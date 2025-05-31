@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BOSTARTER - Accedi o Registrati</title>
+
+  <!-- CSS Bootstrap -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --primary-color: #6366f1;
+      --primary-dark: #4f46e5;
+      --secondary-color: #8b5cf6;
+      --success-color: #10b981;
+      --danger-color: #ef4444;
+      --warning-color: #f59e0b;
+      --dark-color: #1f2937;
+      --light-color: #f8fafc;
+      --gradient: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--gradient);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .auth-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      max-width: 1000px;
+      width: 100%;
+      min-height: 600px;
+      display: flex;
+    }
+
+    .auth-banner {
+      background: var(--gradient);
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      padding: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .auth-banner::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="25" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+      animation: float 20s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(180deg); }
+    }
+
+    .banner-content {
+      text-align: center;
+      z-index: 2;
+      position: relative;
+    }
+
+    .banner-content h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .banner-content p {
+      font-size: 1.2rem;
+      opacity: 0.9;
+      margin-bottom: 2rem;
+    }
+
+    .auth-forms {
+      flex: 1;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .form-container {
+      display: none;
+    }
+
+    .form-container.active {
+      display: block;
+      animation: slideIn 0.5s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    .form-title {
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--dark-color);
+      margin-bottom: 0.5rem;
+    }
+
+    .form-subtitle {
+      color: #6b7280;
+      margin-bottom: 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+      font-weight: 500;
+      color: var(--dark-color);
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .form-control {
+      border: 2px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    .form-control:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      background: white;
+    }
+
+    .input-group {
+      position: relative;
+    }
+
+    .input-group i {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #9ca3af;
+      cursor: pointer;
+      transition: color 0.3s ease;
+    }
+
+    .input-group i:hover {
+      color: var(--primary-color);
+    }
+
+    .btn-primary {
+      background: var(--gradient);
+      border: none;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+      transform: translateY(0);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(99, 102, 241, 0.3);
+    }
+
+    .btn-admin {
+      background: linear-gradient(135deg, var(--warning-color) 0%, #fb923c 100%);
+      border: none;
+      border-radius: 12px;
+      padding: 8px 16px;
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: white;
+      margin-top: 1rem;
+    }
+
+    .auth-switch {
+      text-align: center;
+      margin-top: 2rem;
+      padding-top: 2rem;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .auth-switch a {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+
+    .auth-switch a:hover {
+      color: var(--primary-dark);
+      text-decoration: underline;
+    }
+
+    .alert {
+      border-radius: 12px;
+      border: none;
+      padding: 12px 16px;
+      margin-bottom: 1rem;
+    }
+
+    .alert-success {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success-color);
+      border-left: 4px solid var(--success-color);
+    }
+
+    .alert-danger {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--danger-color);
+      border-left: 4px solid var(--danger-color);
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .spinner {
+      border: 3px solid #f3f4f6;
+      border-top: 3px solid var(--primary-color);
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .auth-container {
+        flex-direction: column;
+        margin: 10px;
+      }
+
+      .auth-banner {
+        min-height: 200px;
+      }
+
+      .banner-content h1 {
+        font-size: 2rem;
+      }
+
+      .auth-forms {
+        padding: 20px;
+      }
+    }
+
+    .skill-requirements {
+      background: rgba(99, 102, 241, 0.05);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
+
+    .features-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .features-list li {
+      padding: 0.5rem 0;
+      display: flex;
+      align-items: center;
+    }
+
+    .features-list li i {
+      color: rgba(255, 255, 255, 0.8);
+      margin-right: 0.5rem;
+    }
+
+    .demo-button {
+      margin-top: 2rem;
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      border-radius: 12px;
+      padding: 10px 20px;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s ease;
+    }
+
+    .demo-button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      color: white;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+<div class="auth-container">
+  <!-- Banner laterale -->
+  <div class="auth-banner">
+    <div class="banner-content">
+      <h1><i class="fas fa-rocket"></i> BOSTARTER</h1>
+      <p>La piattaforma di crowdfunding per progetti innovativi</p>
+      <ul class="features-list">
+        <li><i class="fas fa-check-circle"></i> Finanzia progetti hardware e software</li>
+        <li><i class="fas fa-check-circle"></i> Candidati come sviluppatore</li>
+        <li><i class="fas fa-check-circle"></i> Ottieni reward esclusive</li>
+        <li><i class="fas fa-check-circle"></i> Unisciti alla community</li>
+      </ul>
+
+      <!-- Bottone per visitare come ospite -->
+      <a href="public/projects.php" class="demo-button">
+        <i class="fas fa-eye me-2"></i>Esplora come Ospite
+      </a>
+    </div>
+  </div>
+
+  <!-- Sezione form -->
+  <div class="auth-forms">
+    <!-- Alert per messaggi -->
+    <div id="alertContainer"></div>
+
+    <!-- Form Login -->
+    <div id="loginForm" class="form-container active">
+      <h2 class="form-title">Bentornato!</h2>
+      <p class="form-subtitle">Accedi al tuo account per continuare</p>
+
+      <form id="loginFormElement" method="POST">
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Email</label>
+          <input type="email" class="form-control" id="loginEmail" name="email" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Password</label>
+          <div class="input-group">
+            <input type="password" class="form-control" id="loginPassword" name="password" required>
+            <i class="fas fa-eye" onclick="togglePassword('loginPassword', this)"></i>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="fas fa-sign-in-alt me-2"></i>Accedi
+        </button>
+
+        <button type="button" class="btn btn-admin w-100" onclick="showAdminLogin()">
+          <i class="fas fa-user-shield me-2"></i>Accesso Amministratore
+        </button>
+      </form>
+
+      <div class="auth-switch">
+        <p>Non hai un account? <a href="#" onclick="showRegister()">Registrati qui</a></p>
+      </div>
+    </div>
+
+    <!-- Form Registrazione -->
+    <div id="registerForm" class="form-container">
+      <h2 class="form-title">Unisciti a noi!</h2>
+      <p class="form-subtitle">Crea il tuo account per iniziare</p>
+
+      <form id="registerFormElement" method="POST">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label class="form-label" for="registerNome">Nome</label>
+              <input type="text" class="form-control" id="registerNome" name="nome" required>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label class="form-label" for="registerCognome">Cognome</label>
+              <input type="text" class="form-control" id="registerCognome" name="cognome" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="registerEmail">Email</label>
+          <input type="email" class="form-control" id="registerEmail" name="email" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="registerNickname">Nickname</label>
+          <input type="text" class="form-control" id="registerNickname" name="nickname" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="registerPassword">Password</label>
+          <div class="input-group">
+            <input type="password" class="form-control" id="registerPassword" name="password" required>
+            <i class="fas fa-eye" onclick="togglePassword('registerPassword', this)"></i>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="registerPasswordConfirm">Conferma Password</label>
+          <div class="input-group">
+            <input type="password" class="form-control" id="registerPasswordConfirm" name="password_confirm" required>
+            <i class="fas fa-eye" onclick="togglePassword('registerPasswordConfirm', this)"></i>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label class="form-label" for="registerDataNascita">Data di Nascita</label>
+              <input type="date" class="form-control" id="registerDataNascita" name="data_nascita" required>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label class="form-label" for="registerLuogoNascita">Luogo di Nascita</label>
+              <input type="text" class="form-control" id="registerLuogoNascita" name="luogo_nascita" required>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="isCreator" name="is_creator">
+            <label class="form-check-label" for="isCreator">
+              Voglio diventare un creatore di progetti
+            </label>
+          </div>
+        </div>
+
+        <div class="skill-requirements">
+          <i class="fas fa-info-circle"></i>
+          <strong>Nota:</strong> Dopo la registrazione potrai aggiungere le tue skill per candidarti ai progetti software e aumentare le tue possibilità di collaborazione.
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="fas fa-user-plus me-2"></i>Registrati
+        </button>
+      </form>
+
+      <div class="auth-switch">
+        <p>Hai già un account? <a href="#" onclick="showLogin()">Accedi qui</a></p>
+      </div>
+    </div>
+
+    <!-- Form Login Amministratore -->
+    <div id="adminForm" class="form-container">
+      <h2 class="form-title"><i class="fas fa-user-shield"></i> Accesso Amministratore</h2>
+      <p class="form-subtitle">Inserisci le credenziali di amministratore</p>
+
+      <form id="adminFormElement" method="POST">
+        <div class="form-group">
+          <label class="form-label" for="adminEmail">Email Amministratore</label>
+          <input type="email" class="form-control" id="adminEmail" name="admin_email" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="adminPassword">Password</label>
+          <div class="input-group">
+            <input type="password" class="form-control" id="adminPassword" name="admin_password" required>
+            <i class="fas fa-eye" onclick="togglePassword('adminPassword', this)"></i>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="adminCode">Codice di Sicurezza</label>
+          <input type="text" class="form-control" id="adminCode" name="admin_code" required placeholder="Inserisci il codice di sicurezza">
+        </div>
+
+        <button type="submit" class="btn btn-admin w-100">
+          <i class="fas fa-shield-alt me-2"></i>Accedi come Amministratore
+        </button>
+      </form>
+
+      <div class="auth-switch">
+        <p><a href="#" onclick="showLogin()">← Torna al login normale</a></p>
+      </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div class="loading" id="loadingIndicator">
+      <div class="spinner"></div>
+      <p class="mt-2">Caricamento in corso...</p>
+    </div>
+  </div>
+</div>
+
+<!-- JavaScript Bootstrap -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // Funzioni per gestire il cambio tra i form
+  function showLogin() {
+    hideAllForms();
+    document.getElementById('loginForm').classList.add('active');
+  }
+
+  function showRegister() {
+    hideAllForms();
+    document.getElementById('registerForm').classList.add('active');
+  }
+
+  function showAdminLogin() {
+    hideAllForms();
+    document.getElementById('adminForm').classList.add('active');
+  }
+
+  function hideAllForms() {
+    document.querySelectorAll('.form-container').forEach(form => {
+      form.classList.remove('active');
+    });
+  }
+
+  // Funzione per mostrare/nascondere password
+  function togglePassword(inputId, icon) {
+    const input = document.getElementById(inputId);
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+    } else {
+      input.type = 'password';
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    }
+  }
+
+  // Funzione per mostrare alert
+  function showAlert(message, type) {
+    const alertContainer = document.getElementById('alertContainer');
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type}`;
+    alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+                ${message}
+            `;
+    alertContainer.innerHTML = '';
+    alertContainer.appendChild(alertDiv);
+
+    // Rimuovi l'alert dopo 5 secondi
+    setTimeout(() => {
+      alertDiv.remove();
+    }, 5000);
+  }
+
+  // Gestione submit form login
+  document.getElementById('loginFormElement').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+
+    if (!email || !password) {
+      showAlert('Compila tutti i campi obbligatori', 'danger');
+      return;
+    }
+
+    // Chiamata AJAX per login
+    document.getElementById('loadingIndicator').style.display = 'block';
+
+    const formData = new FormData();
+    formData.append('email', email);
+    formData.append('password', password);
+
+    fetch('auth/login.php', {
+      method: 'POST',
+      body: formData
+    })
+            .then(response => response.json())
+            .then(data => {
+              document.getElementById('loadingIndicator').style.display = 'none';
+
+              if (data.success) {
+                showAlert(data.message, 'success');
+                setTimeout(() => {
+                  window.location.href = data.redirect;
+                }, 1500);
+              } else {
+                showAlert(data.message, 'danger');
+              }
+            })
+            .catch(error => {
+              document.getElementById('loadingIndicator').style.display = 'none';
+              showAlert('Errore di connessione. Riprova più tardi.', 'danger');
+              console.error('Error:', error);
+            });
+  });
+
+  // Gestione submit form registrazione
+  document.getElementById('registerFormElement').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const password = document.getElementById('registerPassword').value;
+    const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+
+    if (password !== passwordConfirm) {
+      showAlert('Le password non corrispondono', 'danger');
+      return;
+    }
+
+    if (password.length < 6) {
+      showAlert('La password deve essere di almeno 6 caratteri', 'danger');
+      return;
+    }
+
+    // Chiamata AJAX per registrazione
+    document.getElementById('loadingIndicator').style.display = 'block';
+
+    const formData = new FormData(this);
+
+    fetch('auth/register.php', {
+      method: 'POST',
+      body: formData
+    })
+            .then(response => response.json())
+            .then(data => {
+              document.getElementById('loadingIndicator').style.display = 'none';
+
+              if (data.success) {
+                showAlert(data.message, 'success');
+                setTimeout(() => {
+                  showLogin();
+                  // Reset form
+                  document.getElementById('registerFormElement').reset();
+                }, 2000);
+              } else {
+                showAlert(data.message, 'danger');
+              }
+            })
+            .catch(error => {
+              document.getElementById('loadingIndicator').style.display = 'none';
+              showAlert('Errore di connessione. Riprova più tardi.', 'danger');
+              console.error('Error:', error);
+            });
+  });
+
+  // Gestione submit form admin
+  document.getElementById('adminFormElement').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const email = document.getElementById('adminEmail').value;
+    const password = document.getElementById('adminPassword').value;
+    const code = document.getElementById('adminCode').value;
+
+    if (!email || !password || !code) {
+      showAlert('Tutti i campi sono obbligatori per l\'accesso amministratore', 'danger');
+      return;
+    }
+
+    // Chiamata AJAX per login admin
+    document.getElementById('loadingIndicator').style.display = 'block';
+
+    const formData = new FormData();
+    formData.append('admin_email', email);
+    formData.append('admin_password', password);
+    formData.append('admin_code', code);
+
+    fetch('auth/admin_login.php', {
+      method: 'POST',
+      body: formData
+    })
+            .then(response => response.json())
+            .then(data => {
+              document.getElementById('loadingIndicator').style.display = 'none';
+
+              if (data.success) {
+                showAlert(data.message, 'success');
+                setTimeout(() => {
+                  window.location.href = data.redirect;
+                }, 1500);
+              } else {
+                showAlert(data.message, 'danger');
+              }
+            })
+            .catch(error => {
+              document.getElementById('loadingIndicator').style.display = 'none';
+              showAlert('Errore di connessione. Riprova più tardi.', 'danger');
+              console.error('Error:', error);
+            });
+  });
+
+  // Validazione real-time per email
+  document.addEventListener('DOMContentLoaded', function() {
+    const emailInputs = document.querySelectorAll('input[type="email"]');
+    emailInputs.forEach(input => {
+      input.addEventListener('blur', function() {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (this.value && !emailRegex.test(this.value)) {
+          this.classList.add('is-invalid');
+        } else {
+          this.classList.remove('is-invalid');
+        }
+      });
+    });
+  });
+</script>
+</body>
+</html>

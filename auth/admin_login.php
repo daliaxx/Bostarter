@@ -1,0 +1,94 @@
+<?php
+/**
+ * BOSTARTER - Admin Login Handler
+ * File: auth/admin_login.php
+ */
+
+require_once '../config/database.php';
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    Utils::jsonResponse(false, 'Metodo non consentito');
+}
+
+try {
+    // Input sanitization
+    $email = Utils::sanitize($_POST['admin_email'] ?? '');
+    $password = Utils::sanitize($_POST['admin_password'] ?? '');
+    $codiceSicurezza = Utils::sanitize($_POST['admin_code'] ?? '');
+
+    // Validazione
+    if (empty($email) || empty($password) || empty($codiceSicurezza)) {
+        Utils::jsonResponse(false, 'Tutti i campi sono obbligatori per l\'accesso amministratore');
+    }
+
+    if (!Utils::validateEmail($email)) {
+        Utils::jsonResponse(false, 'Formato email non valido');
+    }
+
+    $db = Database::getInstance();
+
+    // Verifica credenziali admin usando stored procedure
+    try {
+        $stmt = $db->callStoredProcedure('LoginAmministratore', [$email, $password, $codiceSicurezza]);
+        $result = $stmt->fetch();
+
+        if (!$result || $result['Email'] === null) {
+            Utils::jsonResponse(false, 'Credenziali amministratore non valide');
+        }
+
+        // Recupera dati completi
+        $admin = $db->fetchOne("
+            SELECT u.Email, u.Nickname, u.Nome, u.Cognome, a.Codice_Sicurezza 
+            FROM UTENTE u 
+            JOIN AMMINISTRATORE a ON u.Email = a.Email 
+            WHERE u.Email = ?
+        ", [$email]);
+
+        if (!$admin) {
+            Utils::jsonResponse(false, 'Errore nel recupero dati amministratore');
+        }
+
+        // Verifica se è anche creatore
+        $creatorData = $db->fetchOne("SELECT Nr_Progetti, Affidabilita FROM CREATORE WHERE Email = ?", [$email]);
+        $isCreator = $creatorData !== false;
+
+        // Imposta sessione
+        SessionManager::set('user_email', $admin['Email']);
+        SessionManager::set('user_nickname', $admin['Nickname']);
+        SessionManager::set('user_nome', $admin['Nome']);
+        SessionManager::set('user_cognome', $admin['Cognome']);
+        SessionManager::set('is_admin', true);
+        SessionManager::set('is_creator', $isCreator);
+        SessionManager::set('admin_code', $admin['Codice_Sicurezza']);
+
+        if ($isCreator) {
+            SessionManager::set('creator_progetti', $creatorData['Nr_Progetti']);
+            SessionManager::set('creator_affidabilita', $creatorData['Affidabilita']);
+        }
+
+        error_log("✅ Login ADMIN: $email");
+
+        Utils::jsonResponse(true, 'Accesso amministratore effettuato con successo!', [
+            'user' => [
+                'email' => $admin['Email'],
+                'nickname' => $admin['Nickname'],
+                'nome' => $admin['Nome'],
+                'cognome' => $admin['Cognome'],
+                'is_admin' => true,
+                'is_creator' => $isCreator
+            ]
+        ], '../public/dashboard/admin_dashboard.php');
+
+    } catch (PDOException $e) {
+        if (strpos($e->getMessage(), 'non valide') !== false) {
+            Utils::jsonResponse(false, 'Credenziali amministratore non valide');
+        } else {
+            throw $e;
+        }
+    }
+
+} catch (Exception $e) {
+    error_log("❌ Errore login admin: " . $e->getMessage());
+    Utils::jsonResponse(false, 'Errore interno del server. Riprova più tardi.');
+}
+?>
