@@ -13,180 +13,149 @@ USE BOSTARTER;
 
 -- Tabella UTENTE
 CREATE TABLE UTENTE(
-                       Email VARCHAR(100) PRIMARY KEY,
-                       Nickname VARCHAR(50) UNIQUE NOT NULL,
-                       Password VARCHAR(255) NOT NULL,
-                       Nome VARCHAR(50) NOT NULL,
-                       Cognome VARCHAR(50) NOT NULL,
-                       Anno_Di_Nascita DATE NOT NULL,
-                       Luogo_Di_Nascita VARCHAR(100) NOT NULL,
-                       Data_Registrazione TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    Email               VARCHAR(100) PRIMARY KEY,
+    Nickname            VARCHAR(50) UNIQUE NOT NULL,
+    Password            VARCHAR(255) NOT NULL,
+    Nome                VARCHAR(50) NOT NULL,
+    Cognome             VARCHAR(50) NOT NULL,
+    Anno_Di_Nascita     DATE NOT NULL,
+    Luogo_Di_Nascita    VARCHAR(100) NOT NULL
 );
 
 -- Tabella SKILL
 CREATE TABLE SKILL(
-                      COMPETENZA VARCHAR(100),
-                      LIVELLO INT CHECK (LIVELLO BETWEEN 0 AND 5),
-                      PRIMARY KEY (COMPETENZA, LIVELLO)
+    Competenza  VARCHAR(100),
+    Livello     INT CHECK (LIVELLO BETWEEN 0 AND 5),
+    PRIMARY KEY (Competenza, Livello)
 );
 
 -- Tabella SKILL_CURRICULUM
 CREATE TABLE SKILL_CURRICULUM(
-                                 Email_Utente VARCHAR(100),
-                                 Competenza VARCHAR(100),
-                                 Livello INT,
-                                 PRIMARY KEY (Email_Utente, Competenza, Livello),
-                                 FOREIGN KEY (Email_Utente) REFERENCES UTENTE(Email) ON DELETE CASCADE,
-                                 FOREIGN KEY (Competenza, Livello) REFERENCES SKILL(Competenza, LIVELLO) ON DELETE CASCADE
+    Email_Utente    VARCHAR(100),
+    Competenza      VARCHAR(100),
+    Livello         INT,
+    PRIMARY KEY (Email_Utente, Competenza, Livello),
+    FOREIGN KEY (Email_Utente) REFERENCES UTENTE(Email) ON DELETE CASCADE,
+    FOREIGN KEY (Competenza, Livello) REFERENCES SKILL(Competenza, LIVELLO) ON DELETE CASCADE
 );
 
 -- Tabella AMMINISTRATORE
 CREATE TABLE AMMINISTRATORE(
-                               Email VARCHAR(100) PRIMARY KEY,
-                               Codice_Sicurezza VARCHAR(50) NOT NULL,
-                               FOREIGN KEY (Email) REFERENCES UTENTE(Email) ON DELETE CASCADE
+    Email               VARCHAR(100) PRIMARY KEY,
+    Codice_Sicurezza    VARCHAR(50) NOT NULL,
+    FOREIGN KEY (Email) REFERENCES UTENTE(Email) ON DELETE CASCADE
 );
 
 -- Tabella CREATORE
 CREATE TABLE CREATORE (
-                          Email VARCHAR(100) PRIMARY KEY,
-                          Nr_Progetti INT DEFAULT 0,
-                          Affidabilita FLOAT DEFAULT 0,
-                          FOREIGN KEY (Email) REFERENCES UTENTE(Email) ON DELETE CASCADE
+    Email           VARCHAR(100) PRIMARY KEY,
+    Nr_Progetti     INT DEFAULT 0,
+    Affidabilita    FLOAT DEFAULT 0,
+    FOREIGN KEY (Email) REFERENCES UTENTE(Email) ON DELETE CASCADE
 );
 
 -- Tabella PROGETTO
 CREATE TABLE PROGETTO(
-                         Nome VARCHAR(100) PRIMARY KEY,
-                         Descrizione TEXT NOT NULL,
-                         Data_Inserimento DATE NOT NULL,
-                         Stato ENUM('aperto', 'chiuso') NOT NULL DEFAULT 'aperto',
-                         Budget DECIMAL(10,2) NOT NULL,
-                         Data_Limite DATE NOT NULL,
-                         Email_Creatore VARCHAR(100) NOT NULL,
-                         FOREIGN KEY (Email_Creatore) REFERENCES CREATORE(Email) ON DELETE CASCADE
+    Nome                VARCHAR(100) PRIMARY KEY,
+    Descrizione         TEXT NOT NULL,
+    Data_Inserimento    DATE NOT NULL,
+    Stato               ENUM('aperto', 'chiuso')NOT NULL DEFAULT 'aperto',
+    Budget              DECIMAL(10,2) NOT NULL,
+    Data_Limite         DATE NOT NULL,
+    Tipo                ENUM('Hardware', 'Software') NOT NULL,
+    Email_Creatore      VARCHAR(100) NOT NULL,
+    FOREIGN KEY (Email_Creatore) REFERENCES CREATORE(Email) ON DELETE CASCADE
 );
 
 -- Tabella FOTO
 CREATE TABLE FOTO (
-                      id INT AUTO_INCREMENT PRIMARY KEY,
-                      percorso VARCHAR(255) NOT NULL,
-                      Nome_Progetto VARCHAR(100) NOT NULL,
-                      FOREIGN KEY (Nome_Progetto) REFERENCES PROGETTO(Nome) ON DELETE CASCADE
-);
-
--- Tabella HARDWARE
-CREATE TABLE HARDWARE(
-                         Nome VARCHAR(100) PRIMARY KEY,
-                         FOREIGN KEY (Nome) REFERENCES PROGETTO(Nome) ON DELETE CASCADE
-);
-
--- Tabella SOFTWARE
-CREATE TABLE SOFTWARE(
-                         Nome VARCHAR(100) PRIMARY KEY,
-                         FOREIGN KEY (Nome) REFERENCES PROGETTO(Nome) ON DELETE CASCADE
+    ID              INT AUTO_INCREMENT PRIMARY KEY,
+    Percorso        TEXT NOT NULL,
+    Nome_Progetto   VARCHAR(100) NOT NULL,
+    FOREIGN KEY (Nome_Progetto) REFERENCES PROGETTO(Nome) ON DELETE CASCADE
 );
 
 -- Tabella COMPONENTI
-CREATE TABLE COMPONENTI(
-                           Nome VARCHAR(100) PRIMARY KEY,
-                           Descrizione TEXT NOT NULL,
-                           Prezzo DECIMAL(10,2) NOT NULL,
-                           Quantita INT NOT NULL
-);
-
--- Tabella COMPONENTI_HARDWARE
-CREATE TABLE COMPONENTI_HARDWARE(
-                                    Nome_Progetto VARCHAR(100),
-                                    Nome_Componente VARCHAR(100),
-                                    PRIMARY KEY (Nome_Progetto, Nome_Componente),
-                                    FOREIGN KEY (Nome_Progetto) REFERENCES HARDWARE(Nome) ON DELETE CASCADE,
-                                    FOREIGN KEY (Nome_Componente) REFERENCES COMPONENTI(Nome) ON DELETE CASCADE
+CREATE TABLE COMPONENTE(
+    ID              INT AUTO_INCREMENT PRIMARY KEY,
+    Nome            VARCHAR(100),
+    Descrizione     TEXT NOT NULL,
+    Prezzo          DECIMAL(10,2) NOT NULL,
+    Quantita        INT NOT NULL,
+    Nome_Progetto   VARCHAR(100) NOT NULL,
+    FOREIGN KEY (Nome_Progetto) REFERENCES PROGETTO(Nome) ON DELETE CASCADE
 );
 
 -- Tabella PROFILO
 CREATE TABLE PROFILO(
-                        ID INT AUTO_INCREMENT PRIMARY KEY,
-                        Nome VARCHAR(100) NOT NULL
-);
-
--- Tabella PROFILO_SOFTWARE
-CREATE TABLE PROFILO_SOFTWARE(
-                                 Nome_Progetto VARCHAR(100),
-                                 ID_Profilo INT,
-                                 PRIMARY KEY (Nome_Progetto, ID_Profilo),
-                                 FOREIGN KEY (Nome_Progetto) REFERENCES SOFTWARE(Nome) ON DELETE CASCADE,
-                                 FOREIGN KEY (ID_Profilo) REFERENCES PROFILO(ID) ON DELETE CASCADE
+    ID              INT AUTO_INCREMENT PRIMARY KEY,
+    Nome            VARCHAR(100) NOT NULL,
+    Nome_Progetto   VARCHAR(100) NOT NULL,
+    FOREIGN KEY (Nome_Progetto) REFERENCES PROGETTO(Nome) ON DELETE CASCADE
 );
 
 -- Tabella SKILL_RICHIESTA
 CREATE TABLE SKILL_RICHIESTA(
-                                ID_Profilo INT,
-                                Competenza VARCHAR(100),
-                                Livello INT,
-                                PRIMARY KEY (ID_Profilo, Competenza, Livello),
-                                FOREIGN KEY (ID_Profilo) REFERENCES PROFILO(ID) ON DELETE CASCADE,
-                                FOREIGN KEY (Competenza, Livello) REFERENCES SKILL(Competenza, LIVELLO) ON DELETE CASCADE
+    ID_Profilo  INT AUTO_INCREMENT,
+    Competenza  VARCHAR(100),
+    Livello     INT,
+    PRIMARY KEY (ID_Profilo, Competenza, Livello),
+    FOREIGN KEY (ID_Profilo) REFERENCES PROFILO(ID) ON DELETE CASCADE,
+    FOREIGN KEY (Competenza, Livello) REFERENCES SKILL(Competenza, LIVELLO) ON DELETE CASCADE
 );
 
 -- Tabella COMMENTO
 CREATE TABLE COMMENTO(
-                         ID INT AUTO_INCREMENT PRIMARY KEY,
-                         Data TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                         Testo TEXT NOT NULL,
-                         Nome_Progetto VARCHAR(100) NOT NULL,
-                         Email_Utente VARCHAR(100) NOT NULL,
-                         FOREIGN KEY (Nome_Progetto) REFERENCES PROGETTO(Nome) ON DELETE CASCADE,
-                         FOREIGN KEY (Email_Utente) REFERENCES UTENTE(Email) ON DELETE CASCADE
+    ID              INT AUTO_INCREMENT PRIMARY KEY,
+    Data            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Testo           TEXT NOT NULL,
+    Nome_Progetto   VARCHAR(100) NOT NULL,
+    Email_Utente    VARCHAR(100) NOT NULL,
+    FOREIGN KEY (Nome_Progetto) REFERENCES PROGETTO(Nome) ON DELETE CASCADE,
+    FOREIGN KEY (Email_Utente) REFERENCES UTENTE(Email) ON DELETE CASCADE
 );
 
 -- Tabella RISPOSTA
 CREATE TABLE RISPOSTA(
-                         ID_Commento INT PRIMARY KEY,
-                         Email_Creatore VARCHAR(100) NOT NULL,
-                         Testo TEXT NOT NULL,
-                         Data TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                         FOREIGN KEY (ID_Commento) REFERENCES COMMENTO(ID) ON DELETE CASCADE,
-                         FOREIGN KEY (Email_Creatore) REFERENCES CREATORE(Email) ON DELETE CASCADE
+    ID_Commento     INT PRIMARY KEY,
+    Email_Creatore  VARCHAR(100) NOT NULL,
+    Testo           TEXT NOT NULL,
+    Data            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ID_Commento) REFERENCES COMMENTO(ID) ON DELETE CASCADE,
+    FOREIGN KEY (Email_Creatore) REFERENCES CREATORE(Email) ON DELETE CASCADE
 );
 
 -- Tabella REWARD
 CREATE TABLE REWARD(
-                       Codice VARCHAR(100) PRIMARY KEY,
-                       Descrizione TEXT NOT NULL
-);
-
--- Tabella PROGETTO_REWARD
-CREATE TABLE PROGETTO_REWARD(
-                                Nome_Progetto VARCHAR(100),
-                                Codice_Reward VARCHAR(100),
-                                PRIMARY KEY (Nome_Progetto, Codice_Reward),
-                                FOREIGN KEY (Nome_Progetto) REFERENCES PROGETTO(Nome) ON DELETE CASCADE,
-                                FOREIGN KEY (Codice_Reward) REFERENCES REWARD(Codice) ON DELETE CASCADE
+    Codice          VARCHAR(100) PRIMARY KEY,
+    Descrizione     TEXT NOT NULL,
+    Foto            TEXT NOT NULL,
+    Nome_Progetto   VARCHAR(100) NOT NULL,
+    FOREIGN KEY (Nome_Progetto) REFERENCES PROGETTO(Nome) ON DELETE CASCADE
 );
 
 -- Tabella FINANZIAMENTO
 CREATE TABLE FINANZIAMENTO(
-                              ID INT AUTO_INCREMENT PRIMARY KEY,
-                              Data TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                              Importo DECIMAL(10,2) NOT NULL,
-                              Email_Utente VARCHAR(100) NOT NULL,
-                              Codice_Reward VARCHAR(100),
-                              Nome_Progetto VARCHAR(100) NOT NULL,
-                              FOREIGN KEY (Email_Utente) REFERENCES UTENTE(Email) ON DELETE CASCADE,
-                              FOREIGN KEY (Codice_Reward) REFERENCES REWARD(Codice) ON DELETE SET NULL,
-                              FOREIGN KEY (Nome_Progetto) REFERENCES PROGETTO(Nome) ON DELETE CASCADE
+    ID              INT AUTO_INCREMENT PRIMARY KEY,
+    Data            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Importo         DECIMAL(10,2) NOT NULL,
+    Email_Utente    VARCHAR(100) NOT NULL,
+    Codice_Reward   VARCHAR(100),
+    Nome_Progetto   VARCHAR(100) NOT NULL,
+    FOREIGN KEY (Email_Utente) REFERENCES UTENTE(Email) ON DELETE CASCADE,
+    FOREIGN KEY (Codice_Reward) REFERENCES REWARD(Codice) ON DELETE SET NULL,
+    FOREIGN KEY (Nome_Progetto) REFERENCES PROGETTO(Nome) ON DELETE CASCADE
 );
 
 -- Tabella CANDIDATURA
 CREATE TABLE CANDIDATURA(
-                            ID INT AUTO_INCREMENT PRIMARY KEY,
-                            Esito BOOLEAN DEFAULT FALSE,
-                            Data_Candidatura TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            Email_Utente VARCHAR(100) NOT NULL,
-                            ID_Profilo INT NOT NULL,
-                            FOREIGN KEY (Email_Utente) REFERENCES UTENTE(Email) ON DELETE CASCADE,
-                            FOREIGN KEY (ID_Profilo) REFERENCES PROFILO(ID) ON DELETE CASCADE
+    ID                  INT AUTO_INCREMENT PRIMARY KEY,
+    Esito               BOOLEAN DEFAULT FALSE,
+    Data_Candidatura    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Email_Utente        VARCHAR(100) NOT NULL,
+    ID_Profilo          INT NOT NULL,
+    FOREIGN KEY (Email_Utente) REFERENCES UTENTE(Email) ON DELETE CASCADE,
+    FOREIGN KEY (ID_Profilo) REFERENCES PROFILO(ID) ON DELETE CASCADE
 );
 
 -- ================================================================
@@ -232,6 +201,17 @@ INSERT INTO UTENTE (
              p_Email, p_Nickname, p_Password, p_Nome, p_Cognome,
              p_Anno_Di_Nascita, p_Luogo_Di_Nascita
          );
+END $$
+
+CREATE PROCEDURE LoginUtente (
+    IN in_email VARCHAR(255),
+    IN in_password VARCHAR(255)
+)
+BEGIN
+    SELECT Email
+    FROM UTENTE
+    WHERE Email = in_email
+      AND Password = in_password;
 END $$
 
 -- Procedure per login amministratore
@@ -280,8 +260,6 @@ BEGIN
 INSERT INTO REWARD (Codice, Descrizione)
 VALUES (p_Codice, p_Descrizione);
 
-INSERT INTO PROGETTO_REWARD (Nome_Progetto, Codice_Reward)
-VALUES (p_NomeProgetto, p_Codice);
 END $$
 
 -- Procedure per inserimento skill
@@ -562,140 +540,100 @@ GROUP BY p.Nome, p.Stato, p.Budget, p.Data_Limite, c.Nr_Progetti, c.Affidabilita
 
 -- Inserimento utenti
 INSERT INTO UTENTE (Email, Nickname, Password, Nome, Cognome, Anno_Di_Nascita, Luogo_Di_Nascita) VALUES
-                                                                                                     ('dalia.barone@email.com','dalia28','password123','Dalia','Barone','2004-02-20','Termoli'),
-                                                                                                     ('mattia.veroni@email.com','mattiav','mypassword','Mattia','Veroni','2002-12-31','Carpi'),
-                                                                                                     ('sofia.neamtu@email.com','sofia_n','securepass','Sofia','Neamtu','2003-12-10','Padova'),
-                                                                                                     ('admin@bostarter.com','admin','password123','Admin','System','1990-01-01','Bologna');
+    ('dalia.barone@email.com','dalia28','password123','Dalia','Barone','2004-02-20','Termoli'),
+    ('sofia.neamtu@email.com','sofia_n','securepass','Sofia','Neamtu','2003-12-10','Padova'),
+    ('admin@bostarter.com','admin','password123','Admin','System','1990-01-01','Bologna');
 
 -- Inserimento amministratori
 INSERT INTO AMMINISTRATORE (Email, Codice_Sicurezza) VALUES
-                                                         ('admin@bostarter.com','ADMIN2024'),
-                                                         ('dalia.barone@email.com','SEC123'),
-                                                         ('sofia.neamtu@email.com','SEC456');
+    ('admin@bostarter.com','ADMIN2024');
 
 -- Inserimento creatori
 INSERT INTO CREATORE (Email, Affidabilita) VALUES
-                                               ('dalia.barone@email.com',0),
-                                               ('mattia.veroni@email.com',0),
-                                               ('sofia.neamtu@email.com',0);
+    ('dalia.barone@email.com',0),
+    ('sofia.neamtu@email.com',0);
 
 -- Inserimento skill base
 INSERT INTO SKILL (COMPETENZA, LIVELLO) VALUES
-                                            ('AI', 1), ('AI', 2), ('AI', 3), ('AI', 4), ('AI', 5),
-                                            ('Machine Learning', 1), ('Machine Learning', 2), ('Machine Learning', 3), ('Machine Learning', 4), ('Machine Learning', 5),
-                                            ('Web Development', 1), ('Web Development', 2), ('Web Development', 3), ('Web Development', 4), ('Web Development', 5),
-                                            ('Database Management', 1), ('Database Management', 2), ('Database Management', 3), ('Database Management', 4), ('Database Management', 5),
-                                            ('Cybersecurity', 1), ('Cybersecurity', 2), ('Cybersecurity', 3), ('Cybersecurity', 4), ('Cybersecurity', 5),
-                                            ('Data Analysis', 1), ('Data Analysis', 2), ('Data Analysis', 3), ('Data Analysis', 4), ('Data Analysis', 5),
-                                            ('Cloud Computing', 1), ('Cloud Computing', 2), ('Cloud Computing', 3), ('Cloud Computing', 4), ('Cloud Computing', 5),
-                                            ('Networking', 1), ('Networking', 2), ('Networking', 3), ('Networking', 4), ('Networking', 5),
-                                            ('Software Engineering', 1), ('Software Engineering', 2), ('Software Engineering', 3), ('Software Engineering', 4), ('Software Engineering', 5),
-                                            ('Embedded Systems', 1), ('Embedded Systems', 2), ('Embedded Systems', 3), ('Embedded Systems', 4), ('Embedded Systems', 5);
+    ('AI', 1), ('AI', 2), ('AI', 3), ('AI', 4), ('AI', 5),
+    ('Machine Learning', 1), ('Machine Learning', 2), ('Machine Learning', 3), ('Machine Learning', 4), ('Machine Learning', 5),
+    ('Web Development', 1), ('Web Development', 2), ('Web Development', 3), ('Web Development', 4), ('Web Development', 5),
+    ('Database Management', 1), ('Database Management', 2), ('Database Management', 3), ('Database Management', 4), ('Database Management', 5),
+    ('Cybersecurity', 1), ('Cybersecurity', 2), ('Cybersecurity', 3), ('Cybersecurity', 4), ('Cybersecurity', 5),
+    ('Data Analysis', 1), ('Data Analysis', 2), ('Data Analysis', 3), ('Data Analysis', 4), ('Data Analysis', 5),
+    ('Cloud Computing', 1), ('Cloud Computing', 2), ('Cloud Computing', 3), ('Cloud Computing', 4), ('Cloud Computing', 5),
+    ('Networking', 1), ('Networking', 2), ('Networking', 3), ('Networking', 4), ('Networking', 5),
+    ('Software Engineering', 1), ('Software Engineering', 2), ('Software Engineering', 3), ('Software Engineering', 4), ('Software Engineering', 5),
+    ('Embedded Systems', 1), ('Embedded Systems', 2), ('Embedded Systems', 3), ('Embedded Systems', 4), ('Embedded Systems', 5);
 
 -- Inserimento skill curriculum
 INSERT INTO SKILL_CURRICULUM (Email_Utente, Competenza, Livello) VALUES
-                                                                     ('dalia.barone@email.com','Web Development',4),
-                                                                     ('dalia.barone@email.com','Database Management',3),
-                                                                     ('mattia.veroni@email.com','Cybersecurity',4),
-                                                                     ('mattia.veroni@email.com','Networking',3),
-                                                                     ('sofia.neamtu@email.com','Data Analysis',3),
-                                                                     ('sofia.neamtu@email.com','AI',4),
-                                                                     ('sofia.neamtu@email.com','Machine Learning',5);
+    ('dalia.barone@email.com','Web Development',4),
+    ('dalia.barone@email.com','Database Management',3),
+    ('sofia.neamtu@email.com','Data Analysis',3),
+    ('sofia.neamtu@email.com','AI',4),
+    ('sofia.neamtu@email.com','Machine Learning',5);
 
 -- Inserimento progetti
-INSERT INTO PROGETTO (Nome, Descrizione, Data_Inserimento, Stato, Budget, Data_Limite, Email_Creatore) VALUES
-                                                                                                           ('SmartHome AI','Sistema di automazione domestica basato su AI','2025-03-01','aperto',5000,'2025-06-01','dalia.barone@email.com'),
-                                                                                                           ('EduTech Platform','Piattaforma di e-learning avanzata','2025-02-20','aperto',8000,'2025-05-15','mattia.veroni@email.com'),
-                                                                                                           ('CyberShield','Firewall AI per la sicurezza informatica','2025-01-15','chiuso',12000,'2025-04-30','sofia.neamtu@email.com'),
-                                                                                                           ('AutoPilot System','Sistema di guida autonoma per auto','2025-02-10','aperto',15000,'2025-08-01','dalia.barone@email.com'),
-                                                                                                           ('E-Health Monitor','Sistema di monitoraggio remoto della salute','2025-03-05','aperto',7000,'2025-06-30','mattia.veroni@email.com');
-
--- Classificazione progetti
-INSERT INTO HARDWARE (Nome) VALUES
-                                ('SmartHome AI'), ('AutoPilot System');
-
-INSERT INTO SOFTWARE (Nome) VALUES
-                                ('EduTech Platform'), ('CyberShield'), ('E-Health Monitor');
+INSERT INTO PROGETTO (Nome, Descrizione, Data_Inserimento, Stato, Budget, Data_Limite, Tipo, Email_Creatore) VALUES
+    ('SmartHome AI','Sistema di automazione domestica basato su AI','2025-03-01','aperto',5000,'2025-06-01','Hardware','dalia.barone@email.com'),
+    ('CyberShield','Firewall AI per la sicurezza informatica','2025-01-15','chiuso',12000,'2025-04-30','Hardware','sofia.neamtu@email.com'),
+    ('AutoPilot System','Sistema di guida autonoma per auto','2025-02-10','aperto',15000,'2025-08-01', 'Software','dalia.barone@email.com'),
+    ('E-Health Monitor','Sistema di monitoraggio remoto della salute','2025-03-05','aperto',7000,'2025-06-30','Software','sofia.neamtu@email.com');
 
 -- Inserimento componenti per progetti hardware
-INSERT INTO COMPONENTI (Nome, Descrizione, Prezzo, Quantita) VALUES
-                                                                 ('Sensore di Movimento','Sensore per rilevare il movimento in ambienti domestici',20.00,10),
-                                                                 ('Modulo Bluetooth','Modulo di comunicazione Bluetooth per connessione remota',15.00,8),
-                                                                 ('Camera HD','Telecamera ad alta risoluzione per sicurezza',50.00,5),
-                                                                 ('Motore Elettrico','Motore per guida autonoma',120.00,4),
-                                                                 ('Sensore LiDAR','Sensore per rilevamento ostacoli in guida autonoma',200.00,2),
-                                                                 ('Batteria al Litio','Batteria ricaricabile ad alta capacita',90.00,6);
-
-INSERT INTO COMPONENTI_HARDWARE (Nome_Progetto, Nome_Componente) VALUES
-                                                                     ('SmartHome AI','Sensore di Movimento'),
-                                                                     ('SmartHome AI','Modulo Bluetooth'),
-                                                                     ('SmartHome AI','Camera HD'),
-                                                                     ('AutoPilot System','Motore Elettrico'),
-                                                                     ('AutoPilot System','Sensore LiDAR'),
-                                                                     ('AutoPilot System','Batteria al Litio');
+INSERT INTO COMPONENTE (Nome, Descrizione, Prezzo, Quantita, Nome_Progetto) VALUES
+    ('Sensore di Movimento','Sensore per rilevare il movimento in ambienti domestici',20.00,10,'SmartHome AI'),
+    ('Modulo Bluetooth','Modulo di comunicazione Bluetooth per connessione remota',15.00,8, 'SmartHome AI'),
+    ('Camera HD','Telecamera ad alta risoluzione per sicurezza',50.00,5,'CyberShield'),
+    ('Motore Elettrico','Motore per guida autonoma',120.00,4,'AutoPilot System'),
+    ('Sensore LiDAR','Sensore per rilevamento ostacoli in guida autonoma',200.00,2,'AutoPilot System'),
+    ('Batteria al Litio','Batteria ricaricabile ad alta capacita',90.00,6,'CyberShield');
 
 -- Inserimento profili per progetti software
-INSERT INTO PROFILO (Nome) VALUES
-                               ('Esperto AI'),
-                               ('Sviluppatore Full Stack'),
-                               ('Analista di Sicurezza'),
-                               ('Ingegnere DevOps'),
-                               ('Data Scientist'),
-                               ('Cloud Architect');
-
-INSERT INTO PROFILO_SOFTWARE (Nome_Progetto, ID_Profilo) VALUES
-                                                             ('EduTech Platform',1),
-                                                             ('EduTech Platform',2),
-                                                             ('CyberShield',3),
-                                                             ('CyberShield',4),
-                                                             ('E-Health Monitor',5),
-                                                             ('E-Health Monitor',6);
+INSERT INTO PROFILO (Nome, Nome_Progetto) VALUES
+    ('Esperto AI','SmartHome AI'),
+    ('Sviluppatore Full Stack', 'SmartHome AI'),
+    ('Analista di Sicurezza','CyberShield'),
+    ('Ingegnere DevOps','CyberShield'),
+    ('Data Scientist', 'E-Health Monitor'),
+    ('Cloud Architect','CyberShield');
 
 INSERT INTO SKILL_RICHIESTA (ID_Profilo, Competenza, Livello) VALUES
-                                                                  (1,'AI',4),
-                                                                  (1,'Machine Learning',5),
-                                                                  (2,'Web Development',4),
-                                                                  (2,'Database Management',3),
-                                                                  (3,'Cybersecurity',4),
-                                                                  (4,'Cloud Computing',5),
-                                                                  (5,'Data Analysis',3),
-                                                                  (5,'AI',4),
-                                                                  (6,'Cloud Computing',4),
-                                                                  (6,'Networking',3);
+    (1,'AI',4),
+    (1,'Machine Learning',5),
+    (2,'Web Development',4),
+    (2,'Database Management',3),
+    (3,'Cybersecurity',4),
+    (4,'Cloud Computing',5),
+    (5,'Data Analysis',3),
+    (5,'AI',4),
+    (6,'Cloud Computing',4),
+    (6,'Networking',3);
 
 -- Inserimento rewards
-INSERT INTO REWARD (Codice, Descrizione) VALUES
-                                             ('RWD1','Accesso beta esclusivo al prodotto'),
-                                             ('RWD2','T-shirt personalizzata del progetto'),
-                                             ('RWD3','Menzione speciale nel sito ufficiale'),
-                                             ('RWD4','Invito a evento esclusivo di presentazione'),
-                                             ('RWD5','Pacchetto premium di funzioni avanzate');
-
-INSERT INTO PROGETTO_REWARD (Nome_Progetto, Codice_Reward) VALUES
-                                                               ('SmartHome AI','RWD1'),
-                                                               ('EduTech Platform','RWD2'),
-                                                               ('CyberShield','RWD3'),
-                                                               ('AutoPilot System','RWD4'),
-                                                               ('E-Health Monitor','RWD5');
+INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) VALUES
+    ('RWD1','Accesso beta esclusivo al prodotto', '/img/rwd2.jpeg','SmartHome AI'),
+    ('RWD2','T-shirt personalizzata del progetto','/img/rwd2.jpeg','SmartHome AI'),
+    ('RWD3','Menzione speciale nel sito ufficiale','/img/rwd2.jpeg','SmartHome AI'),
+    ('RWD4','Invito a evento esclusivo di presentazione','/img/rwd2.jpeg','SmartHome AI'),
+    ('RWD5','Pacchetto premium di funzioni avanzate','/img/rwd2.jpeg','SmartHome AI');
 
 -- Inserimento finanziamenti
-INSERT INTO FINANZIAMENTO (Importo, Email_Utente, Codice_Reward, Nome_Progetto) VALUES
-                                                                                    (100.00, 'dalia.barone@email.com', 'RWD1', 'SmartHome AI'),
-                                                                                    (200.00, 'mattia.veroni@email.com', 'RWD2', 'EduTech Platform'),
-                                                                                    (150.00, 'sofia.neamtu@email.com', 'RWD3', 'CyberShield'),
-                                                                                    (300.00, 'dalia.barone@email.com', 'RWD4', 'AutoPilot System'),
-                                                                                    (250.00, 'mattia.veroni@email.com', 'RWD5', 'E-Health Monitor');
+INSERT INTO FINANZIAMENTO (Data, Importo, Email_Utente, Codice_Reward, Nome_Progetto) VALUES
+    ('2025-06-05',100.00, 'dalia.barone@email.com', 'RWD1', 'SmartHome AI'),
+    ('2025-06-01',150.00, 'sofia.neamtu@email.com', 'RWD3', 'CyberShield'),
+    ('2025-06-01',300.00, 'dalia.barone@email.com', 'RWD4', 'AutoPilot System'),
+    ('2025-06-01',250.00, 'sofia.neamtu@email.com', 'RWD5', 'E-Health Monitor');
 
 -- Inserimento foto progetti
-INSERT INTO FOTO (percorso, Nome_Progetto) VALUES
-                                               ('smarthome.jpg', 'SmartHome AI'),
-                                               ('edutech.jpg', 'EduTech Platform'),
-                                               ('cybershield.jpg', 'CyberShield'),
-                                               ('autopilot.jpg','AutoPilot System'),
-                                               ('ehealth.jpg','E-Health Monitor');
+INSERT INTO FOTO (Percorso, Nome_Progetto) VALUES
+    ('smarthome.jpg', 'SmartHome AI'),
+    ('cybershield.jpg', 'CyberShield'),
+    ('autopilot.jpg','AutoPilot System'),
+    ('e-health.png','E-Health Monitor');
 
 -- Inserimento candidature
 INSERT INTO CANDIDATURA (Esito, Email_Utente, ID_Profilo) VALUES
-                                                              (FALSE, 'dalia.barone@email.com', 1),
-                                                              (FALSE, 'mattia.veroni@email.com', 2),
-                                                              (FALSE, 'sofia.neamtu@email.com', 3);
+    (FALSE, 'dalia.barone@email.com', 1),
+    (FALSE, 'sofia.neamtu@email.com', 3);

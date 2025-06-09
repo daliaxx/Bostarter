@@ -37,30 +37,44 @@ try {
                COUNT(DISTINCT f.Email_Utente) as Num_Sostenitori,
                COUNT(DISTINCT c.ID) as Num_Commenti,
                DATEDIFF(p.Data_Limite, CURDATE()) as Giorni_Rimanenti,
-               CASE 
-                   WHEN h.Nome IS NOT NULL THEN 'Hardware'
-                   WHEN s.Nome IS NOT NULL THEN 'Software'
-                   ELSE 'Indefinito'
-               END as Tipo
+               p.Tipo as Categoria
         FROM PROGETTO p
         LEFT JOIN FINANZIAMENTO f ON p.Nome = f.Nome_Progetto
         LEFT JOIN COMMENTO c ON p.Nome = c.Nome_Progetto
-        LEFT JOIN HARDWARE h ON p.Nome = h.Nome
-        LEFT JOIN SOFTWARE s ON p.Nome = s.Nome
         WHERE p.Email_Creatore = ?
         GROUP BY p.Nome
         ORDER BY p.Data_Inserimento DESC
     ", [$userEmail]);
 
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['elimina_progetto'])) {
+        $nome = $_POST['elimina_progetto'];
+        $email = $_SESSION['user_email'];
+
+        try {
+            // Elimina prima eventuali dipendenze
+            $db->execute("DELETE FROM FOTO WHERE Nome_Progetto = ?", [$nome]);
+            // Aggiungi anche altri DELETE se servono: commenti, reward, candidature...
+
+            // Poi elimina il progetto solo se appartiene a chi è loggato
+            $db->execute("DELETE FROM PROGETTO WHERE Nome = ? AND Email_Creatore = ?", [$nome, $email]);
+
+            // Redirect per aggiornare la lista senza ripetere il POST
+            header("Location: creator_dashboard.php");
+            exit;
+        } catch (Exception $e) {
+            echo "<p>❌ Errore nell'eliminazione: " . $e->getMessage() . "</p>";
+        }
+    }
+
+
     // Candidature ricevute (solo per progetti software)
     $candidatureRicevute = $db->fetchAll("
         SELECT c.ID, c.Data_Candidatura, c.Esito, u.Nickname, u.Nome, u.Cognome,
-               pr.Nome as Nome_Profilo, p.Nome as Nome_Progetto
+            pr.Nome as Nome_Profilo, p.Nome as Nome_Progetto
         FROM CANDIDATURA c
         JOIN UTENTE u ON c.Email_Utente = u.Email
         JOIN PROFILO pr ON c.ID_Profilo = pr.ID
-        JOIN PROFILO_SOFTWARE ps ON pr.ID = ps.ID_Profilo
-        JOIN PROGETTO p ON ps.Nome_Progetto = p.Nome
+        JOIN PROGETTO p ON pr.Nome_Progetto = p.Nome
         WHERE p.Email_Creatore = ? AND c.Esito IS NULL
         ORDER BY c.Data_Candidatura DESC
         LIMIT 10
@@ -79,21 +93,21 @@ try {
         LIMIT 5
     ", [$userEmail]);
 
-} catch (Exception $e) {
-    error_log("Errore dashboard creatore: " . $e->getMessage());
-    $error = "Errore nel caricamento dei dati. Riprova più tardi.";
-}
+    } catch (Exception $e) {
+        error_log("Errore dashboard creatore: " . $e->getMessage());
+        $error = "Errore nel caricamento dei dati. Riprova più tardi.";
+    }
 
-// Funzione helper per formattare valuta
-function formatCurrency($amount) {
-    return '€ ' . number_format($amount, 2, ',', '.');
-}
+    // Funzione helper per formattare valuta
+    function formatCurrency($amount) {
+        return '€ ' . number_format($amount, 2, ',', '.');
+    }
 
-// Funzione per calcolare percentuale completamento
-function getCompletionPercentage($raccolto, $budget) {
-    if ($budget <= 0) return 0;
-    return min(100, ($raccolto / $budget) * 100);
-}
+    // Funzione per calcolare percentuale completamento
+    function getCompletionPercentage($raccolto, $budget) {
+        if ($budget <= 0) return 0;
+        return min(100, ($raccolto / $budget) * 100);
+    }
 ?>
 
 <!DOCTYPE html>
@@ -304,6 +318,7 @@ function getCompletionPercentage($raccolto, $budget) {
                             $classeProgetto = $progetto['Tipo'] === 'Hardware' ? 'project-hardware' : 'project-software';
                             $statoClasse = $progetto['Stato'] === 'aperto' ? 'success' : 'secondary';
                             ?>
+
                             <div class="card project-card <?= $classeProgetto ?> mb-3">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-start">
@@ -359,6 +374,10 @@ function getCompletionPercentage($raccolto, $budget) {
                                            class="btn btn-outline-secondary btn-sm">
                                             <i class="fas fa-edit me-1"></i>Modifica
                                         </a>
+                                        <form method="POST" style="display:inline;" onsubmit="return confirm('Eliminare il progetto?')">
+                                            <input type="hidden" name="elimina_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
+                                            <button type="submit" class="btn btn-danger btn-sm">Elimina</button>
+                                        </form>
                                         <?php if ($progetto['Num_Commenti'] > 0): ?>
                                             <span class="badge bg-info ms-2">
                                                 <i class="fas fa-comments me-1"></i><?= $progetto['Num_Commenti'] ?> commenti

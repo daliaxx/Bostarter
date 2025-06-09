@@ -15,82 +15,61 @@ $userEmail = SessionManager::getUserEmail();
 $isCreator = SessionManager::isCreator();
 $isAdmin = SessionManager::isAdmin();
 
-// Gestione filtri
+// Variabili filtro iniziali
+$searchQuery = $_GET['q'] ?? '';
 $statusFilter = $_GET['status'] ?? 'all';
 $categoryFilter = $_GET['category'] ?? 'all';
-$searchQuery = trim($_GET['search'] ?? '');
 
-try {
-    $db = Database::getInstance();
+$whereClause = "WHERE 1=1";
+$params = [];
 
-    // Costruzione query con filtri
-    $whereConditions = [];
-    $params = [];
-
-    if ($statusFilter !== 'all') {
-        $whereConditions[] = "p.Stato = ?";
-        $params[] = $statusFilter;
-    }
-
-    if ($searchQuery !== '') {
-        $whereConditions[] = "(p.Nome LIKE ? OR p.Descrizione LIKE ?)";
-        $params[] = "%$searchQuery%";
-        $params[] = "%$searchQuery%";
-    }
-
-    $whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
-
-    // Query per ottenere i progetti con informazioni aggiuntive
-    $sql = "
-        SELECT 
-            p.Nome,
-            p.Descrizione,
-            p.Data_Inserimento,
-            p.Stato,
-            p.Budget,
-            p.Data_Limite,
-            u.Nickname as Creatore,
-            c.Affidabilita,
-            COALESCE(SUM(f.Importo), 0) as Totale_Finanziato,
-            COUNT(DISTINCT f.ID) as Num_Finanziatori,
-            CASE 
-                WHEN h.Nome IS NOT NULL THEN 'Hardware'
-                WHEN s.Nome IS NOT NULL THEN 'Software'
-                ELSE 'N/A'
-            END as Categoria,
-            foto.percorso as Foto,
-            DATEDIFF(p.Data_Limite, CURDATE()) as Giorni_Rimanenti
-        FROM PROGETTO p
-        JOIN CREATORE c ON p.Email_Creatore = c.Email
-        JOIN UTENTE u ON c.Email = u.Email
-        LEFT JOIN FINANZIAMENTO f ON p.Nome = f.Nome_Progetto
-        LEFT JOIN HARDWARE h ON p.Nome = h.Nome
-        LEFT JOIN SOFTWARE s ON p.Nome = s.Nome
-        LEFT JOIN FOTO foto ON p.Nome = foto.Nome_Progetto
-        $whereClause
-        GROUP BY p.Nome, p.Descrizione, p.Data_Inserimento, p.Stato, p.Budget, p.Data_Limite, u.Nickname, c.Affidabilita, foto.percorso
-        ORDER BY p.Data_Inserimento DESC
-    ";
-
-    $progetti = $db->fetchAll($sql, $params);
-
-    // Filtro categoria lato PHP
-    if ($categoryFilter !== 'all') {
-        $progetti = array_filter($progetti, function($progetto) use ($categoryFilter) {
-            return strtolower($progetto['Categoria']) === strtolower($categoryFilter);
-        });
-    }
-
-} catch (Exception $e) {
-    error_log("Errore caricamento progetti: " . $e->getMessage());
-    $error = "Errore nel caricamento dei progetti. Riprova più tardi.";
-    $progetti = [];
+if (!empty($searchQuery)) {
+    $whereClause .= " AND (p.Nome LIKE ? OR p.Descrizione LIKE ?)";
+    $params[] = "%$searchQuery%";
+    $params[] = "%$searchQuery%";
 }
 
-// Funzione helper per formattare valuta
-function formatCurrency($amount) {
-    return '€ ' . number_format($amount, 2, ',', '.');
+if ($statusFilter !== 'all') {
+    $whereClause .= " AND p.Stato = ?";
+    $params[] = $statusFilter;
 }
+
+if ($categoryFilter !== 'all') {
+    $whereClause .= " AND p.Tipo = ?";
+    $params[] = $categoryFilter;
+}
+
+$sql = "
+    SELECT 
+        p.Nome,
+        p.Descrizione,
+        p.Data_Inserimento,
+        p.Stato,
+        p.Budget,
+        p.Data_Limite,
+        p.Tipo AS Categoria,
+        u.Nickname AS Creatore,
+        c.Affidabilita,
+        COALESCE(SUM(f.Importo), 0) AS Totale_Finanziato,
+        COUNT(DISTINCT f.ID) AS Num_Finanziatori,
+        foto.percorso AS Foto,
+        DATEDIFF(p.Data_Limite, CURDATE()) AS Giorni_Rimanenti
+    FROM PROGETTO p
+    JOIN CREATORE c ON p.Email_Creatore = c.Email
+    JOIN UTENTE u ON c.Email = u.Email
+    LEFT JOIN FINANZIAMENTO f ON p.Nome = f.Nome_Progetto
+    LEFT JOIN FOTO foto ON p.Nome = foto.Nome_Progetto
+    $whereClause
+    GROUP BY p.Nome, p.Descrizione, p.Data_Inserimento, p.Stato, p.Budget, p.Data_Limite, p.Tipo, u.Nickname, c.Affidabilita, foto.percorso
+    ORDER BY p.Data_Inserimento DESC
+";
+
+$db = Database::getInstance();
+$progetti = $db->fetchAll($sql, $params);
+
+// Gestione accesso utente
+$isLoggedIn = SessionManager::isLoggedIn();
+$isCreator = SessionManager::isCreator();
 ?>
 
 <!DOCTYPE html>
@@ -273,7 +252,7 @@ function formatCurrency($amount) {
                 <div class="card bg-primary text-white">
                     <div class="card-body text-center">
                         <h5><i class="fas fa-trophy"></i> Top Creatori</h5>
-                        <a href="stats/top_creators.php" class="btn btn-light btn-sm">Visualizza</a>
+                        <a href="statistiche.php?view=top-creatori" class="btn btn-light btn-sm">Visualizza</a>
                     </div>
                 </div>
             </div>
@@ -281,7 +260,7 @@ function formatCurrency($amount) {
                 <div class="card bg-success text-white">
                     <div class="card-body text-center">
                         <h5><i class="fas fa-chart-line"></i> Progetti in Crescita</h5>
-                        <a href="stats/trending_projects.php" class="btn btn-light btn-sm">Visualizza</a>
+                        <a href="statistiche.php?view=progetti-crescita" class="btn btn-light btn-sm">Visualizza</a>
                     </div>
                 </div>
             </div>
@@ -289,7 +268,7 @@ function formatCurrency($amount) {
                 <div class="card bg-info text-white">
                     <div class="card-body text-center">
                         <h5><i class="fas fa-users"></i> Top Finanziatori</h5>
-                        <a href="stats/top_funders.php" class="btn btn-light btn-sm">Visualizza</a>
+                        <a href="statistiche.php?view=top-finanziatori" class="btn btn-light btn-sm">Visualizza</a>
                     </div>
                 </div>
             </div>
@@ -336,16 +315,30 @@ function formatCurrency($amount) {
 
                 <div class="col-lg-4 col-md-6 mb-4">
                     <div class="card project-card h-100">
-                        <?php if ($progetto['Foto']): ?>
-                            <img src="assets/images/uploads/<?= htmlspecialchars($progetto['Foto']) ?>"
-                                 class="card-img-top" style="height: 200px; object-fit: cover;"
-                                 alt="<?= htmlspecialchars($progetto['Nome']) ?>">
-                        <?php else: ?>
-                            <div class="card-img-top d-flex align-items-center justify-content-center bg-light"
-                                 style="height: 200px;">
-                                <i class="fas fa-image fa-3x text-muted"></i>
-                            </div>
-                        <?php endif; ?>
+                        <?php
+                            $fotoDb = $progetto['Foto'] ?? '';
+                            if ($fotoDb !== '') {
+                                // Se già contiene 'img/', non aggiungo nulla
+                                $src = (strpos($fotoDb, 'img/') === 0)
+                                    ? "/Bostarter/{$fotoDb}"
+                                    : "/Bostarter/img/{$fotoDb}";
+                            } else {
+                                $src = null;
+                            }
+                            ?>
+
+                            <?php if ($src): ?>
+                                <img src="<?= htmlspecialchars($src) ?>"
+                                    class="card-img-top"
+                                    style="height:200px; object-fit:cover;"
+                                    alt="<?= htmlspecialchars($progetto['Nome']) ?>">
+                            <?php else: ?>
+                                <div class="card-img-top d-flex align-items-center justify-content-center bg-light"
+                                    style="height:200px;">
+                                    <i class="fas fa-image fa-3x text-muted"></i>
+                                </div>
+                            <?php endif; ?>
+
 
                         <div class="card-body d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-start mb-2">
@@ -365,7 +358,7 @@ function formatCurrency($amount) {
                             <!-- Progress bar -->
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between small text-muted mb-1">
-                                    <span><?= formatCurrency($progetto['Totale_Finanziato']) ?> raccolti</span>
+                                    <span><?= Utils::formatCurrency($progetto['Totale_Finanziato']) ?> raccolti</span>
                                     <span><?= number_format($percentualeCompletamento, 1) ?>%</span>
                                 </div>
                                 <div class="progress" style="height: 6px;">
@@ -373,7 +366,7 @@ function formatCurrency($amount) {
                                          style="width: <?= $percentualeCompletamento ?>%"></div>
                                 </div>
                                 <div class="small text-muted mt-1">
-                                    Obiettivo: <?= formatCurrency($progetto['Budget']) ?>
+                                    Obiettivo: <?= Utils::formatCurrency($progetto['Budget']) ?>
                                 </div>
                             </div>
 

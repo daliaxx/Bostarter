@@ -5,7 +5,7 @@
  */
 
 // Configurazione database - MODIFICA SECONDO IL TUO SETUP
-define('DB_HOST', 'localhost:8889');  // Per MAMP usa :8889, per XAMPP usa solo 'localhost'
+define('DB_HOST', 'localhost');  // Per MAMP usa :8889, per XAMPP usa solo 'localhost'
 define('DB_NAME', 'BOSTARTER');
 define('DB_USER', 'root');
 define('DB_PASS', 'root');  // Per MAMP usa 'root', per XAMPP spesso è vuoto ''
@@ -206,8 +206,12 @@ class Utils {
             'success' => $success,
             'message' => $message
         ];
-        if ($data) $response['data'] = $data;
-        if ($redirect) $response['redirect'] = $redirect;
+        if (!empty($data)) {
+            $response['data'] = $data;
+        }
+        if (!empty($redirect)) {
+            $response['redirect'] = $redirect;
+        }
         echo json_encode($response);
         exit;
     }

@@ -21,6 +21,7 @@ spl_autoload_register(function ($className) {
 // Avvia sessione
 SessionManager::start();
 
+/*
 // Inizializza database
 try {
     $db = Database::getInstance();
@@ -35,7 +36,7 @@ try {
     if (DatabaseConfig::DEBUG_MODE) {
         die('Errore database: ' . $e->getMessage());
     }
-}
+}*/
 
 // Funzioni globali utili
 function asset($path) {

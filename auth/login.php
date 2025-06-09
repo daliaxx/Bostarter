@@ -1,47 +1,62 @@
 <?php
 /**
- * BOSTARTER - Login Handler
- * File: auth/login.php
+ * BOSTARTER - Login Handler per utenti
  */
 
-require_once '../config/database.php';
+require_once '../config/bootstrap.php'; // include tutto (config, database, session, utils)
 
-// Verifica metodo
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     Utils::jsonResponse(false, 'Metodo non consentito');
 }
 
 try {
-    // Input sanitization
-    $email = Utils::sanitize($_POST['email'] ?? '');
-    $password = Utils::sanitize($_POST['password'] ?? '');
+    // Sanitizzazione input
+    $email = $_POST['email'] ?? '';
+    $password = $_POST['password'] ?? '';
 
-    // Validazione
     if (empty($email) || empty($password)) {
-        Utils::jsonResponse(false, 'Email e password sono obbligatori');
+        Utils::jsonResponse(false, 'Inserisci email e password');
     }
 
     if (!Utils::validateEmail($email)) {
-        Utils::jsonResponse(false, 'Formato email non valido');
+        Utils::jsonResponse(false, 'Email non valida');
     }
 
     $db = Database::getInstance();
 
-    // Verifica utente esistente
-    $user = $db->fetchOne("SELECT * FROM UTENTE WHERE Email = ?", [$email]);
-    if (!$user) {
+    // Verifica credenziali tramite stored procedure
+    $stmt = $db->callStoredProcedure('LoginUtente', [$email, $password]);
+    $result = $stmt->fetch();
+    $stmt->closeCursor(); // <-- fondamentale
+
+    if (!$result || $result['Email'] === null) {
         Utils::jsonResponse(false, 'Credenziali non valide');
     }
 
-    // Verifica password (nel tuo DB attuale sono in chiaro)
-    if ($password !== $user['Password']) {
-        Utils::jsonResponse(false, 'Credenziali non valide');
+    // Recupera dati dell'utente
+    $user = $db->fetchOne("
+        SELECT Email, Nickname, Nome, Cognome 
+        FROM UTENTE 
+        WHERE Email = ?
+    ", [$email]);
+
+    if (!$user) {
+        Utils::jsonResponse(false, 'Errore nel recupero dati utente');
     }
 
     // Verifica ruoli
+    $admin = $db->fetchOne("SELECT Codice_Sicurezza FROM AMMINISTRATORE WHERE Email = ?", [$email]);
     $isAdmin = $db->fetchOne("SELECT 1 FROM AMMINISTRATORE WHERE Email = ?", [$email]) !== false;
-    $creatorData = $db->fetchOne("SELECT Nr_Progetti, Affidabilita FROM CREATORE WHERE Email = ?", [$email]);
-    $isCreator = $creatorData !== false;
+    if ($isAdmin) {
+        Utils::jsonResponse(false, 'Gli amministratori devono usare il login dedicato.');
+    }
+    $isCreator = false;
+    $creatorData = null;
+
+    if ($db->fetchOne("SELECT 1 FROM CREATORE WHERE Email = ?", [$email])) {
+        $isCreator = true;
+        $creatorData = $db->fetchOne("SELECT Nr_Progetti, Affidabilita FROM CREATORE WHERE Email = ?", [$email]);
+    }
 
     // Imposta sessione
     SessionManager::set('user_email', $user['Email']);
@@ -51,22 +66,20 @@ try {
     SessionManager::set('is_admin', $isAdmin);
     SessionManager::set('is_creator', $isCreator);
 
-    if ($isCreator) {
+    if ($isCreator && $creatorData) {
         SessionManager::set('creator_progetti', $creatorData['Nr_Progetti']);
         SessionManager::set('creator_affidabilita', $creatorData['Affidabilita']);
     }
 
-    // Log
-    error_log("✅ Login: $email");
-
     // Determina redirect
-    $redirect = '../public/projects.php';
+    $redirect = '/Bostarter/public/projects.php';
     if ($isAdmin) {
-        $redirect = '../public/dashboard/admin_dashboard.php';
+        $redirect = '/Bostarter/public/dashboard/admin_dashboard.php';
     } elseif ($isCreator) {
-        $redirect = '../public/dashboard/creator_dashboard.php';
+        $redirect = '/Bostarter/public/dashboard/creator_dashboard.php';
     }
 
+    // Risposta JSON al frontend
     Utils::jsonResponse(true, 'Login effettuato con successo!', [
         'user' => [
             'email' => $user['Email'],
@@ -79,7 +92,5 @@ try {
     ], $redirect);
 
 } catch (Exception $e) {
-    error_log("❌ Errore login: " . $e->getMessage());
-    Utils::jsonResponse(false, 'Errore interno. Riprova più tardi.');
+    Utils::jsonResponse(false, 'Errore interno: ' . $e->getMessage());
 }
-?>

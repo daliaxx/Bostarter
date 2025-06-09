@@ -5,15 +5,17 @@
  */
 
 require_once '../../config/database.php';
+$error = null;
+$candidatureInCorso = [];
 
 // Verifica login
 SessionManager::requireLogin('../../index.html');
 
-$userEmail = SessionManager::getUserEmail();
-$userName = SessionManager::get('user_nome') . ' ' . SessionManager::get('user_cognome');
-$userNickname = SessionManager::get('user_nickname');
-$isCreator = SessionManager::isCreator();
-$isAdmin = SessionManager::isAdmin();
+    $userEmail = SessionManager::get('user_email');
+    $userName = SessionManager::get('user_nome') . ' ' . SessionManager::get('user_cognome');
+    $userNickname = SessionManager::get('user_nickname');
+    $isCreator = SessionManager::isCreator();
+    $isAdmin = SessionManager::isAdmin();
 
 try {
     $db = Database::getInstance();
@@ -50,14 +52,16 @@ try {
 
     // Progetti finanziati recenti
     $progettiFinanziati = $db->fetchAll("
-        SELECT DISTINCT p.Nome, p.Descrizione, SUM(f.Importo) as Mio_Investimento, 
-               f.Data as Ultima_Donazione
+        SELECT p.Nome, p.Descrizione, 
+            SUM(f.Importo) AS Mio_Investimento, 
+            MAX(f.Data) AS Ultima_Donazione
         FROM FINANZIAMENTO f
         JOIN PROGETTO p ON f.Nome_Progetto = p.Nome
         WHERE f.Email_Utente = ?
         GROUP BY p.Nome, p.Descrizione
-        ORDER BY f.Data DESC
+        ORDER BY Ultima_Donazione DESC
         LIMIT 5
+
     ", [$userEmail]);
 
     // Recupera skill dell'utente
@@ -76,14 +80,13 @@ try {
         $mySkills = [];
     }
 
-    // Candidature in corso
+    // Query per candidature in corso
     $candidatureInCorso = $db->fetchAll("
         SELECT c.ID, c.Data_Candidatura, c.Esito, pr.Nome as Nome_Profilo,
-               p.Nome as Nome_Progetto
+            p.Nome as Nome_Progetto
         FROM CANDIDATURA c
         JOIN PROFILO pr ON c.ID_Profilo = pr.ID
-        JOIN PROFILO_SOFTWARE ps ON pr.ID = ps.ID_Profilo
-        JOIN PROGETTO p ON ps.Nome_Progetto = p.Nome
+        JOIN PROGETTO p ON pr.Nome_Progetto = p.Nome
         WHERE c.Email_Utente = ?
         ORDER BY c.Data_Candidatura DESC
         LIMIT 5
@@ -91,7 +94,7 @@ try {
 
 } catch (Exception $e) {
     error_log("Errore dashboard utente: " . $e->getMessage());
-    $error = "Errore nel caricamento dei dati. Riprova più tardi.";
+    $error = "Errore nel caricamento dei dati: " . $e->getMessage(); // mostra il messaggio reale
 }
 ?>
 
