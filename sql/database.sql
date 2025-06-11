@@ -249,6 +249,16 @@ INSERT INTO PROGETTO (Nome, Descrizione, Data_Inserimento, Stato, Budget, Data_L
 VALUES (p_Nome, p_Descrizione, p_DataInserimento, p_Stato, p_Budget, p_DataLimite, p_EmailCreatore);
 END $$
 
+-- Procedure per inserimento foto
+CREATE PROCEDURE InserisciFoto(
+    IN p_Percorso TEXT,
+    IN p_NomeProgetto VARCHAR(100)
+)
+BEGIN
+    INSERT INTO FOTO (Percorso, Nome_Progetto)
+    VALUES (p_Percorso, p_NomeProgetto);
+END $$
+
 -- Procedure per inserimento reward
 CREATE PROCEDURE InserisciReward(
     IN p_Codice VARCHAR(100),
@@ -268,8 +278,13 @@ CREATE PROCEDURE InserisciSkill(
     IN p_Livello INT
 )
 BEGIN
-INSERT INTO SKILL (COMPETENZA, LIVELLO)
-VALUES (p_Competenza, p_Livello);
+    IF NOT EXISTS (
+        SELECT 1 FROM SKILL
+        WHERE Competenza = p_Competenza AND Livello = p_Livello
+    ) THEN
+        INSERT INTO SKILL (Competenza, Livello)
+        VALUES (p_Competenza, p_Livello);
+    END IF;
 END $$
 
 -- Procedure per finanziamento progetto
@@ -359,6 +374,17 @@ CREATE PROCEDURE InserisciSkillCurriculum(
 BEGIN
 INSERT INTO SKILL_CURRICULUM (Email_Utente, Competenza, Livello)
 VALUES (p_Email, p_Competenza, p_Livello);
+END $$
+
+-- Procedure per inserimento skill richiesta
+CREATE PROCEDURE InserisciSkillRichiesta(
+    IN p_IDProfilo INT,
+    IN p_Competenza VARCHAR(100),
+    IN p_Livello INT
+)
+BEGIN
+    INSERT INTO SKILL_RICHIESTA (ID_Profilo, Competenza, Livello)
+    VALUES (p_IDProfilo, p_Competenza, p_Livello);
 END $$
 
 -- Procedure per inserimento commento
@@ -613,11 +639,11 @@ INSERT INTO SKILL_RICHIESTA (ID_Profilo, Competenza, Livello) VALUES
 
 -- Inserimento rewards
 INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) VALUES
-    ('RWD1','Accesso beta esclusivo al prodotto', '/img/rwd2.jpeg','SmartHome AI'),
-    ('RWD2','T-shirt personalizzata del progetto','/img/rwd2.jpeg','SmartHome AI'),
-    ('RWD3','Menzione speciale nel sito ufficiale','/img/rwd2.jpeg','SmartHome AI'),
-    ('RWD4','Invito a evento esclusivo di presentazione','/img/rwd2.jpeg','SmartHome AI'),
-    ('RWD5','Pacchetto premium di funzioni avanzate','/img/rwd2.jpeg','SmartHome AI');
+    ('RWD1','Accesso beta esclusivo al prodotto', '/img/rwd2.jpeg','AutoPilot System'),
+    ('RWD2','T-shirt personalizzata del progetto','/img/rwd2.jpeg','AutoPilot System'),
+    ('RWD3','Menzione speciale nel sito ufficiale','/img/rwd2.jpeg','AutoPilot System'),
+    ('RWD4','Invito a evento esclusivo di presentazione','/img/rwd2.jpeg','AutoPilot System'),
+    ('RWD5','Pacchetto premium di funzioni avanzate','/img/rwd2.jpeg','AutoPilot System');
 
 -- Inserimento finanziamenti
 INSERT INTO FINANZIAMENTO (Data, Importo, Email_Utente, Codice_Reward, Nome_Progetto) VALUES

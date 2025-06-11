@@ -95,15 +95,14 @@ class Database {
     }
 
     public function callStoredProcedure($procedureName, $params = []) {
-        $placeholders = str_repeat('?,', count($params));
-        $placeholders = rtrim($placeholders, ',');
+        $placeholders = implode(',', array_fill(0, count($params), '?'));
         $sql = "CALL $procedureName($placeholders)";
 
         try {
             $stmt = $this->conn->prepare($sql);
             $stmt->execute($params);
             return $stmt;
-        } catch(PDOException $e) {
+        } catch (PDOException $e) {
             error_log("Stored procedure error: $procedureName - " . $e->getMessage());
             throw new Exception("Errore procedura: " . $e->getMessage());
         }

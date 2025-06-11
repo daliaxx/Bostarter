@@ -485,7 +485,7 @@ try {
         formData.append('competenza', competenza);
         formData.append('livello', livello);
 
-        fetch('actions/manage_skills.php', {
+        fetch('manage_skill.php', {
             method: 'POST',
             body: formData
         })
