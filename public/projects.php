@@ -403,7 +403,7 @@ $isCreator = SessionManager::isCreator();
                                     </a>
                                     <?php if ($progetto['Stato'] === 'aperto' && $giorniRimanenti > 0): ?>
                                         <?php if ($isLoggedIn): ?>
-                                            <a href="fund_project.php?name=<?= urlencode($progetto['Nome']) ?>"
+                                            <a href="project_detail.php?name=<?= urlencode($progetto['Nome']) ?>"
                                                class="btn btn-primary">
                                                 <i class="fas fa-heart me-1"></i>Finanzia Progetto
                                             </a>

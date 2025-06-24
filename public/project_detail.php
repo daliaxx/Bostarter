@@ -11,11 +11,12 @@ function formatCurrency($amount) {
 }
 
 // Verifica se l'utente è loggato per la navbar dinamica
-session_start(); // Assicurati che la sessione sia avviata per usare $_SESSION
+session_start();
 $isLoggedIn = isset($_SESSION['user_email']);
+$userEmail = $_SESSION['user_email'] ?? null;
 
-$isAdmin = SessionManager::isAdmin(); // Supponendo che SessionManager abbia questo metodo
-$isCreator = SessionManager::isCreator(); // Supponendo che SessionManager abbia questo metodo
+$isAdmin = SessionManager::isAdmin();
+$isCreator = SessionManager::isCreator();
 
 // Controllo parametro
 if (!isset($_GET['name']) || empty($_GET['name'])) {
@@ -40,14 +41,14 @@ $sql = "
         u.Cognome AS CreatoreCognome,
         c.Affidabilita,
         COALESCE(SUM(f.Importo), 0) AS Totale_Finanziato,
-        COUNT(DISTINCT f.Email_Utente) AS Num_Finanziatori, /* Conteggio sostenitori unici */
-        (SELECT percorso FROM FOTO WHERE Nome_Progetto = p.Nome LIMIT 1) AS Foto, /* Prendi una sola foto */
+        COUNT(DISTINCT f.Email_Utente) AS Num_Finanziatori,
+        (SELECT percorso FROM FOTO WHERE Nome_Progetto = p.Nome LIMIT 1) AS Foto,
         DATEDIFF(p.Data_Limite, CURDATE()) AS Giorni_Rimanenti
     FROM PROGETTO p
     JOIN CREATORE c ON p.Email_Creatore = c.Email
     JOIN UTENTE u ON c.Email = u.Email
     LEFT JOIN FINANZIAMENTO f ON p.Nome = f.Nome_Progetto
-    LEFT JOIN FOTO foto ON p.Nome = foto.Nome_Progetto /* Ho aggiunto questo JOIN per coerenza con il tuo codice originale */
+    LEFT JOIN FOTO foto ON p.Nome = foto.Nome_Progetto
     WHERE p.Nome = ?
     GROUP BY p.Nome, p.Descrizione, p.Data_Inserimento, p.Stato, p.Budget, p.Data_Limite, p.Tipo, CreatoreNickname, CreatoreNome, CreatoreCognome, c.Affidabilita, foto.percorso
 ";
@@ -61,19 +62,18 @@ if (!$progetto) {
 $percentuale = $progetto['Budget'] > 0 ? round($progetto['Totale_Finanziato'] / $progetto['Budget'] * 100, 1) : 0;
 $statoClasse = ($progetto['Stato'] === 'aperto' && $progetto['Giorni_Rimanenti'] > 0 && $percentuale < 100) ? 'success' : 'secondary';
 if ($progetto['Stato'] === 'chiuso' || $progetto['Giorni_Rimanenti'] <= 0 || $percentuale >= 100) {
-    $statoClasse = 'info'; // Progetto concluso (raggiunto budget o tempo scaduto)
+    $statoClasse = 'info';
     if ($percentuale >= 100) {
-        $statoClasse = 'primary'; // Obiettivo raggiunto
+        $statoClasse = 'primary';
     }
     if ($progetto['Giorni_Rimanenti'] <= 0 && $percentuale < 100) {
-        $statoClasse = 'danger'; // Scaduto senza raggiungere l'obiettivo
+        $statoClasse = 'danger';
     }
 }
 
 // Percorso immagine
 $fotoDb = $progetto['Foto'] ?? '';
 if ($fotoDb !== '') {
-    // Se già contiene 'img/', non aggiungo nulla
     $src = (strpos($fotoDb, 'img/') === 0)
         ? "/Bostarter/{$fotoDb}"
         : "/Bostarter/img/{$fotoDb}";
@@ -82,18 +82,66 @@ if ($fotoDb !== '') {
 }
 
 // Ottieni le rewards disponibili per questo progetto
-$rewards = $db->fetchAll("SELECT Codice, Descrizione FROM REWARD WHERE Nome_Progetto = ? ORDER BY Codice ASC", [$nomeProgetto]); // Puoi ordinare come preferisci, es. per Codice
+$rewards = $db->fetchAll("SELECT Codice, Descrizione FROM REWARD WHERE Nome_Progetto = ? ORDER BY Codice ASC", [$nomeProgetto]);
 
 $profiliRicercati = $db->fetchAll(
     "SELECT ID, Nome FROM PROFILO WHERE Nome_Progetto = ?",
     [$nomeProgetto]
 );
 
+// NUOVA SEZIONE: Verifica skill per candidature
+if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'aperto' && !empty($profiliRicercati)) {
+    // Per ogni profilo, verifica se l'utente ha le skill necessarie
+    foreach ($profiliRicercati as &$profilo) {
+        // Ottieni skill richieste per questo profilo
+        $skillRichieste = $db->fetchAll("
+            SELECT sr.Competenza, sr.Livello 
+            FROM SKILL_RICHIESTA sr 
+            WHERE sr.ID_Profilo = ?
+        ", [$profilo['ID']]);
+
+        // Ottieni skill dell'utente
+        $skillUtente = $db->fetchAll("
+            SELECT sc.Competenza, sc.Livello 
+            FROM SKILL_CURRICULUM sc 
+            WHERE sc.Email_Utente = ?
+        ", [$userEmail]);
+
+        // Crea array associativo per controllo veloce
+        $userSkillsMap = [];
+        foreach ($skillUtente as $skill) {
+            $userSkillsMap[$skill['Competenza']] = $skill['Livello'];
+        }
+
+        // Verifica se ha tutte le skill richieste
+        $hasAllSkills = true;
+        $missingSkills = [];
+        $hasSkills = [];
+
+        foreach ($skillRichieste as $required) {
+            $competenza = $required['Competenza'];
+            $livelloRichiesto = $required['Livello'];
+
+            if (!isset($userSkillsMap[$competenza]) ||
+                $userSkillsMap[$competenza] < $livelloRichiesto) {
+                $hasAllSkills = false;
+                $missingSkills[] = $competenza . " (liv. " . $livelloRichiesto . ")";
+            } else {
+                $hasSkills[] = $competenza . " (liv. " . $userSkillsMap[$competenza] . "/" . $livelloRichiesto . ")";
+            }
+        }
+
+        $profilo['canApply'] = $hasAllSkills;
+        $profilo['missingSkills'] = $missingSkills;
+        $profilo['hasSkills'] = $hasSkills;
+        $profilo['requiredSkills'] = $skillRichieste;
+    }
+}
+
 $commenti = $db->fetchAll(
     "SELECT Email_Utente, Testo FROM COMMENTO WHERE Nome_Progetto = ? ORDER BY ID DESC",
     [$nomeProgetto]
 );
-
 
 ?>
 
@@ -166,17 +214,6 @@ $commenti = $db->fetchAll(
             overflow: hidden;
         }
 
-        .project-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 100" fill="rgba(255,255,255,0.1)"><polygon points="0,0 1000,0 1000,100 0,80"/></svg>') no-repeat bottom;
-            background-size: cover;
-        }
-
         .project-title {
             font-size: 3.2rem;
             font-weight: 700;
@@ -246,24 +283,8 @@ $commenti = $db->fetchAll(
             transition: all 0.3s ease;
         }
 
-        .stat-box::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 50%);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
         .stat-box:hover {
             transform: translateY(-3px);
-        }
-
-        .stat-box:hover::before {
-            opacity: 1;
         }
 
         .stat-box .value {
@@ -301,22 +322,6 @@ $commenti = $db->fetchAll(
 
         .progress-bar.bg-primary {
             background: var(--primary-gradient) !important;
-        }
-
-        .progress-bar::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            animation: shimmer 2s infinite;
-        }
-
-        @keyframes shimmer {
-            0% { left: -100%; }
-            100% { left: 100%; }
         }
 
         /* Info styling migliorato */
@@ -367,39 +372,6 @@ $commenti = $db->fetchAll(
             color: white;
         }
 
-        /* Sidebar moderna */
-        .sidebar-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: var(--border-radius);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: var(--card-shadow);
-            transition: all 0.3s ease;
-        }
-
-        .sidebar-card:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--card-hover-shadow);
-        }
-
-        .sidebar-title {
-            color: var(--text-primary);
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-        }
-
-        .sidebar-title i {
-            background: var(--primary-gradient);
-            color: white;
-            padding: 0.5rem;
-            border-radius: 8px;
-            margin-right: 0.75rem;
-        }
-
         /* Modal migliorato */
         .modal-content {
             border-radius: var(--border-radius);
@@ -437,17 +409,54 @@ $commenti = $db->fetchAll(
             z-index: 2;
         }
 
+        /* Stili per profili candidatura */
+        .profile-card {
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .profile-card.can-apply {
+            border-color: #28a745;
+            background: rgba(40, 167, 69, 0.05);
+        }
+
+        .profile-card.cannot-apply {
+            border-color: #ffc107;
+            background: rgba(255, 193, 7, 0.05);
+        }
+
+        .skill-tag {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            margin: 0.125rem;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .skill-has {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .skill-missing {
+            background: #fff3cd;
+            color: #856404;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .project-title {
                 font-size: 2.5rem;
                 line-height: 1.2;
             }
-            
+
             .project-details-card {
                 padding: 1.5rem;
             }
-            
+
             .stat-box .value {
                 font-size: 1.8rem;
             }
@@ -619,7 +628,7 @@ $commenti = $db->fetchAll(
                         <i class="fas fa-hand-holding-usd me-2"></i>Finanzia questo Progetto
                     </button>
                 <?php elseif ($isLoggedIn && $progetto['Stato'] === 'aperto' && $percentuale >= 100): ?>
-                     <button class="btn btn-success btn-lg ms-3" disabled>
+                    <button class="btn btn-success btn-lg ms-3" disabled>
                         <i class="fas fa-check-circle me-2"></i>Obiettivo Raggiunto!
                     </button>
                 <?php endif; ?>
@@ -627,93 +636,167 @@ $commenti = $db->fetchAll(
         </div>
 
         <div class="col-lg-4">
-            <?php if ($isLoggedIn): // Mostra il form solo se l'utente è loggato ?>
-            <div class="card my-4">
-                <div class="card-header bg-light">
-                    <h5>Lascia un commento</h5>
-                    <?php if (count($commenti) > 0): ?>
-                        <ul class="list-group">
-                            <?php foreach ($commenti as $commento): ?>
-                                <li class="list-group-item">
-                                    <strong><?= htmlspecialchars($commento['Email_Utente']) ?>:</strong>
-                                    <?= htmlspecialchars($commento['Testo']) ?>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    <?php else: ?>
-                        <p>Nessun commento presente per questo progetto.</p>
-                    <?php endif; ?>
+            <?php if ($isLoggedIn): ?>
+                <div class="card my-4">
+                    <div class="card-header bg-light">
+                        <h5>Lascia un commento</h5>
+                        <?php if (count($commenti) > 0): ?>
+                            <ul class="list-group">
+                                <?php foreach ($commenti as $commento): ?>
+                                    <li class="list-group-item">
+                                        <strong><?= htmlspecialchars($commento['Email_Utente']) ?>:</strong>
+                                        <?= htmlspecialchars($commento['Testo']) ?>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php else: ?>
+                            <p>Nessun commento presente per questo progetto.</p>
+                        <?php endif; ?>
+                    </div>
+                    <div class="card-body">
+                        <form action="/Bostarter/public/manage_comment.php" method="POST">
+                            <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
+                            <div class="mb-3">
+                                <label for="commentText" class="form-label visually-hidden">Il tuo commento</label>
+                                <textarea class="form-control" id="commentText" name="testo_commento" rows="3" placeholder="Scrivi qui il tuo commento..." required maxlength="500"></textarea>
+                                <div class="form-text text-muted">Massimo 500 caratteri.</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-comment me-2"></i>Invia Commento</button>
+                        </form>
+                    </div>
                 </div>
-                <div class="card-body">
-                <form action="/Bostarter/public/manage_comment.php" method="POST">
-                        <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
-                        <div class="mb-3">
-                            <label for="commentText" class="form-label visually-hidden">Il tuo commento</label>
-                            <textarea class="form-control" id="commentText" name="testo_commento" rows="3" placeholder="Scrivi qui il tuo commento..." required maxlength="500"></textarea>
-                            <div class="form-text text-muted">Massimo 500 caratteri.</div>
-                        </div>
-                        <button type="submit" class="btn btn-primary"><i class="fas fa-comment me-2"></i>Invia Commento</button>
-                    </form>
-                </div>
-            </div>
             <?php else: ?>
-            <div class="alert alert-info my-4">
-                Accedi per lasciare un commento.
-            </div>
+                <div class="alert alert-info my-4">
+                    Accedi per lasciare un commento.
+                </div>
             <?php endif; ?>
 
-            <?php if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'aperto'): // Mostra solo se loggato, NON creatore del progetto, tipo Software e aperto ?>
-            <div class="card my-4">
-                <div class="card-header bg-primary text-white">
-                    <h5>Candidati per un ruolo in questo progetto</h5>
-                </div>
-                <div class="card-body">
-                    <?php if (isset($_GET['success']) && $_GET['success'] === 'candidatura_inviata'): ?>
-                        <div class="alert alert-success" id="alertBox">✅ Candidatura inviata con successo!</div>
-                    <?php endif; ?>
+            <?php if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'aperto'): ?>
+                <div class="card my-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5><i class="fas fa-user-tie me-2"></i>Candidati per un ruolo in questo progetto</h5>
+                    </div>
+                    <div class="card-body">
+                        <?php if (isset($_GET['success']) && $_GET['success'] === 'candidatura_inviata'): ?>
+                            <div class="alert alert-success" id="alertBox">✅ Candidatura inviata con successo!</div>
+                        <?php endif; ?>
 
-                    <?php if (isset($_GET['error'])): ?>
-                        <div class="alert alert-danger" id="alertBox">❌ Errore: <?= htmlspecialchars($_GET['error']) ?></div>
-                    <?php endif; ?>
-                    <?php if (!empty($profiliRicercati)): ?>
-                        <p>Questo progetto software sta ricercando i seguenti profili:</p>
-                        <ul>
+                        <?php if (isset($_GET['error'])): ?>
+                            <div class="alert alert-danger" id="alertBox">❌ Errore: <?= htmlspecialchars($_GET['error']) ?></div>
+                        <?php endif; ?>
+
+                        <?php if (!empty($profiliRicercati)): ?>
+                            <p class="mb-3">Questo progetto software sta ricercando i seguenti profili:</p>
+
+                            <!-- Mostra dettagli profili con verifica skill -->
                             <?php foreach ($profiliRicercati as $profilo): ?>
-                                <li><strong><?= htmlspecialchars($profilo['Nome']) ?></strong></li>
-                            <?php endforeach; ?>
-                        </ul>
-                        <form action="/Bostarter/public/manage_candidature.php" method="POST">
-                            <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
-
-                            <div class="mb-3">
-                                <label for="profiloCandidatura" class="form-label">Seleziona il profilo per cui candidarti:</label>
-                                <select class="form-select" id="profiloCandidatura" name="profilo" required>
-                                    <option value="">Seleziona un profilo...</option>
-                                    <?php foreach ($profiliRicercati as $profilo): ?>
-                                        <option value="<?= htmlspecialchars($profilo['ID']) ?>">
+                                <div class="profile-card <?= $profilo['canApply'] ? 'can-apply' : 'cannot-apply' ?> p-3">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-<?= $profilo['canApply'] ? 'check-circle text-success' : 'exclamation-triangle text-warning' ?> me-2"></i>
                                             <?= htmlspecialchars($profilo['Nome']) ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+                                        </h6>
+                                        <?php if ($profilo['canApply']): ?>
+                                            <span class="badge bg-success">✓ Puoi candidarti</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-warning">⚠ Skill mancanti</span>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <?php if (!empty($profilo['requiredSkills'])): ?>
+                                        <div class="mt-2">
+                                            <small class="text-muted d-block mb-1">Skill richieste:</small>
+                                            <?php foreach ($profilo['requiredSkills'] as $skill): ?>
+                                                <?php
+                                                $hasSkill = false;
+                                                foreach ($profilo['hasSkills'] as $userSkill) {
+                                                    if (strpos($userSkill, $skill['Competenza']) === 0) {
+                                                        $hasSkill = true;
+                                                        break;
+                                                    }
+                                                }
+                                                ?>
+                                                <span class="skill-tag <?= $hasSkill ? 'skill-has' : 'skill-missing' ?>">
+                                                <?= htmlspecialchars($skill['Competenza']) ?> (Liv. <?= $skill['Livello'] ?>)
+                                                <?= $hasSkill ? '✓' : '✗' ?>
+                                            </span>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!$profilo['canApply'] && !empty($profilo['missingSkills'])): ?>
+                                        <div class="mt-2">
+                                            <small class="text-danger">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Ti mancano: <?= implode(', ', $profilo['missingSkills']) ?>
+                                            </small>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+
+                            <!-- Form candidatura -->
+                            <form action="/Bostarter/public/manage_candidature.php" method="POST" class="mt-3">
+                                <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
+
+                                <div class="mb-3">
+                                    <label for="profiloCandidatura" class="form-label">Seleziona il profilo per cui candidarti:</label>
+                                    <select class="form-select" id="profiloCandidatura" name="profilo" required>
+                                        <option value="">Seleziona un profilo...</option>
+                                        <?php foreach ($profiliRicercati as $profilo): ?>
+                                            <option value="<?= htmlspecialchars($profilo['ID']) ?>"
+                                                <?= !$profilo['canApply'] ? 'disabled' : '' ?>>
+                                                <?= htmlspecialchars($profilo['Nome']) ?>
+                                                <?= !$profilo['canApply'] ? ' (skill insufficienti)' : '' ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+
+                                <?php
+                                $hasEligibleProfile = false;
+                                foreach ($profiliRicercati as $profilo) {
+                                    if ($profilo['canApply']) {
+                                        $hasEligibleProfile = true;
+                                        break;
+                                    }
+                                }
+                                ?>
+
+                                <?php if ($hasEligibleProfile): ?>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-user-plus me-2"></i>Invia Candidatura
+                                    </button>
+                                <?php else: ?>
+                                    <div class="alert alert-warning">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        <strong>Non puoi candidarti per nessun profilo.</strong><br>
+                                        <small>Aggiungi le skill mancanti nel tuo
+                                            <a href="/Bostarter/public/dashboard/user_dashboard.php" class="alert-link">profilo utente</a>
+                                            per poter inviare candidature.
+                                        </small>
+                                    </div>
+                                <?php endif; ?>
+                            </form>
+
+                        <?php else: ?>
+                            <div class="text-center py-3">
+                                <i class="fas fa-info-circle fa-2x text-muted mb-2"></i>
+                                <p class="text-muted">Questo progetto software non ha profili specifici ricercati al momento.</p>
                             </div>
-
-                            <button type="submit" class="btn btn-success"><i class="fas fa-user-plus me-2"></i>Invia Candidatura</button>
-
-                        </form>
-
-                    <?php else: ?>
-                        <p>Questo progetto software non ha profili specifici ricercati al momento.</p>
-                    <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
                 </div>
-            </div>
             <?php elseif ($progetto['Tipo'] === 'Software' && $progetto['Stato'] !== 'aperto'): ?>
-            <div class="alert alert-info my-4">
-                Questo progetto software non accetta più candidature (Stato: <?= htmlspecialchars($progetto['Stato']) ?>).
-            </div>
+                <div class="alert alert-info my-4">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Questo progetto software non accetta più candidature (Stato: <?= htmlspecialchars($progetto['Stato']) ?>).
+                </div>
             <?php elseif ($progetto['Tipo'] === 'Software' && !$isLoggedIn): ?>
-            <div class="alert alert-info my-4">
-                Accedi per candidarti a questo progetto software.
-            </div>
+                <div class="alert alert-info my-4">
+                    <i class="fas fa-sign-in-alt me-2"></i>
+                    Accedi per candidarti a questo progetto software.
+                </div>
             <?php endif; ?>
         </div>
     </div>
@@ -741,7 +824,7 @@ $commenti = $db->fetchAll(
                         </div>
                     </div>
 
-                    <?php if (!empty($rewards)): // Mostra il selettore reward solo se ci sono rewards ?>
+                    <?php if (!empty($rewards)): ?>
                         <div class="mb-3">
                             <label for="codice_reward" class="form-label">Scegli una ricompensa (opzionale)</label>
                             <select class="form-select" id="codice_reward" name="codice_reward">
@@ -752,6 +835,13 @@ $commenti = $db->fetchAll(
                                     </option>
                                 <?php endforeach; ?>
                             </select>
+                        </div>
+                    <?php else: ?>
+                        <!-- Nessuna reward disponibile -->
+                        <input type="hidden" name="codice_reward" value="">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Questo progetto non ha ancora reward disponibili.
                         </div>
                     <?php endif; ?>
 
@@ -765,13 +855,14 @@ $commenti = $db->fetchAll(
         </div>
     </div>
 </div>
+
 <script>
     window.addEventListener('DOMContentLoaded', () => {
         const alertBox = document.getElementById('alertBox');
         if (alertBox) {
             setTimeout(() => {
                 alertBox.style.display = 'none';
-            }, 3000); // 3000 ms = 3 secondi
+            }, 3000);
         }
     });
 </script>

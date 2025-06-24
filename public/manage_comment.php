@@ -1,20 +1,23 @@
 <?php
 require_once '../config/database.php';
 
-header('Content-Type: application/json');
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
 SessionManager::start();
 
 try {
     if (!SessionManager::isLoggedIn()) {
-        echo json_encode(['success' => false, 'message' => 'Devi essere loggato per commentare.']);
+        // Se è AJAX, manda JSON
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Devi essere loggato per commentare.']);
+            exit;
+        }
+        // Se è form normale, redirect
+        header('Location: ../index.html');
         exit;
     }
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        echo json_encode(['success' => false, 'message' => 'Metodo di richiesta non valido.']);
+        header('Location: projects.php');
         exit;
     }
 
@@ -25,29 +28,66 @@ try {
     $testoCommento = trim($_POST['testo_commento'] ?? '');
 
     if (empty($nomeProgetto) || empty($testoCommento)) {
-        echo json_encode(['success' => false, 'message' => 'Nome progetto e testo del commento sono obbligatori.']);
+        // Se è AJAX, manda JSON
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Nome progetto e testo del commento sono obbligatori.']);
+            exit;
+        }
+        // Se è form normale, redirect con errore
+        header('Location: project_detail.php?name=' . urlencode($nomeProgetto) . '&error=dati_mancanti');
         exit;
     }
 
     if (strlen($testoCommento) > 500) {
-        echo json_encode(['success' => false, 'message' => 'Il commento non può superare i 500 caratteri.']);
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Il commento non può superare i 500 caratteri.']);
+            exit;
+        }
+        header('Location: project_detail.php?name=' . urlencode($nomeProgetto) . '&error=commento_troppo_lungo');
         exit;
     }
 
     $progettoEsiste = $db->fetchOne("SELECT Nome FROM PROGETTO WHERE Nome = ?", [$nomeProgetto]);
     if (!$progettoEsiste) {
-        echo json_encode(['success' => false, 'message' => 'Progetto non trovato.']);
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'message' => 'Progetto non trovato.']);
+            exit;
+        }
+        header('Location: projects.php?error=progetto_non_trovato');
         exit;
     }
 
     $db->callStoredProcedure('InserisciCommento', [
-        $userEmail, 
-        $nomeProgetto, 
+        $userEmail,
+        $nomeProgetto,
         $testoCommento
     ]);
 
-    echo json_encode(['success' => true, 'message' => 'Commento aggiunto con successo!']);
+    // Se è richiesta AJAX, manda JSON
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'Commento aggiunto con successo!']);
+        exit;
+    }
+
+    // Se è form normale, redirect con successo
+    header('Location: project_detail.php?name=' . urlencode($nomeProgetto) . '&success=commento_aggiunto');
+    exit;
+
 } catch (Exception $e) {
-    echo json_encode(['success' => false, 'message' => 'Errore: ' . $e->getMessage()]);
+    error_log("Errore commento: " . $e->getMessage());
+
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'message' => 'Errore: ' . $e->getMessage()]);
+        exit;
+    }
+
+    $nomeProgetto = $_POST['nome_progetto'] ?? '';
+    header('Location: project_detail.php?name=' . urlencode($nomeProgetto) . '&error=errore_inserimento');
+    exit;
 }
 ?>

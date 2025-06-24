@@ -69,17 +69,22 @@ try {
 
     // Candidature ricevute (solo per progetti software)
     $candidatureRicevute = $db->fetchAll("
-        SELECT c.ID, c.Data_Candidatura, c.Esito, u.Nickname, u.Nome, u.Cognome,
-            pr.Nome as Nome_Profilo, p.Nome as Nome_Progetto
-        FROM CANDIDATURA c
-        JOIN UTENTE u ON c.Email_Utente = u.Email
-        JOIN PROFILO pr ON c.ID_Profilo = pr.ID
-        JOIN PROGETTO p ON pr.Nome_Progetto = p.Nome
-        WHERE p.Email_Creatore = ? AND c.Esito IS NULL
-        ORDER BY c.Data_Candidatura DESC
-        LIMIT 10
-    ", [$userEmail]);
-
+    SELECT c.ID, c.Data_Candidatura, c.Esito, u.Nickname, u.Nome, u.Cognome,
+        pr.Nome as Nome_Profilo, p.Nome as Nome_Progetto
+    FROM CANDIDATURA c
+    JOIN UTENTE u ON c.Email_Utente = u.Email
+    JOIN PROFILO pr ON c.ID_Profilo = pr.ID
+    JOIN PROGETTO p ON pr.Nome_Progetto = p.Nome
+    WHERE p.Email_Creatore = ?
+    ORDER BY 
+        CASE 
+            WHEN c.Esito IS NULL THEN 0  -- Candidature in attesa vengono prima
+            WHEN c.Esito = 1 THEN 1      -- Candidature accettate
+            ELSE 2                       -- Candidature rifiutate per ultime
+        END,
+        c.Data_Candidatura DESC
+    LIMIT 20
+", [$userEmail]);
     // Commenti recenti sui miei progetti
     $commentiRecenti = $db->fetchAll("
         SELECT c.*, u.Nickname, p.Nome as Nome_Progetto,
@@ -399,8 +404,12 @@ try {
                 <div class="card-header">
                     <h6 class="mb-0">
                         <i class="fas fa-user-check me-2"></i>Candidature Ricevute
-                        <?php if (count($candidatureRicevute) > 0): ?>
-                            <span class="badge bg-warning"><?= count($candidatureRicevute) ?></span>
+                        <?php
+                        $candidatureInAttesa = array_filter($candidatureRicevute, function($c) {
+                            return $c['Esito'] === null;
+                        });
+                        if (count($candidatureInAttesa) > 0): ?>
+                            <span class="badge bg-warning"><?= count($candidatureInAttesa) ?></span>
                         <?php endif; ?>
                     </h6>
                 </div>
@@ -408,35 +417,66 @@ try {
                     <?php if (empty($candidatureRicevute)): ?>
                         <div class="text-center text-muted">
                             <i class="fas fa-inbox mb-2"></i>
-                            <p class="small mb-0">Nessuna candidatura in attesa</p>
+                            <p class="small mb-0">Nessuna candidatura ricevuta</p>
                         </div>
                     <?php else: ?>
                         <?php foreach ($candidatureRicevute as $candidatura): ?>
-                            <div class="card candidatura-card mb-2">
+                            <?php
+                            // Determina lo stato e la classe CSS
+                            if ($candidatura['Esito'] === null) {
+                                $statoClasse = 'candidatura-pending';
+                                $statoBadge = '<span class="badge bg-warning">In Attesa</span>';
+                                $mostraBottoni = true;
+                            } elseif ($candidatura['Esito'] == 1) {
+                                $statoClasse = 'candidatura-accepted';
+                                $statoBadge = '<span class="badge bg-success">Accettata</span>';
+                                $mostraBottoni = false;
+                            } else {
+                                $statoClasse = 'candidatura-rejected';
+                                $statoBadge = '<span class="badge bg-danger">Rifiutata</span>';
+                                $mostraBottoni = false;
+                            }
+                            ?>
+                            <div class="card <?= $statoClasse ?> mb-2">
                                 <div class="card-body p-3">
-                                    <h6 class="card-title small mb-1">
-                                        <?= htmlspecialchars($candidatura['Nickname']) ?>
-                                    </h6>
-                                    <p class="card-text small text-muted mb-2">
-                                        <strong><?= htmlspecialchars($candidatura['Nome_Profilo']) ?></strong><br>
-                                        per <em><?= htmlspecialchars($candidatura['Nome_Progetto']) ?></em>
-                                    </p>
-                                    <div class="d-flex gap-1">
-                                        <button class="btn btn-success btn-sm flex-fill"
-                                                onclick="gestisciCandidatura(<?= $candidatura['ID'] ?>, true)">
-                                            <i class="fas fa-check"></i>
-                                        </button>
-                                        <button class="btn btn-danger btn-sm flex-fill"
-                                                onclick="gestisciCandidatura(<?= $candidatura['ID'] ?>, false)">
-                                            <i class="fas fa-times"></i>
-                                        </button>
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="card-title small mb-1">
+                                                <i class="fas fa-user me-1"></i><?= htmlspecialchars($candidatura['Nickname']) ?>
+                                                <small class="text-muted">(<?= htmlspecialchars($candidatura['Nome'] . ' ' . $candidatura['Cognome']) ?>)</small>
+                                            </h6>
+                                            <p class="card-text small text-muted mb-2">
+                                                <strong>Profilo:</strong> <?= htmlspecialchars($candidatura['Nome_Profilo']) ?><br>
+                                                <strong>Progetto:</strong> <em><?= htmlspecialchars($candidatura['Nome_Progetto']) ?></em><br>
+                                                <strong>Data:</strong> <?= date('d/m/Y H:i', strtotime($candidatura['Data_Candidatura'])) ?>
+                                            </p>
+                                        </div>
+                                        <div class="text-end">
+                                            <?= $statoBadge ?>
+                                        </div>
                                     </div>
+
+                                    <?php if ($mostraBottoni): ?>
+                                        <div class="d-flex gap-1 mt-2">
+                                            <button class="btn btn-success btn-sm flex-fill"
+                                                    onclick="gestisciCandidatura(<?= $candidatura['ID'] ?>, true)"
+                                                    title="Accetta candidatura">
+                                                <i class="fas fa-check me-1"></i>Accetta
+                                            </button>
+                                            <button class="btn btn-danger btn-sm flex-fill"
+                                                    onclick="gestisciCandidatura(<?= $candidatura['ID'] ?>, false)"
+                                                    title="Rifiuta candidatura">
+                                                <i class="fas fa-times me-1"></i>Rifiuta
+                                            </button>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
             </div>
+
 
             <!-- Commenti recenti -->
             <div class="card">
