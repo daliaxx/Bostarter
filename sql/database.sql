@@ -372,8 +372,26 @@ CREATE PROCEDURE InserisciSkillCurriculum(
     IN p_Livello INT
 )
 BEGIN
-INSERT INTO SKILL_CURRICULUM (Email_Utente, Competenza, Livello)
-VALUES (p_Email, p_Competenza, p_Livello);
+    DECLARE v_LivelloAttuale INT;
+
+    -- Controlla se esiste già una skill per quell'utente e competenza
+    SELECT MAX(Livello) INTO v_LivelloAttuale
+    FROM SKILL_CURRICULUM
+    WHERE Email_Utente = p_Email AND Competenza = p_Competenza;
+
+    IF v_LivelloAttuale IS NULL THEN
+        -- Non esiste, inserisci nuova skill
+        INSERT INTO SKILL_CURRICULUM (Email_Utente, Competenza, Livello)
+        VALUES (p_Email, p_Competenza, p_Livello);
+    ELSEIF p_Livello > v_LivelloAttuale THEN
+        -- Esiste già ma il nuovo livello è superiore: elimina il vecchio e inserisci il nuovo
+        DELETE FROM SKILL_CURRICULUM
+        WHERE Email_Utente = p_Email AND Competenza = p_Competenza AND Livello = v_LivelloAttuale;
+
+        INSERT INTO SKILL_CURRICULUM (Email_Utente, Competenza, Livello)
+        VALUES (p_Email, p_Competenza, p_Livello);
+    END IF;
+    -- Se il livello è uguale o inferiore, non fa nulla
 END $$
 
 -- Procedure per inserimento skill richiesta
@@ -517,28 +535,27 @@ DELIMITER ;
 -- View classifica affidabilità creatori
 CREATE VIEW classifica_affidabilita AS
 SELECT u.Nickname, c.affidabilita
-FROM UTENTE u
-         JOIN CREATORE c ON u.Email = c.Email
+FROM CREATORE c
+         JOIN UTENTE u ON  c.Email = u.Email
 ORDER BY c.affidabilita DESC
     LIMIT 3;
 
 -- View progetti quasi completati
 CREATE VIEW ProgettiQuasiCompletati AS
 SELECT p.Nome,
-       p.Descrizione,
        p.Budget - COALESCE(SUM(f.Importo), 0) AS DifferenzaResidua
 FROM PROGETTO p
          LEFT JOIN FINANZIAMENTO f ON p.Nome = f.Nome_Progetto
 WHERE p.Stato = 'aperto'
-GROUP BY p.Nome, p.Descrizione, p.Budget
+GROUP BY p.Nome, p.Budget
 ORDER BY DifferenzaResidua ASC
     LIMIT 3;
 
 -- View classifica finanziatori
 CREATE VIEW ClassificaFinanziatori AS
 SELECT u.Nickname, SUM(f.Importo) AS Totale
-FROM UTENTE u
-         JOIN FINANZIAMENTO f ON u.Email = f.Email_Utente
+FROM FINANZIAMENTO f
+         JOIN UTENTE u ON f.Email_Utente = u.Email
 GROUP BY u.Nickname
 ORDER BY Totale DESC
     LIMIT 3;

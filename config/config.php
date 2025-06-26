@@ -4,6 +4,11 @@
  * File: config/database.php
  */
 
+// === CONFIGURAZIONE MONGODB PER LOG ===
+define('MONGO_LOG_URI', 'mongodb://localhost:27017'); // Cambia se necessario
+define('MONGO_LOG_DB', 'bostarter_logs'); // Nome database per i log
+// Se vuoi disabilitare il log su MongoDB, lascia MONGO_LOG_URI vuoto
+
 class Database {
     // MODIFICA QUESTE IMPOSTAZIONI SECONDO LA TUA CONFIGURAZIONE
     private $host = "localhost";          // o "127.0.0.1" se localhost non funziona
@@ -397,6 +402,40 @@ class Utils {
 // Classe per log degli errori
 class Logger {
     private static $logFile = 'logs/error.log';
+    private static $mongoClient = null;
+    private static $mongoCollection = null;
+    private static $mongoInitTried = false;
+
+    private static function logToMongo($message, $level) {
+        if (!defined('MONGO_LOG_URI') || empty(MONGO_LOG_URI)) return;
+        if (!self::$mongoInitTried) {
+            self::$mongoInitTried = true;
+            try {
+                if (class_exists('MongoDB\\Client')) {
+                    self::$mongoClient = new MongoDB\Client(MONGO_LOG_URI);
+                    self::$mongoCollection = self::$mongoClient->{MONGO_LOG_DB}->logs;
+                }
+            } catch (Exception $e) {
+                // Se fallisce la connessione, ignora e fallback su file
+                self::$mongoClient = null;
+                self::$mongoCollection = null;
+            }
+        }
+        if (self::$mongoCollection) {
+            try {
+                self::$mongoCollection->insertOne([
+                    'timestamp' => new MongoDB\BSON\UTCDateTime(),
+                    'level' => $level,
+                    'message' => $message,
+                    'user' => isset($_SESSION['user_email']) ? $_SESSION['user_email'] : null,
+                    'ip' => $_SERVER['REMOTE_ADDR'] ?? null,
+                    'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? null
+                ]);
+            } catch (Exception $e) {
+                // Se fallisce il log su MongoDB, ignora
+            }
+        }
+    }
 
     public static function log($message, $level = 'INFO') {
         $timestamp = date('Y-m-d H:i:s');
@@ -409,6 +448,8 @@ class Logger {
         }
 
         file_put_contents(self::$logFile, $logMessage, FILE_APPEND | LOCK_EX);
+        // Log anche su MongoDB
+        self::logToMongo($message, $level);
     }
 
     public static function error($message) {
