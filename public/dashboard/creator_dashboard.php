@@ -1,6 +1,6 @@
 <?php
 /**
- * BOSTARTER - Dashboard Creatore
+ * BOSTARTER - Dashboard Creatore - VERSIONE CORRETTA
  * File: public/dashboard/creator_dashboard.php
  */
 
@@ -46,7 +46,8 @@ try {
         ORDER BY p.Data_Inserimento DESC
     ", [$userEmail]);
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['elimina_progetto'])) {
+    // Gestione eliminazione progetto
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['elimina_progetto'])) {
         $nome = $_POST['elimina_progetto'];
         $email = $_SESSION['user_email'];
 
@@ -66,36 +67,11 @@ try {
         }
     }
 
-
+    // Candidature ricevute
     $candidatureRicevute = $db->fetchAll("
-    SELECT c.ID, c.Data_Candidatura, c.Esito, u.Nickname, u.Nome, u.Cognome,
-        pr.Nome as Nome_Profilo, p.Nome as Nome_Progetto
-    FROM CANDIDATURA c
-    JOIN UTENTE u ON c.Email_Utente = u.Email
-    JOIN PROFILO pr ON c.ID_Profilo = pr.ID
-    JOIN PROGETTO p ON pr.Nome_Progetto = p.Nome
-    WHERE p.Email_Creatore = ?
-    ORDER BY 
-        CASE 
-            WHEN c.Esito IS NULL THEN 0  -- Candidature in attesa vengono prima
-            WHEN c.Esito = 1 THEN 1      -- Candidature accettate
-            ELSE 2                       -- Candidature rifiutate per ultime
-        END,
-        c.Data_Candidatura DESC
-    LIMIT 20
-", [$userEmail]);
-
-// ✅ DEBUG: Stampa i valori per capire cosa succede
-    error_log("🔍 Debug candidature per $userEmail:");
-    foreach ($candidatureRicevute as $cand) {
-        error_log("- ID: {$cand['ID']}, Esito: " . var_export($cand['Esito'], true) . ", Nickname: {$cand['Nickname']}");
-    }
-
-    // Commenti recenti sui miei progetti
-    $commentiRecenti = $db->fetchAll("
-        SELECT c.*, u.Nickname, p.Nome as Nome_Progetto,
-               r.Testo as Mia_Risposta
-        FROM COMMENTO c
+        SELECT c.ID, c.Data_Candidatura, c.Esito, u.Nickname, u.Nome, u.Cognome,
+            pr.Nome as Nome_Profilo, p.Nome as Nome_Progetto
+        FROM CANDIDATURA c
         JOIN UTENTE u ON c.Email_Utente = u.Email
         JOIN PROFILO pr ON c.ID_Profilo = pr.ID
         JOIN PROGETTO p ON pr.Nome_Progetto = p.Nome
@@ -110,25 +86,31 @@ try {
         LIMIT 20
     ", [$userEmail]);
 
+    // Debug candidature
+    error_log("🔍 Debug candidature per $userEmail:");
+    foreach ($candidatureRicevute as $cand) {
+        error_log("- ID: {$cand['ID']}, Esito: " . var_export($cand['Esito'], true) . ", Nickname: {$cand['Nickname']}");
+    }
+
+    // Commenti ricevuti (query corretta)
     $commentiRicevuti = $db->fetchAll("
-        SELECT c.ID, c.Testo AS Commento, c.Email_Utente, c.Nome_Progetto, r.Testo AS Risposta
+        SELECT c.ID, c.Testo, c.Email_Utente, c.Nome_Progetto, r.Testo AS Risposta
         FROM COMMENTO c
         LEFT JOIN RISPOSTA r ON r.ID_Commento = c.ID
         JOIN PROGETTO p ON c.Nome_Progetto = p.Nome
         WHERE p.Email_Creatore = ?
         ORDER BY c.Data DESC
+        LIMIT 10
     ", [$userEmail]);
 
-
+    // Gestione risposta ai commenti
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_commento'], $_POST['testo_risposta'])) {
-        require_once '../../config/database.php';
         $id = intval($_POST['id_commento']);
         $risposta = trim($_POST['testo_risposta']);
         $emailCreatore = SessionManager::getUserEmail();
 
         try {
-            $db = Database::getInstance();
-            $db->execute("CALL InserisciRisposta(?, ?, ?)", [$id, $emailCreatore, $risposta]);
+            $db->callStoredProcedure('InserisciRisposta', [$id, $emailCreatore, $risposta]);
             header("Location: creator_dashboard.php");
             exit;
         } catch (Exception $e) {
@@ -136,22 +118,21 @@ try {
         }
     }
 
+} catch (Exception $e) {
+    error_log("Errore dashboard creatore: " . $e->getMessage());
+    $error = "Errore nel caricamento dei dati. Riprova più tardi.";
+}
 
-    } catch (Exception $e) {
-        error_log("Errore dashboard creatore: " . $e->getMessage());
-        $error = "Errore nel caricamento dei dati. Riprova più tardi.";
-    }
+// Funzione helper per formattare valuta
+function formatCurrency($amount) {
+    return '€ ' . number_format($amount, 2, ',', '.');
+}
 
-    // Funzione helper per formattare valuta
-    function formatCurrency($amount) {
-        return '€ ' . number_format($amount, 2, ',', '.');
-    }
-
-    // Funzione per calcolare percentuale completamento
-    function getCompletionPercentage($raccolto, $budget) {
-        if ($budget <= 0) return 0;
-        return min(100, ($raccolto / $budget) * 100);
-    }
+// Funzione per calcolare percentuale completamento
+function getCompletionPercentage($raccolto, $budget) {
+    if ($budget <= 0) return 0;
+    return min(100, ($raccolto / $budget) * 100);
+}
 ?>
 
 <!DOCTYPE html>
@@ -211,8 +192,17 @@ try {
         .project-software {
             border-left-color: #6f42c1;
         }
-        .candidatura-card {
+        .candidatura-pending {
             border-left: 4px solid #ffc107;
+            background: rgba(255, 193, 7, 0.05);
+        }
+        .candidatura-accepted {
+            border-left: 4px solid #28a745;
+            background: rgba(40, 167, 69, 0.05);
+        }
+        .candidatura-rejected {
+            border-left: 4px solid #dc3545;
+            background: rgba(220, 53, 69, 0.05);
         }
         .affidabilita-badge {
             font-size: 1.2rem;
@@ -351,7 +341,7 @@ try {
             </a>
         </div>
         <div class="col-md-4 mb-3">
-            <a href="manage_skills.php" class="card quick-action-card text-decoration-none">
+            <a href="user_dashboard.php" class="card quick-action-card text-decoration-none">
                 <div class="card-body text-center">
                     <i class="fas fa-cogs fa-2x mb-2"></i>
                     <h5 class="card-title">Gestisci Skill</h5>
@@ -498,18 +488,28 @@ try {
                     <?php else: ?>
                         <?php foreach ($candidatureRicevute as $candidatura): ?>
                             <?php
+                            // ✅ LOGICA CORRETTA per determinare lo stato
+                            $esitoRaw = $candidatura['Esito'];
+
+                            if ($esitoRaw === null || $esitoRaw === '' || $esitoRaw === 'NULL') {
+                                // Candidatura in attesa
                                 $statoClasse = 'candidatura-pending';
                                 $statoBadge = '<span class="badge bg-warning">In Attesa</span>';
                                 $mostraBottoni = true;
+                            } elseif ($esitoRaw === 1 || $esitoRaw === '1' || $esitoRaw === true) {
+                                // Candidatura accettata
                                 $statoClasse = 'candidatura-accepted';
                                 $statoBadge = '<span class="badge bg-success">Accettata</span>';
                                 $mostraBottoni = false;
                             } else {
+                                // Candidatura rifiutata
                                 $statoClasse = 'candidatura-rejected';
                                 $statoBadge = '<span class="badge bg-danger">Rifiutata</span>';
                                 $mostraBottoni = false;
                             }
                             ?>
+
+                            <div class="card <?= $statoClasse ?> mb-2" data-candidatura-id="<?= $candidatura['ID'] ?>">
                                 <div class="card-body p-3">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div class="flex-grow-1">
@@ -529,8 +529,17 @@ try {
                                     </div>
 
                                     <?php if ($mostraBottoni): ?>
+                                        <div class="d-flex gap-1 mt-2">
+                                            <button class="btn btn-success btn-sm flex-fill"
+                                                    onclick="gestisciCandidatura(<?= $candidatura['ID'] ?>, true)"
+                                                    title="Accetta candidatura"
+                                                    type="button">
                                                 <i class="fas fa-check me-1"></i>Accetta
                                             </button>
+                                            <button class="btn btn-danger btn-sm flex-fill"
+                                                    onclick="gestisciCandidatura(<?= $candidatura['ID'] ?>, false)"
+                                                    title="Rifiuta candidatura"
+                                                    type="button">
                                                 <i class="fas fa-times me-1"></i>Rifiuta
                                             </button>
                                         </div>
@@ -542,64 +551,57 @@ try {
                                             </small>
                                         </div>
                                     <?php endif; ?>
-
                                 </div>
                             </div>
                         <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
             </div>
-            <!-- Commenti recenti -->
+
+            <!-- Commenti ricevuti -->
             <div class="card">
                 <div class="card-header">
-                    <h4>Commenti ricevuti</h4>
-                    <?php foreach ($commentiRicevuti as $commento): ?>
-                        <div class="card my-3">
-                            <div class="card-body">
-                                <strong><?= htmlspecialchars($commento['Email_Utente']) ?></strong> ha commentato sul progetto
-                                <strong><?= htmlspecialchars($commento['Nome_Progetto']) ?></strong>:<br>
-                                <em><?= htmlspecialchars($commento['Testo']) ?></em>
-
-                                <?php if ($commento['Risposta']): ?>
-                                    <p class="mt-2"><strong>Risposta:</strong> <?= htmlspecialchars($commento['Risposta']) ?></p>
-                                <?php else: ?>
-                                    <form method="POST" action="creator_dashboard.php" class="mt-2">
-                                        <input type="hidden" name="id_commento" value="<?= $commento['ID'] ?>">
-                                        <input type="hidden" name="nome_progetto" value="<?= $commento['Nome_Progetto'] ?>">
-                                        <textarea name="testo_risposta" class="form-control" rows="2" required></textarea>
-                                        <button type="submit" class="btn btn-sm btn-primary mt-1">Rispondi</button>
-                                    </form>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
-
+                    <h6 class="mb-0">
+                        <i class="fas fa-comments me-2"></i>Commenti Ricevuti
+                    </h6>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
+                <div class="card-body">
+                    <?php if (empty($commentiRicevuti)): ?>
+                        <div class="text-center text-muted py-3">
+                            <i class="fas fa-comment-slash fa-2x mb-2"></i>
+                            <p class="small mb-0">Nessun commento ricevuto</p>
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($commentiRicevuti as $commento): ?>
+                            <div class="card comment-card mb-3">
+                                <div class="card-body p-3">
+                                    <div class="d-flex justify-content-between">
+                                        <strong class="text-primary"><?= htmlspecialchars($commento['Email_Utente']) ?></strong>
+                                        <small class="text-muted">Progetto: <?= htmlspecialchars($commento['Nome_Progetto']) ?></small>
+                                    </div>
+                                    <p class="mb-2"><?= htmlspecialchars($commento['Testo']) ?></p>
 
-<!-- Modal per rispondere ai commenti -->
-<div class="modal fade" id="rispostaModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Rispondi al Commento</h5>
-                <button onclick="rispondiCommento(<?= $commento['ID'] ?>, '<?= $commento['Nome_Progetto'] ?>')">Rispondi</button>
-            </div>
-            <div class="modal-body">
-                <form id="rispostaForm">
-                    <input type="hidden" id="commentoId" name="id_commento">
-                    <input type="hidden" id="nomeProgetto" name="nome_progetto">
-                    <textarea id="testoRisposta" name="testo_risposta" class="form-control" required></textarea>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-                <button type="button" class="btn btn-primary" onclick="inviaRisposta()">
-                    <i class="fas fa-paper-plane me-1"></i>Invia Risposta
-                </button>
+                                    <?php if ($commento['Risposta']): ?>
+                                        <div class="bg-light p-2 rounded">
+                                            <strong>La tua risposta:</strong> <?= htmlspecialchars($commento['Risposta']) ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <form method="POST" action="creator_dashboard.php" class="mt-2">
+                                            <input type="hidden" name="id_commento" value="<?= $commento['ID'] ?>">
+                                            <input type="hidden" name="nome_progetto" value="<?= $commento['Nome_Progetto'] ?>">
+                                            <div class="input-group">
+                                                <textarea name="testo_risposta" class="form-control" rows="2" placeholder="Scrivi una risposta..." required></textarea>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-paper-plane"></i>
+                                                </button>
+                                            </div>
+                                        </form>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>
@@ -619,11 +621,6 @@ try {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // ================================================================
-    // FIX BUG #4: CANDIDATURE ACCETTAZIONE/RIFIUTO
-    // File: creator_dashboard.php (parte JavaScript)
-    // ================================================================
-
     // ✅ FUNZIONE CORRETTA per gestire candidature
     function gestisciCandidatura(idCandidatura, accettata) {
         // Validazione input
@@ -773,60 +770,16 @@ try {
         bsToast.show();
     }
 
-    // ✅ Debug function per testare
-    function debugCandidature() {
-        console.log('🔍 Debug candidature disponibili:');
-        const candidature = document.querySelectorAll('[data-candidatura-id]');
-        candidature.forEach(card => {
-            const id = card.getAttribute('data-candidatura-id');
-            const stato = card.className.includes('pending') ? 'pending' :
-                card.className.includes('accepted') ? 'accepted' : 'rejected';
-            console.log(`- ID: ${id}, Stato: ${stato}`);
-        });
-    }
-
     // ✅ Inizializzazione quando il DOM è pronto
     document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Sistema gestione candidature caricato');
 
         // Debug opzionale
         if (window.location.search.includes('debug=1')) {
-            debugCandidature();
+            const candidature = document.querySelectorAll('[data-candidatura-id]');
+            console.log(`🔍 Candidature trovate: ${candidature.length}`);
         }
-
-        // Auto-refresh ogni 5 minuti per nuove candidature
-        setInterval(() => {
-            // Solo se non ci sono azioni in corso
-            const bottoniDisabilitati = document.querySelectorAll('button[disabled]');
-            if (bottoniDisabilitati.length === 0) {
-                location.reload();
-            }
-        }, 300000); // 5 minuti
     });
-
-    // Risposta ai commenti
-    function rispondiCommento(commentoId, nomeProgetto) {
-        document.getElementById('commentoId').value = commentoId;
-        document.getElementById('nomeProgetto').value = nomeProgetto;
-        document.getElementById('testoRisposta').value = '';
-        new bootstrap.Modal(document.getElementById('rispostaModal')).show();
-    }
-
-    // Funzione per mostrare toast
-    function mostraToast(message, type) {
-        const toast = document.getElementById('toastNotifica');
-        const toastMessage = document.getElementById('toastMessage');
-
-        toastMessage.textContent = message;
-        toast.className = `toast ${type === 'success' ? 'bg-success' : 'bg-danger'} text-white`;
-
-        new bootstrap.Toast(toast).show();
-    }
-
-    // Auto-refresh ogni 5 minuti per aggiornare le candidature
-    setInterval(() => {
-        location.reload();
-    }, 300000);
 </script>
 </body>
 </html>
