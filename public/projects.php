@@ -1,4 +1,8 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 /**
  * BOSTARTER - Lista Progetti
  * File: public/projects.php
@@ -81,6 +85,32 @@ $isCreator = SessionManager::isCreator();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --small-radius: 12px;
+        }
+        .navbar {
+            background: var(--primary-gradient) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+            z-index: 50;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+        .nav-link {
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
+            border-radius: var(--small-radius);
+            margin: 0 0.25rem;
+        }
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
         .project-card {
             transition: transform 0.2s;
             border: none;
@@ -102,24 +132,18 @@ $isCreator = SessionManager::isCreator();
         .creator-badge {
             background: linear-gradient(45deg, #fd7e14, #ffc107);
         }
-        .navbar-brand {
-            font-weight: 700;
-            font-size: 1.5rem;
-        }
     </style>
 </head>
 <body>
-<!-- Navbar -->
+
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
-        <a class="navbar-brand" href="../index.html">
+        <a class="navbar-brand fw-bold" href="../index.html">
             <i class="fas fa-rocket me-2"></i>BOSTARTER
         </a>
-
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
-
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
@@ -127,55 +151,35 @@ $isCreator = SessionManager::isCreator();
                         <i class="fas fa-project-diagram me-1"></i>Progetti
                     </a>
                 </li>
-                <?php if ($isLoggedIn): ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="dashboard/user_dashboard.php">
-                            <i class="fas fa-user me-1"></i>Il Mio Profilo
-                        </a>
-                    </li>
-                <?php endif; ?>
             </ul>
-
-            <ul class="navbar-nav">
+            <ul class="navbar-nav ms-auto">
                 <?php if ($isLoggedIn): ?>
-                    <!-- Menu utente loggato -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
                             <i class="fas fa-user-circle me-1"></i>
                             <?= htmlspecialchars(SessionManager::get('user_nickname', 'Utente')) ?>
                         </a>
-                        <ul class="dropdown-menu">
-                            <?php if ($isCreator): ?>
-                                <li><a class="dropdown-item" href="dashboard/creator_dashboard.php">
-                                        <i class="fas fa-plus me-2"></i>Crea Progetto
-                                    </a></li>
-                                <li><hr class="dropdown-divider"></li>
-                            <?php endif; ?>
+                        <ul class="dropdown-menu dropdown-menu-end">
                             <?php if ($isAdmin): ?>
-                                <li><a class="dropdown-item" href="dashboard/admin_dashboard.php">
-                                        <i class="fas fa-shield-alt me-2"></i>Admin Panel
-                                    </a></li>
+                                <li><a class="dropdown-item" href="dashboard/admin_dashboard.php"><i class="fas fa-shield-alt me-2"></i>Dashboard Admin</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                            <?php elseif ($isCreator): ?>
+                                <li><a class="dropdown-item" href="dashboard/creator_dashboard.php"><i class="fas fa-user-cog me-2"></i>Dashboard Creatore</a></li>
+                                <li><a class="dropdown-item" href="dashboard/new_project.php"><i class="fas fa-plus me-2"></i>Crea Progetto</a></li>
                                 <li><hr class="dropdown-divider"></li>
                             <?php endif; ?>
-                            <li><a class="dropdown-item" href="dashboard/user_dashboard.php">
-                                    <i class="fas fa-user me-2"></i>Profilo
-                                </a></li>
-                            <li><a class="dropdown-item" href="../auth/logout.php">
-                                    <i class="fas fa-sign-out-alt me-2"></i>Logout
-                                </a></li>
+                            <li><a class="dropdown-item" href="dashboard/user_dashboard.php"><i class="fas fa-user me-2"></i>Il mio profilo</a></li>
+                            <li><a class="dropdown-item" href="statistiche.php"><i class="fas fa-chart-bar me-2"></i>Statistiche</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="../auth/logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                         </ul>
                     </li>
                 <?php else: ?>
-                    <!-- Menu ospite -->
                     <li class="nav-item">
-                        <a class="nav-link" href="../index.html">
-                            <i class="fas fa-sign-in-alt me-1"></i>Login
-                        </a>
+                        <a class="nav-link" href="../auth/login.php"><i class="fas fa-sign-in-alt me-1"></i>Accedi</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="../index.html">
-                            <i class="fas fa-user-plus me-1"></i>Registrati
-                        </a>
+                        <a class="nav-link" href="../auth/register.php"><i class="fas fa-user-plus me-1"></i>Registrati</a>
                     </li>
                 <?php endif; ?>
             </ul>

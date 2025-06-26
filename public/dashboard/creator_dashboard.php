@@ -69,34 +69,49 @@ try {
 
     // Candidature ricevute (solo per progetti software)
     $candidatureRicevute = $db->fetchAll("
-    SELECT c.ID, c.Data_Candidatura, c.Esito, u.Nickname, u.Nome, u.Cognome,
-        pr.Nome as Nome_Profilo, p.Nome as Nome_Progetto
-    FROM CANDIDATURA c
-    JOIN UTENTE u ON c.Email_Utente = u.Email
-    JOIN PROFILO pr ON c.ID_Profilo = pr.ID
-    JOIN PROGETTO p ON pr.Nome_Progetto = p.Nome
-    WHERE p.Email_Creatore = ?
-    ORDER BY 
-        CASE 
-            WHEN c.Esito IS NULL THEN 0  -- Candidature in attesa vengono prima
-            WHEN c.Esito = 1 THEN 1      -- Candidature accettate
-            ELSE 2                       -- Candidature rifiutate per ultime
-        END,
-        c.Data_Candidatura DESC
-    LIMIT 20
-", [$userEmail]);
-    // Commenti recenti sui miei progetti
-    $commentiRecenti = $db->fetchAll("
-        SELECT c.*, u.Nickname, p.Nome as Nome_Progetto,
-               r.Testo as Mia_Risposta
-        FROM COMMENTO c
+        SELECT c.ID, c.Data_Candidatura, c.Esito, u.Nickname, u.Nome, u.Cognome,
+            pr.Nome as Nome_Profilo, p.Nome as Nome_Progetto
+        FROM CANDIDATURA c
         JOIN UTENTE u ON c.Email_Utente = u.Email
+        JOIN PROFILO pr ON c.ID_Profilo = pr.ID
+        JOIN PROGETTO p ON pr.Nome_Progetto = p.Nome
+        WHERE p.Email_Creatore = ?
+        ORDER BY 
+            CASE 
+                WHEN c.Esito IS NULL THEN 0  -- Candidature in attesa vengono prima
+                WHEN c.Esito = 1 THEN 1      -- Candidature accettate
+                ELSE 2                       -- Candidature rifiutate per ultime
+            END,
+            c.Data_Candidatura DESC
+        LIMIT 20
+    ", [$userEmail]);
+
+    $commentiRicevuti = $db->fetchAll("
+        SELECT c.ID, c.Testo AS Commento, c.Email_Utente, c.Nome_Progetto, r.Testo AS Risposta
+        FROM COMMENTO c
+        LEFT JOIN RISPOSTA r ON r.ID_Commento = c.ID
         JOIN PROGETTO p ON c.Nome_Progetto = p.Nome
-        LEFT JOIN RISPOSTA r ON c.ID = r.ID_Commento
         WHERE p.Email_Creatore = ?
         ORDER BY c.Data DESC
-        LIMIT 5
     ", [$userEmail]);
+
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_commento'], $_POST['testo_risposta'])) {
+        require_once '../../config/database.php';
+        $id = intval($_POST['id_commento']);
+        $risposta = trim($_POST['testo_risposta']);
+        $emailCreatore = SessionManager::getUserEmail();
+
+        try {
+            $db = Database::getInstance();
+            $db->execute("CALL InserisciRisposta(?, ?, ?)", [$id, $emailCreatore, $risposta]);
+            header("Location: creator_dashboard.php");
+            exit;
+        } catch (Exception $e) {
+            echo "<div class='alert alert-danger'>Errore: " . $e->getMessage() . "</div>";
+        }
+    }
+
 
     } catch (Exception $e) {
         error_log("Errore dashboard creatore: " . $e->getMessage());
@@ -124,6 +139,32 @@ try {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --small-radius: 12px;
+        }
+        .navbar {
+            background: var(--primary-gradient) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+            z-index: 50;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+        .nav-link {
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
+            border-radius: var(--small-radius);
+            margin: 0 0.25rem;
+        }
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
         .creator-stat-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -178,27 +219,38 @@ try {
         <a class="navbar-brand fw-bold" href="../projects.php">
             <i class="fas fa-rocket me-2"></i>BOSTARTER
         </a>
-        <div class="navbar-nav ms-auto">
-            <a class="nav-link" href="../projects.php">
-                <i class="fas fa-project-diagram me-1"></i>Progetti
-            </a>
-            <a class="nav-link" href="user_dashboard.php">
-                <i class="fas fa-user me-1"></i>Profilo
-            </a>
-            <?php if ($isAdmin): ?>
-                <a class="nav-link" href="admin_dashboard.php">
-                    <i class="fas fa-user-shield me-1"></i>Admin
-                </a>
-            <?php endif; ?>
-            <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                    <i class="fas fa-user-circle me-1"></i><?= htmlspecialchars($userNickname) ?>
-                </a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="../../auth/logout.php">
-                            <i class="fas fa-sign-out-alt me-1"></i>Logout</a></li>
-                </ul>
-            </div>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="../projects.php">
+                        <i class="fas fa-project-diagram me-1"></i>Progetti
+                    </a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user-circle me-1"></i><?= htmlspecialchars($userNickname) ?>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <?php if ($isAdmin): ?>
+                            <li><a class="dropdown-item" href="admin_dashboard.php"><i class="fas fa-shield-alt me-2"></i>Dashboard Admin</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                        <?php else: ?>
+                            <li><a class="dropdown-item" href="creator_dashboard.php"><i class="fas fa-user-cog me-2"></i>Dashboard Creatore</a></li>
+                            <li><a class="dropdown-item" href="new_project.php"><i class="fas fa-plus me-2"></i>Crea Progetto</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                        <?php endif; ?>
+                        <li><a class="dropdown-item" href="user_dashboard.php"><i class="fas fa-user me-2"></i>Il mio profilo</a></li>
+                        <li><a class="dropdown-item" href="../statistiche.php"><i class="fas fa-chart-bar me-2"></i>Statistiche</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="../../auth/logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
         </div>
     </div>
 </nav>
@@ -457,19 +509,17 @@ try {
                                     </div>
 
                                     <?php if ($mostraBottoni): ?>
-                                        <div class="d-flex gap-1 mt-2">
-                                            <button class="btn btn-success btn-sm flex-fill"
-                                                    onclick="gestisciCandidatura(<?= $candidatura['ID'] ?>, true)"
-                                                    title="Accetta candidatura">
+                                        <form method="POST" action="manage_candidature.php" class="d-flex gap-1 mt-2">
+                                            <input type="hidden" name="id_candidatura" value="<?= $candidatura['ID'] ?>">
+                                            <button class="btn btn-success btn-sm flex-fill" name="azione" value="accetta" title="Accetta candidatura">
                                                 <i class="fas fa-check me-1"></i>Accetta
                                             </button>
-                                            <button class="btn btn-danger btn-sm flex-fill"
-                                                    onclick="gestisciCandidatura(<?= $candidatura['ID'] ?>, false)"
-                                                    title="Rifiuta candidatura">
+                                            <button class="btn btn-danger btn-sm flex-fill" name="azione" value="rifiuta" title="Rifiuta candidatura">
                                                 <i class="fas fa-times me-1"></i>Rifiuta
                                             </button>
-                                        </div>
+                                        </form>
                                     <?php endif; ?>
+
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -481,52 +531,28 @@ try {
             <!-- Commenti recenti -->
             <div class="card">
                 <div class="card-header">
-                    <h6 class="mb-0">
-                        <i class="fas fa-comments me-2"></i>Commenti Recenti
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <?php if (empty($commentiRecenti)): ?>
-                        <div class="text-center text-muted">
-                            <i class="fas fa-comment-slash mb-2"></i>
-                            <p class="small mb-0">Nessun commento recente</p>
-                        </div>
-                    <?php else: ?>
-                        <?php foreach ($commentiRecenti as $commento): ?>
-                            <div class="card comment-card mb-2">
-                                <div class="card-body p-3">
-                                    <div class="d-flex justify-content-between">
-                                        <small class="text-primary fw-bold">
-                                            <?= htmlspecialchars($commento['Nickname']) ?>
-                                        </small>
-                                        <small class="text-muted">
-                                            <?= date('d/m/Y', strtotime($commento['Data'])) ?>
-                                        </small>
-                                    </div>
-                                    <p class="small mb-1">
-                                        <?= htmlspecialchars(substr($commento['Testo'], 0, 80)) ?>...
-                                    </p>
-                                    <small class="text-muted">
-                                        su <em><?= htmlspecialchars($commento['Nome_Progetto']) ?></em>
-                                    </small>
-                                    <?php if (!$commento['Mia_Risposta']): ?>
-                                        <div class="mt-2">
-                                            <button class="btn btn-outline-primary btn-sm"
-                                                    onclick="rispondiCommento(<?= $commento['ID'] ?>)">
-                                                <i class="fas fa-reply me-1"></i>Rispondi
-                                            </button>
-                                        </div>
-                                    <?php else: ?>
-                                        <div class="mt-1">
-                                            <span class="badge bg-success">
-                                                <i class="fas fa-check me-1"></i>Risposto
-                                            </span>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
+                    <h4>Commenti ricevuti</h4>
+                    <?php foreach ($commentiRicevuti as $commento): ?>
+                        <div class="card my-3">
+                            <div class="card-body">
+                                <strong><?= htmlspecialchars($commento['Email_Utente']) ?></strong> ha commentato sul progetto
+                                <strong><?= htmlspecialchars($commento['Nome_Progetto']) ?></strong>:<br>
+                                <em><?= htmlspecialchars($commento['Testo']) ?></em>
+
+                                <?php if ($commento['Risposta']): ?>
+                                    <p class="mt-2"><strong>Risposta:</strong> <?= htmlspecialchars($commento['Risposta']) ?></p>
+                                <?php else: ?>
+                                    <form method="POST" action="creator_dashboard.php" class="mt-2">
+                                        <input type="hidden" name="id_commento" value="<?= $commento['ID'] ?>">
+                                        <input type="hidden" name="nome_progetto" value="<?= $commento['Nome_Progetto'] ?>">
+                                        <textarea name="testo_risposta" class="form-control" rows="2" required></textarea>
+                                        <button type="submit" class="btn btn-sm btn-primary mt-1">Rispondi</button>
+                                    </form>
+                                <?php endif; ?>
                             </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                        </div>
+                    <?php endforeach; ?>
+
                 </div>
             </div>
         </div>
@@ -539,15 +565,13 @@ try {
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Rispondi al Commento</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button onclick="rispondiCommento(<?= $commento['ID'] ?>, '<?= $commento['Nome_Progetto'] ?>')">Rispondi</button>
             </div>
             <div class="modal-body">
                 <form id="rispostaForm">
-                    <div class="mb-3">
-                        <label for="testoRisposta" class="form-label">La tua risposta</label>
-                        <textarea class="form-control" id="testoRisposta" name="testo" rows="3" required></textarea>
-                    </div>
-                    <input type="hidden" id="commentoId" name="commento_id">
+                    <input type="hidden" id="commentoId" name="id_commento">
+                    <input type="hidden" id="nomeProgetto" name="nome_progetto">
+                    <textarea id="testoRisposta" name="testo_risposta" class="form-control" required></textarea>
                 </form>
             </div>
             <div class="modal-footer">
@@ -603,33 +627,11 @@ try {
     }
 
     // Risposta ai commenti
-    function rispondiCommento(commentoId) {
+    function rispondiCommento(commentoId, nomeProgetto) {
         document.getElementById('commentoId').value = commentoId;
+        document.getElementById('nomeProgetto').value = nomeProgetto;
         document.getElementById('testoRisposta').value = '';
         new bootstrap.Modal(document.getElementById('rispostaModal')).show();
-    }
-
-    function inviaRisposta() {
-        const form = document.getElementById('rispostaForm');
-        const formData = new FormData(form);
-
-        fetch('../../api/rispondi_commento.php', {
-            method: 'POST',
-            body: formData
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    mostraToast(data.message, 'success');
-                    bootstrap.Modal.getInstance(document.getElementById('rispostaModal')).hide();
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    mostraToast(data.message, 'error');
-                }
-            })
-            .catch(error => {
-                mostraToast('Errore di connessione', 'error');
-            });
     }
 
     // Funzione per mostrare toast

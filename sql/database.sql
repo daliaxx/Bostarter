@@ -503,9 +503,9 @@ CREATE EVENT ChiudiProgettiScaduti
 ON SCHEDULE EVERY 1 DAY
 DO
 BEGIN
-UPDATE PROGETTO
-SET Stato = 'chiuso'
-WHERE Stato = 'aperto' AND Data_Limite < CURDATE();
+    UPDATE PROGETTO
+    SET Stato = 'chiuso'
+    WHERE Stato = 'aperto' AND Data_Limite <= CURDATE();
 END $$
 
 DELIMITER ;

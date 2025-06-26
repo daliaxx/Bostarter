@@ -138,10 +138,14 @@ if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'a
     }
 }
 
-$commenti = $db->fetchAll(
-    "SELECT Email_Utente, Testo FROM COMMENTO WHERE Nome_Progetto = ? ORDER BY ID DESC",
-    [$nomeProgetto]
-);
+$commenti = $db->fetchAll("
+    SELECT c.ID, c.Email_Utente, c.Testo, r.Testo AS Risposta
+    FROM COMMENTO c
+    LEFT JOIN RISPOSTA r ON r.ID_Commento = c.ID
+    WHERE c.Nome_Progetto = ?
+    ",[$nomeProgetto]);
+
+$isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creatore']) && $_SESSION['email'] === $progetto['Email_Creatore']);
 
 ?>
 
@@ -486,41 +490,47 @@ $commenti = $db->fetchAll(
         <a class="navbar-brand fw-bold" href="../projects.php">
             <i class="fas fa-rocket me-2"></i>BOSTARTER
         </a>
-        <div class="navbar-nav ms-auto">
-            <a class="nav-link" href="/Bostarter/public/projects.php">
-                <i class="fas fa-project-diagram me-1"></i>Progetti
-            </a>
-            <?php if ($isLoggedIn): ?>
-                <a class="nav-link" href="/Bostarter/public/dashboard/user_dashboard.php">
-                    <i class="fas fa-user me-1"></i>Profilo
-                </a>
-                <?php if ($isCreator): ?>
-                    <a class="nav-link" href="/Bostarter/public/dashboard/creator_dashboard.php">
-                        <i class="fas fa-paint-brush me-1"></i>Creatore
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="/Bostarter/public/projects.php">
+                        <i class="fas fa-project-diagram me-1"></i>Progetti
                     </a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ms-auto">
+                <?php if ($isLoggedIn): ?>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i><?= htmlspecialchars($_SESSION['user_nickname'] ?? 'Utente') ?>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <?php if ($isAdmin): ?>
+                                <li><a class="dropdown-item" href="/Bostarter/public/dashboard/admin_dashboard.php"><i class="fas fa-shield-alt me-2"></i>Dashboard Admin</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                            <?php elseif ($isCreator): ?>
+                                <li><a class="dropdown-item" href="/Bostarter/public/dashboard/creator_dashboard.php"><i class="fas fa-user-cog me-2"></i>Dashboard Creatore</a></li>
+                                <li><a class="dropdown-item" href="/Bostarter/public/dashboard/new_project.php"><i class="fas fa-plus me-2"></i>Crea Progetto</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                            <?php endif; ?>
+                            <li><a class="dropdown-item" href="/Bostarter/public/dashboard/user_dashboard.php"><i class="fas fa-user me-2"></i>Il mio profilo</a></li>
+                            <li><a class="dropdown-item" href="/Bostarter/public/statistiche.php"><i class="fas fa-chart-bar me-2"></i>Statistiche</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="../auth/logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </li>
+                <?php else: ?>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../auth/login.php"><i class="fas fa-sign-in-alt me-1"></i>Accedi</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../auth/register.php"><i class="fas fa-user-plus me-1"></i>Registrati</a>
+                    </li>
                 <?php endif; ?>
-                <?php if ($isAdmin): ?>
-                    <a class="nav-link" href="/Bostarter/public/dashboard/admin_dashboard.php">
-                        <i class="fas fa-user-shield me-1"></i>Admin
-                    </a>
-                <?php endif; ?>
-                <div class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-user-circle me-1"></i><?= htmlspecialchars($_SESSION['user_nickname'] ?? 'Utente') ?>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="../auth/logout.php">
-                                <i class="fas fa-sign-out-alt me-1"></i>Logout</a></li>
-                    </ul>
-                </div>
-            <?php else: ?>
-                <a class="nav-link" href="../auth/login.php">
-                    <i class="fas fa-sign-in-alt me-1"></i>Accedi
-                </a>
-                <a class="nav-link" href="../auth/register.php">
-                    <i class="fas fa-user-plus me-1"></i>Registrati
-                </a>
-            <?php endif; ?>
+            </ul>
         </div>
     </div>
 </nav>
@@ -643,11 +653,19 @@ $commenti = $db->fetchAll(
                         <?php if (count($commenti) > 0): ?>
                             <ul class="list-group">
                                 <?php foreach ($commenti as $commento): ?>
-                                    <li class="list-group-item">
-                                        <strong><?= htmlspecialchars($commento['Email_Utente']) ?>:</strong>
+                                    <div class="mb-3">
+                                        <strong><?= htmlspecialchars($commento['Email_Utente']) ?>:</strong><br>
                                         <?= htmlspecialchars($commento['Testo']) ?>
-                                    </li>
+
+                                        <?php if (!empty($commento['Risposta'])): ?>
+                                            <div class="mt-1 ms-3 p-2 bg-light border-start border-3 border-success">
+                                                <strong>Risposta del creatore:</strong><br>
+                                                <?= htmlspecialchars($commento['Risposta']) ?>
+                                            </div>
+                                        <?php endif; ?>
+                                    </div>
                                 <?php endforeach; ?>
+
                             </ul>
                         <?php else: ?>
                             <p>Nessun commento presente per questo progetto.</p>
@@ -670,12 +688,29 @@ $commenti = $db->fetchAll(
                     Accedi per lasciare un commento.
                 </div>
             <?php endif; ?>
+                <!-- Dopo visualizzazione commento -->
+            <?php if ($isLoggedIn && $isCreatore): ?>
+                <form action="/Bostarter/public/manage_comment.php" method="POST" class="mt-2">
+                    <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
+                    <textarea name="testo_risposta" class="form-control" placeholder="Rispondi al commento..." required></textarea>
+                    <button type="submit" class="btn btn-sm btn-outline-primary mt-1">Rispondi</button>
+                </form>
+            <?php endif; ?>
+
+            <?php if (!empty($commento['Risposta'])): ?>
+                <div class="mt-1 ms-3 p-2 bg-light border-start border-3">
+                    <strong>Risposta del creatore:</strong><br>
+                    <?= htmlspecialchars($commento['Risposta']) ?>
+                </div>
+            <?php endif; ?>
 
             <?php if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'aperto'): ?>
                 <div class="card my-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5><i class="fas fa-user-tie me-2"></i>Candidati per un ruolo in questo progetto</h5>
-                    </div>
+                    <form method="POST" action="manage_candidature.php">
+                        <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
+                        <button type="submit" class="btn btn-primary btn-sm">Candidati</button>
+                    </form>
+
                     <div class="card-body">
                         <?php if (isset($_GET['success']) && $_GET['success'] === 'candidatura_inviata'): ?>
                             <div class="alert alert-success" id="alertBox">✅ Candidatura inviata con successo!</div>
