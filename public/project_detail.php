@@ -706,10 +706,9 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
 
             <?php if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'aperto'): ?>
                 <div class="card my-4">
-                    <form method="POST" action="manage_candidature.php">
-                        <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
-                        <button type="submit" class="btn btn-primary btn-sm">Candidati</button>
-                    </form>
+                    <div class="card-header bg-primary text-white">
+                        <h5><i class="fas fa-user-tie me-2"></i>Candidati per un ruolo in questo progetto</h5>
+                    </div>
 
                     <div class="card-body">
                         <?php if (isset($_GET['success']) && $_GET['success'] === 'candidatura_inviata'): ?>

@@ -211,14 +211,6 @@ try {
         <div class="col-12">
             <h1><i class="fas fa-user-circle"></i> Benvenuto, <?= htmlspecialchars($userName) ?>!</h1>
             <p class="text-muted">Nickname: <strong><?= htmlspecialchars($userNickname) ?></strong></p>
-
-            <?php if (!$isCreator): ?>
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    Vuoi creare i tuoi progetti?
-                    <a href="become_creator.php" class="alert-link">Diventa un creatore!</a>
-                </div>
-            <?php endif; ?>
         </div>
     </div>
 
