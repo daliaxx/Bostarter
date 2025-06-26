@@ -67,11 +67,7 @@ try {
     }
 
 
-    // Candidature ricevute (solo per progetti software)
     $candidatureRicevute = $db->fetchAll("
-        SELECT c.ID, c.Data_Candidatura, c.Esito, u.Nickname, u.Nome, u.Cognome,
-            pr.Nome as Nome_Profilo, p.Nome as Nome_Progetto
-        FROM CANDIDATURA c
     SELECT c.ID, c.Data_Candidatura, c.Esito, u.Nickname, u.Nome, u.Cognome,
         pr.Nome as Nome_Profilo, p.Nome as Nome_Progetto
     FROM CANDIDATURA c
@@ -502,12 +498,9 @@ try {
                     <?php else: ?>
                         <?php foreach ($candidatureRicevute as $candidatura): ?>
                             <?php
-                            // Determina lo stato e la classe CSS
-                            if ($candidatura['Esito'] === null) {
                                 $statoClasse = 'candidatura-pending';
                                 $statoBadge = '<span class="badge bg-warning">In Attesa</span>';
                                 $mostraBottoni = true;
-                            } elseif ($candidatura['Esito'] == 1) {
                                 $statoClasse = 'candidatura-accepted';
                                 $statoBadge = '<span class="badge bg-success">Accettata</span>';
                                 $mostraBottoni = false;
@@ -517,7 +510,6 @@ try {
                                 $mostraBottoni = false;
                             }
                             ?>
-                            <div class="card <?= $statoClasse ?> mb-2">
                                 <div class="card-body p-3">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div class="flex-grow-1">
@@ -537,12 +529,8 @@ try {
                                     </div>
 
                                     <?php if ($mostraBottoni): ?>
-                                        <form method="POST" action="manage_candidature.php" class="d-flex gap-1 mt-2">
-                                            <input type="hidden" name="id_candidatura" value="<?= $candidatura['ID'] ?>">
-                                            <button class="btn btn-success btn-sm flex-fill" name="azione" value="accetta" title="Accetta candidatura">
                                                 <i class="fas fa-check me-1"></i>Accetta
                                             </button>
-                                            <button class="btn btn-danger btn-sm flex-fill" name="azione" value="rifiuta" title="Rifiuta candidatura">
                                                 <i class="fas fa-times me-1"></i>Rifiuta
                                             </button>
                                         </div>
