@@ -253,26 +253,32 @@ $isCreator = SessionManager::isCreator();
     <?php if ($isLoggedIn): ?>
         <div class="row mb-4">
             <div class="col-md-4">
-                <div class="card bg-primary text-white">
-                    <div class="card-body text-center">
-                        <h5><i class="fas fa-trophy"></i> Top Creatori</h5>
-                        <a href="statistiche.php?view=top-creatori" class="btn btn-light btn-sm">Visualizza</a>
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-trophy fa-2x text-primary mb-2"></i>
+                        <h5 class="card-title">Top Creatori</h5>
+                        <p class="card-text">Classifica per affidabilità</p>
+                        <a href="statistiche.php?view=top-creatori" class="btn btn-outline-primary btn-sm">Visualizza</a>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card bg-success text-white">
-                    <div class="card-body text-center">
-                        <h5><i class="fas fa-chart-line"></i> Progetti in Crescita</h5>
-                        <a href="statistiche.php?view=progetti-crescita" class="btn btn-light btn-sm">Visualizza</a>
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                        <h5 class="card-title">Progetti in Crescita</h5>
+                        <p class="card-text">Più vicini al completamento</p>
+                        <a href="statistiche.php?view=progetti-crescita" class="btn btn-outline-success btn-sm">Visualizza</a>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card bg-info text-white">
-                    <div class="card-body text-center">
-                        <h5><i class="fas fa-users"></i> Top Finanziatori</h5>
-                        <a href="statistiche.php?view=top-finanziatori" class="btn btn-light btn-sm">Visualizza</a>
+                <div class="card text-center">
+                    <div class="card-body">
+                        <i class="fas fa-users fa-2x text-info mb-2"></i>
+                        <h5 class="card-title">Top Finanziatori</h5>
+                        <p class="card-text">Maggiori investitori</p>
+                        <a href="statistiche.php?view=top-finanziatori" class="btn btn-outline-info btn-sm">Visualizza</a>
                     </div>
                 </div>
             </div>
@@ -320,28 +326,28 @@ $isCreator = SessionManager::isCreator();
                 <div class="col-lg-4 col-md-6 mb-4">
                     <div class="card project-card h-100">
                         <?php
-                            $fotoDb = $progetto['Foto'] ?? '';
-                            if ($fotoDb !== '') {
-                                // Se già contiene 'img/', non aggiungo nulla
-                                $src = (strpos($fotoDb, 'img/') === 0)
-                                    ? "/Bostarter/{$fotoDb}"
-                                    : "/Bostarter/img/{$fotoDb}";
-                            } else {
-                                $src = null;
-                            }
-                            ?>
+                        $fotoDb = $progetto['Foto'] ?? '';
+                        if ($fotoDb !== '') {
+                            // Se già contiene 'img/', non aggiungo nulla
+                            $src = (strpos($fotoDb, 'img/') === 0)
+                                ? "/Bostarter/{$fotoDb}"
+                                : "/Bostarter/img/{$fotoDb}";
+                        } else {
+                            $src = null;
+                        }
+                        ?>
 
-                            <?php if ($src): ?>
-                                <img src="<?= htmlspecialchars($src) ?>"
-                                    class="card-img-top"
-                                    style="height:200px; object-fit:cover;"
-                                    alt="<?= htmlspecialchars($progetto['Nome']) ?>">
-                            <?php else: ?>
-                                <div class="card-img-top d-flex align-items-center justify-content-center bg-light"
-                                    style="height:200px;">
-                                    <i class="fas fa-image fa-3x text-muted"></i>
-                                </div>
-                            <?php endif; ?>
+                        <?php if ($src): ?>
+                            <img src="<?= htmlspecialchars($src) ?>"
+                                 class="card-img-top"
+                                 style="height:200px; object-fit:cover;"
+                                 alt="<?= htmlspecialchars($progetto['Nome']) ?>">
+                        <?php else: ?>
+                            <div class="card-img-top d-flex align-items-center justify-content-center bg-light"
+                                 style="height:200px;">
+                                <i class="fas fa-image fa-3x text-muted"></i>
+                            </div>
+                        <?php endif; ?>
 
 
                         <div class="card-body d-flex flex-column">

@@ -52,18 +52,23 @@ try {
 
     // Progetti finanziati recenti
     $progettiFinanziati = $db->fetchAll("
-        SELECT p.Nome, p.Descrizione, 
-            SUM(f.Importo) AS Mio_Investimento, 
-            MAX(f.Data) AS Ultima_Donazione
-        FROM FINANZIAMENTO f
-        JOIN PROGETTO p ON f.Nome_Progetto = p.Nome
-        WHERE f.Email_Utente = ?
-        GROUP BY p.Nome, p.Descrizione
-        ORDER BY Ultima_Donazione DESC
-        LIMIT 5
-
-    ", [$userEmail]);
-
+    SELECT p.Nome, p.Descrizione, 
+        SUM(f.Importo) AS Mio_Investimento, 
+        MAX(f.Data) AS Ultima_Donazione,
+        GROUP_CONCAT(
+            DISTINCT CONCAT(r.Codice, '|', r.Descrizione) 
+            ORDER BY f.Data DESC 
+            SEPARATOR ';;;'
+        ) AS Rewards_Ricevute,
+        COUNT(DISTINCT f.ID) AS Num_Finanziamenti
+    FROM FINANZIAMENTO f
+    JOIN PROGETTO p ON f.Nome_Progetto = p.Nome
+    LEFT JOIN REWARD r ON f.Codice_Reward = r.Codice
+    WHERE f.Email_Utente = ?
+    GROUP BY p.Nome, p.Descrizione
+    ORDER BY Ultima_Donazione DESC
+    LIMIT 5
+", [$userEmail]);
     // Recupera skill dell'utente
     $mySkills = [];
     try {
@@ -282,7 +287,7 @@ try {
     <div class="row">
         <!-- Colonna sinistra -->
         <div class="col-lg-8">
-            <!-- Progetti finanziati -->
+            <!-- Progetti finanziati con reward -->
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5><i class="fas fa-heart me-2"></i>I Miei Investimenti</h5>
@@ -302,30 +307,73 @@ try {
                     <?php else: ?>
                         <div class="table-responsive">
                             <table class="table table-hover">
-                                <thead>
+                                <thead class="table-light">
                                 <tr>
-                                    <th>Progetto</th>
-                                    <th>Mio Investimento</th>
-                                    <th>Ultima Donazione</th>
-                                    <th>Azioni</th>
+                                    <th><i class="fas fa-project-diagram me-1"></i>Progetto</th>
+                                    <th><i class="fas fa-euro-sign me-1"></i>Investimento</th>
+                                    <th><i class="fas fa-gift me-1"></i>Le Mie Reward</th>
+                                    <th><i class="fas fa-calendar me-1"></i>Ultima Donazione</th>
+                                    <th><i class="fas fa-eye me-1"></i>Azioni</th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 <?php foreach ($progettiFinanziati as $progetto): ?>
+                                    <?php
+                                    // ✅ Elabora le reward ricevute
+                                    $rewardsRicevute = [];
+                                    if (!empty($progetto['Rewards_Ricevute'])) {
+                                        $rewardsList = explode(';;;', $progetto['Rewards_Ricevute']);
+                                        foreach ($rewardsList as $rewardData) {
+                                            if (!empty($rewardData) && strpos($rewardData, '|') !== false) {
+                                                list($codice, $descrizione) = explode('|', $rewardData, 2);
+                                                $rewardsRicevute[] = [
+                                                    'codice' => $codice,
+                                                    'descrizione' => $descrizione
+                                                ];
+                                            }
+                                        }
+                                    }
+                                    ?>
                                     <tr>
                                         <td>
-                                            <strong><?= htmlspecialchars($progetto['Nome']) ?></strong><br>
-                                            <small class="text-muted"><?= htmlspecialchars(substr($progetto['Descrizione'], 0, 50)) ?>...</small>
+                                            <div>
+                                                <strong><?= htmlspecialchars($progetto['Nome']) ?></strong>
+                                                <br>
+                                                <small class="text-muted"><?= htmlspecialchars(substr($progetto['Descrizione'], 0, 60)) ?>...</small>
+                                            </div>
                                         </td>
                                         <td>
-                                            <span class="badge bg-success">€<?= number_format($progetto['Mio_Investimento'], 2) ?></span>
+                                            <span class="badge bg-success fs-6">€<?= number_format($progetto['Mio_Investimento'], 2) ?></span>
+                                            <?php if ($progetto['Num_Finanziamenti'] > 1): ?>
+                                                <br><small class="text-muted"><?= $progetto['Num_Finanziamenti'] ?> donazioni</small>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if (!empty($rewardsRicevute)): ?>
+                                                <div class="reward-list">
+                                                    <?php foreach (array_unique($rewardsRicevute, SORT_REGULAR) as $reward): ?>
+                                                        <div class="reward-item mb-1">
+                                                    <span class="badge bg-primary me-1">
+                                                        <i class="fas fa-gift me-1"></i><?= htmlspecialchars($reward['codice']) ?>
+                                                    </span>
+                                                            <br>
+                                                            <small class="text-muted"><?= htmlspecialchars($reward['descrizione']) ?></small>
+                                                        </div>
+                                                    <?php endforeach; ?>
+                                                </div>
+                                            <?php else: ?>
+                                                <span class="text-muted">
+                                            <i class="fas fa-minus-circle me-1"></i>Nessuna reward
+                                        </span>
+                                            <?php endif; ?>
                                         </td>
                                         <td>
                                             <small><?= date('d/m/Y', strtotime($progetto['Ultima_Donazione'])) ?></small>
                                         </td>
                                         <td>
                                             <a href="../project_detail.php?name=<?= urlencode($progetto['Nome']) ?>"
-                                               class="btn btn-sm btn-outline-primary">
+                                               class="btn btn-sm btn-outline-primary"
+                                               title="Visualizza progetto">
                                                 <i class="fas fa-eye"></i>
                                             </a>
                                         </td>
@@ -334,10 +382,38 @@ try {
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- ✅ Info aggiuntiva -->
+                        <div class="mt-3 p-3 bg-light rounded">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <strong>Le tue reward:</strong> I creatori ti contatteranno per consegnare le ricompense dei progetti che hai sostenuto.
+                                Le reward vengono assegnate in base ai finanziamenti che hai effettuato.
+                            </small>
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>
 
+            <!-- ✅ CSS aggiuntivo per migliorare l'aspetto -->
+            <style>
+                .reward-item {
+                    padding: 0.25rem 0;
+                }
+
+                .reward-list {
+                    max-height: 80px;
+                    overflow-y: auto;
+                }
+
+                .table td {
+                    vertical-align: middle;
+                }
+
+                .badge.fs-6 {
+                    font-size: 0.9rem !important;
+                }
+            </style>
             <!-- Candidature -->
             <div class="card mb-4">
                 <div class="card-header">

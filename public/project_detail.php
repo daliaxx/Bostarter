@@ -176,7 +176,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #fffdfd 0%, #c3cfe2 100%);
             min-height: 100vh;
             color: var(--text-primary);
         }
@@ -836,59 +836,238 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
     </div>
 </div>
 
+<!-- ================================================================ -->
+<!-- MODAL FINANZIAMENTO COMPLETO - Sostituisci nel project_detail.php -->
+<!-- Cerca la sezione <!-- Modal finanziamento --> e sostituisci tutto -->
+<!-- ================================================================ -->
+
+<!-- Modal per finanziamento -->
 <div class="modal fade" id="finanziaModal" tabindex="-1" aria-labelledby="finanziaModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="finanziaModalLabel">Finanzia <?= htmlspecialchars($progetto['Nome']) ?></h5>
+                <h5 class="modal-title" id="finanziaModalLabel">
+                    <i class="fas fa-hand-holding-usd me-2"></i>
+                    Finanzia <?= htmlspecialchars($progetto['Nome']) ?>
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <form action="/Bostarter/public/fund_project.php" method="POST">
-                    <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
-                    <div class="mb-3">
-                        <label for="importo" class="form-label">Importo da finanziare (€)</label>
-                        <input type="number" class="form-control" id="importo" name="importo" min="1" required>
-                        <div class="mt-2 d-flex justify-content-around">
-                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('importo').value = 10">€10</button>
-                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('importo').value = 25">€25</button>
-                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('importo').value = 50">€50</button>
-                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('importo').value = 100">€100</button>
-                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('importo').value = 250">€250</button>
-                        </div>
+                <?php if (!empty($rewards)): ?>
+                    <!-- ✅ Progetto con reward - form completo -->
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Seleziona una reward</strong> per ricevere un ringraziamento speciale dal creatore.
                     </div>
 
-                    <?php if (!empty($rewards)): ?>
+                    <form action="fund_project.php" method="POST" id="quickFundingForm">
+                        <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
+
+                        <!-- STEP 1: Reward obbligatoria -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <strong><i class="fas fa-gift me-2"></i>Reward disponibili</strong>
+                                <span class="badge bg-danger ms-2">Obbligatorio</span>
+                            </label>
+
+                            <?php foreach ($rewards as $index => $reward): ?>
+                                <div class="form-check border rounded p-3 mb-2" style="cursor: pointer;">
+                                    <input class="form-check-input"
+                                           type="radio"
+                                           name="codice_reward"
+                                           id="modal_reward_<?= $index ?>"
+                                           value="<?= htmlspecialchars($reward['Codice']) ?>"
+                                           required>
+                                    <label class="form-check-label w-100" for="modal_reward_<?= $index ?>">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong class="text-primary"><?= htmlspecialchars($reward['Codice']) ?></strong>
+                                                <br>
+                                                <small class="text-muted"><?= htmlspecialchars($reward['Descrizione']) ?></small>
+                                            </div>
+                                            <i class="fas fa-gift fa-2x text-success"></i>
+                                        </div>
+                                    </label>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <!-- STEP 2: Importo -->
                         <div class="mb-3">
-                            <label for="codice_reward" class="form-label">Scegli una ricompensa (opzionale)</label>
-                            <select class="form-select" id="codice_reward" name="codice_reward">
-                                <option value="">Nessuna ricompensa</option>
-                                <?php foreach ($rewards as $reward): ?>
-                                    <option value="<?= htmlspecialchars($reward['Codice']) ?>">
-                                        <?= htmlspecialchars($reward['Descrizione']) ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                    <?php else: ?>
-                        <!-- Nessuna reward disponibile -->
-                        <input type="hidden" name="codice_reward" value="">
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            Questo progetto non ha ancora reward disponibili.
-                        </div>
-                    <?php endif; ?>
+                            <label for="modal_importo" class="form-label">
+                                <strong><i class="fas fa-euro-sign me-2"></i>Importo da finanziare (€)</strong>
+                            </label>
+                            <input type="number" class="form-control form-control-lg"
+                                   id="modal_importo" name="importo"
+                                   min="1" step="0.01" required
+                                   placeholder="Es: 25.00">
 
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-modern btn-lg">
-                            <i class="fas fa-paper-plane me-2"></i>Conferma Finanziamento
-                        </button>
+                            <div class="mt-2 d-flex justify-content-around">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="setModalAmount(10)">€10</button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="setModalAmount(25)">€25</button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="setModalAmount(50)">€50</button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="setModalAmount(100)">€100</button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="setModalAmount(250)">€250</button>
+                            </div>
+                        </div>
+
+                        <!-- Riepilogo -->
+                        <div class="card bg-light mb-3" id="modalSummary" style="display: none;">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <i class="fas fa-clipboard-list me-2"></i>Riepilogo
+                                </h6>
+                                <p class="mb-1"><strong>Reward:</strong> <span id="selectedRewardName">-</span></p>
+                                <p class="mb-0"><strong>Importo:</strong> <span id="selectedAmountDisplay">€0.00</span></p>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success btn-lg" id="modalSubmitBtn" disabled>
+                                <i class="fas fa-paper-plane me-2"></i>Conferma Finanziamento
+                            </button>
+                        </div>
+                    </form>
+
+                <?php else: ?>
+                    <!-- ✅ Progetto senza reward - non finanziabile -->
+                    <div class="alert alert-warning text-center">
+                        <i class="fas fa-exclamation-triangle fa-3x mb-3 text-warning"></i>
+                        <h5>Progetto Non Ancora Finanziabile</h5>
+                        <p class="mb-3">
+                            Questo progetto non ha ancora definito le reward per i sostenitori.
+                            <br>
+                            Il creatore deve aggiungere almeno una reward prima che il progetto possa ricevere finanziamenti.
+                        </p>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Torna più tardi per vedere se sono state aggiunte delle reward!
+                        </small>
                     </div>
-                </form>
+                <?php endif; ?>
             </div>
+
+            <?php if (empty($rewards)): ?>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Chiudi
+                    </button>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
+
+<!-- ✅ JavaScript per il modal (aggiungi prima della chiusura del body) -->
+<script>
+    // Funzione per impostare importo rapido
+    function setModalAmount(amount) {
+        const importoInput = document.getElementById('modal_importo');
+        if (importoInput) {
+            importoInput.value = amount;
+            document.getElementById('selectedAmountDisplay').textContent = `€${amount}.00`;
+            checkModalFormCompletion();
+        }
+    }
+
+    // Verifica completezza form
+    function checkModalFormCompletion() {
+        const selectedReward = document.querySelector('input[name="codice_reward"]:checked');
+        const importo = parseFloat(document.getElementById('modal_importo')?.value || 0);
+
+        const isComplete = selectedReward && importo > 0;
+
+        // Abilita/disabilita submit
+        const submitBtn = document.getElementById('modalSubmitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = !isComplete;
+        }
+
+        // Mostra/nascondi riepilogo
+        const summary = document.getElementById('modalSummary');
+        if (summary) {
+            summary.style.display = isComplete ? 'block' : 'none';
+        }
+
+        // Aggiorna testo reward selezionata
+        if (selectedReward) {
+            const rewardCode = selectedReward.value;
+            const rewardDesc = selectedReward.closest('.form-check').querySelector('.text-muted').textContent;
+            document.getElementById('selectedRewardName').textContent = `${rewardCode} - ${rewardDesc}`;
+        }
+    }
+
+    // Inizializzazione quando il DOM è pronto
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('✅ Modal finanziamento inizializzato');
+
+        // Listener per selezione reward
+        document.querySelectorAll('input[name="codice_reward"]').forEach(radio => {
+            radio.addEventListener('change', checkModalFormCompletion);
+        });
+
+        // Listener per input importo
+        const modalImporto = document.getElementById('modal_importo');
+        if (modalImporto) {
+            modalImporto.addEventListener('input', function() {
+                const amount = parseFloat(this.value) || 0;
+                document.getElementById('selectedAmountDisplay').textContent = `€${amount.toFixed(2)}`;
+                checkModalFormCompletion();
+            });
+        }
+
+        // Validazione form submit
+        const quickForm = document.getElementById('quickFundingForm');
+        if (quickForm) {
+            quickForm.addEventListener('submit', function(e) {
+                const selectedReward = document.querySelector('input[name="codice_reward"]:checked');
+                const importo = parseFloat(document.getElementById('modal_importo').value || 0);
+
+                if (!selectedReward) {
+                    e.preventDefault();
+                    alert('⚠️ Devi selezionare una reward per continuare!');
+                    return false;
+                }
+
+                if (importo <= 0) {
+                    e.preventDefault();
+                    alert('⚠️ Inserisci un importo valido maggiore di zero!');
+                    return false;
+                }
+
+                // Mostra loading
+                const submitBtn = document.getElementById('modalSubmitBtn');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Elaborazione...';
+
+                return true;
+            });
+        }
+
+        // Reset form quando si apre il modal
+        const modal = document.getElementById('finanziaModal');
+        if (modal) {
+            modal.addEventListener('show.bs.modal', function() {
+                // Reset form
+                const form = document.getElementById('quickFundingForm');
+                if (form) {
+                    form.reset();
+                    checkModalFormCompletion();
+                }
+            });
+        }
+    });
+
+    // Test function per debug
+    function testModal() {
+        console.log('🔍 Test modal:', {
+            modal: document.getElementById('finanziaModal') ? 'OK' : 'MISSING',
+            form: document.getElementById('quickFundingForm') ? 'OK' : 'MISSING',
+            rewards: document.querySelectorAll('input[name="codice_reward"]').length,
+            importo: document.getElementById('modal_importo') ? 'OK' : 'MISSING'
+        });
+    }
+</script>
 
 <script>
     window.addEventListener('DOMContentLoaded', () => {
