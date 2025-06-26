@@ -150,7 +150,7 @@ CREATE TABLE FINANZIAMENTO(
 -- Tabella CANDIDATURA
 CREATE TABLE CANDIDATURA(
     ID                  INT AUTO_INCREMENT PRIMARY KEY,
-    Esito               BOOLEAN DEFAULT FALSE,
+    Esito               BOOLEAN DEFAULT NULL,
     Data_Candidatura    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     Email_Utente        VARCHAR(100) NOT NULL,
     ID_Profilo          INT NOT NULL,
@@ -323,8 +323,8 @@ IF v_Count > 0 THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'L utente non possiede tutte le skill richieste per questo profilo';
 ELSE
-        INSERT INTO CANDIDATURA (Esito, Email_Utente, ID_Profilo)
-        VALUES (FALSE, p_Email, p_IDProfilo);
+        INSERT INTO CANDIDATURA (Email_Utente, ID_Profilo, Esito, Data_Candidatura)
+        VALUES (p_Email, p_IDProfilo, NULL, NOW());
 END IF;
 END $$
 

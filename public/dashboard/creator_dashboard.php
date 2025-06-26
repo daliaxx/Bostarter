@@ -72,6 +72,34 @@ try {
         SELECT c.ID, c.Data_Candidatura, c.Esito, u.Nickname, u.Nome, u.Cognome,
             pr.Nome as Nome_Profilo, p.Nome as Nome_Progetto
         FROM CANDIDATURA c
+    SELECT c.ID, c.Data_Candidatura, c.Esito, u.Nickname, u.Nome, u.Cognome,
+        pr.Nome as Nome_Profilo, p.Nome as Nome_Progetto
+    FROM CANDIDATURA c
+    JOIN UTENTE u ON c.Email_Utente = u.Email
+    JOIN PROFILO pr ON c.ID_Profilo = pr.ID
+    JOIN PROGETTO p ON pr.Nome_Progetto = p.Nome
+    WHERE p.Email_Creatore = ?
+    ORDER BY 
+        CASE 
+            WHEN c.Esito IS NULL THEN 0  -- Candidature in attesa vengono prima
+            WHEN c.Esito = 1 THEN 1      -- Candidature accettate
+            ELSE 2                       -- Candidature rifiutate per ultime
+        END,
+        c.Data_Candidatura DESC
+    LIMIT 20
+", [$userEmail]);
+
+// ✅ DEBUG: Stampa i valori per capire cosa succede
+    error_log("🔍 Debug candidature per $userEmail:");
+    foreach ($candidatureRicevute as $cand) {
+        error_log("- ID: {$cand['ID']}, Esito: " . var_export($cand['Esito'], true) . ", Nickname: {$cand['Nickname']}");
+    }
+
+    // Commenti recenti sui miei progetti
+    $commentiRecenti = $db->fetchAll("
+        SELECT c.*, u.Nickname, p.Nome as Nome_Progetto,
+               r.Testo as Mia_Risposta
+        FROM COMMENTO c
         JOIN UTENTE u ON c.Email_Utente = u.Email
         JOIN PROFILO pr ON c.ID_Profilo = pr.ID
         JOIN PROGETTO p ON pr.Nome_Progetto = p.Nome
@@ -517,7 +545,14 @@ try {
                                             <button class="btn btn-danger btn-sm flex-fill" name="azione" value="rifiuta" title="Rifiuta candidatura">
                                                 <i class="fas fa-times me-1"></i>Rifiuta
                                             </button>
-                                        </form>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle"></i>
+                                                Candidatura già processata
+                                            </small>
+                                        </div>
                                     <?php endif; ?>
 
                                 </div>
@@ -526,8 +561,6 @@ try {
                     <?php endif; ?>
                 </div>
             </div>
-
-
             <!-- Commenti recenti -->
             <div class="card">
                 <div class="card-header">
@@ -598,33 +631,190 @@ try {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // Gestione candidature
+    // ================================================================
+    // FIX BUG #4: CANDIDATURE ACCETTAZIONE/RIFIUTO
+    // File: creator_dashboard.php (parte JavaScript)
+    // ================================================================
+
+    // ✅ FUNZIONE CORRETTA per gestire candidature
     function gestisciCandidatura(idCandidatura, accettata) {
-        if (!confirm(accettata ? 'Vuoi accettare questa candidatura?' : 'Vuoi rifiutare questa candidatura?')) {
+        // Validazione input
+        if (!idCandidatura || idCandidatura <= 0) {
+            mostraToast('ID candidatura non valido', 'error');
             return;
         }
 
+        // Conferma azione
+        const azione = accettata ? 'accettare' : 'rifiutare';
+        const conferma = confirm(`Sei sicuro di voler ${azione} questa candidatura?`);
+
+        if (!conferma) {
+            return;
+        }
+
+        // Disabilita i bottoni per evitare click multipli
+        const bottoniCandidatura = document.querySelectorAll(`[onclick*="${idCandidatura}"]`);
+        bottoniCandidatura.forEach(btn => {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Elaborazione...';
+        });
+
+        // Prepara i dati
         const formData = new FormData();
         formData.append('id_candidatura', idCandidatura);
         formData.append('accettata', accettata ? '1' : '0');
 
+        // Debug per verificare i dati inviati
+        console.log('🔍 Gestione candidatura:', {
+            id: idCandidatura,
+            accettata: accettata ? '1' : '0'
+        });
+
+        // Chiamata API
         fetch('../../api/gestisci_candidatura.php', {
             method: 'POST',
             body: formData
         })
-            .then(response => response.json())
+            .then(response => {
+                // Verifica se la risposta è JSON valida
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('✅ Risposta API:', data);
+
                 if (data.success) {
                     mostraToast(data.message, 'success');
-                    setTimeout(() => location.reload(), 1500);
+
+                    // Aggiorna l'UI senza ricaricare la pagina
+                    aggiornaUICandidatura(idCandidatura, accettata, data.candidatura);
+
+                    // Opzionale: ricarica dopo 2 secondi per aggiornare tutto
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
                 } else {
-                    mostraToast(data.message, 'error');
+                    mostraToast(data.message || 'Errore sconosciuto', 'error');
+                    // Riabilita i bottoni in caso di errore
+                    riabilitaBottoniCandidatura(idCandidatura);
                 }
             })
             .catch(error => {
-                mostraToast('Errore di connessione', 'error');
+                console.error('❌ Errore:', error);
+                mostraToast(`Errore di connessione: ${error.message}`, 'error');
+                // Riabilita i bottoni in caso di errore
+                riabilitaBottoniCandidatura(idCandidatura);
             });
     }
+
+    // ✅ Funzione per aggiornare UI senza reload
+    function aggiornaUICandidatura(idCandidatura, accettata, candidaturaData) {
+        // Trova la card della candidatura
+        const candidaturaCard = document.querySelector(`[data-candidatura-id="${idCandidatura}"]`);
+
+        if (candidaturaCard) {
+            // Aggiorna la classe CSS
+            candidaturaCard.className = candidaturaCard.className
+                    .replace(/candidatura-(pending|accepted|rejected)/, '') +
+                ` candidatura-${accettata ? 'accepted' : 'rejected'}`;
+
+            // Aggiorna il badge
+            const badge = candidaturaCard.querySelector('.badge');
+            if (badge) {
+                badge.className = `badge bg-${accettata ? 'success' : 'danger'}`;
+                badge.textContent = accettata ? 'Accettata' : 'Rifiutata';
+            }
+
+            // Rimuovi i bottoni di azione
+            const bottoniContainer = candidaturaCard.querySelector('.d-flex.gap-1');
+            if (bottoniContainer) {
+                bottoniContainer.remove();
+            }
+        }
+    }
+
+    // ✅ Funzione per riabilitare bottoni in caso di errore
+    function riabilitaBottoniCandidatura(idCandidatura) {
+        const bottoniCandidatura = document.querySelectorAll(`[onclick*="${idCandidatura}"]`);
+        bottoniCandidatura.forEach((btn, index) => {
+            btn.disabled = false;
+            if (btn.classList.contains('btn-success')) {
+                btn.innerHTML = '<i class="fas fa-check me-1"></i>Accetta';
+            } else if (btn.classList.contains('btn-danger')) {
+                btn.innerHTML = '<i class="fas fa-times me-1"></i>Rifiuta';
+            }
+        });
+    }
+
+    // ✅ Funzione migliorata per mostrare toast
+    function mostraToast(message, type = 'info') {
+        const toastContainer = document.querySelector('.toast-container');
+        const toast = document.getElementById('toastNotifica');
+        const toastMessage = document.getElementById('toastMessage');
+
+        if (!toast || !toastMessage) {
+            // Fallback se il toast non esiste
+            if (type === 'error') {
+                alert(`❌ ${message}`);
+            } else {
+                alert(`✅ ${message}`);
+            }
+            return;
+        }
+
+        // Configura il toast
+        toastMessage.textContent = message;
+
+        // Colori in base al tipo
+        const colorClasses = {
+            'success': 'bg-success text-white',
+            'error': 'bg-danger text-white',
+            'warning': 'bg-warning text-dark',
+            'info': 'bg-info text-white'
+        };
+
+        toast.className = `toast ${colorClasses[type] || colorClasses.info}`;
+
+        // Mostra il toast
+        const bsToast = new bootstrap.Toast(toast, {
+            autohide: true,
+            delay: type === 'error' ? 5000 : 3000
+        });
+        bsToast.show();
+    }
+
+    // ✅ Debug function per testare
+    function debugCandidature() {
+        console.log('🔍 Debug candidature disponibili:');
+        const candidature = document.querySelectorAll('[data-candidatura-id]');
+        candidature.forEach(card => {
+            const id = card.getAttribute('data-candidatura-id');
+            const stato = card.className.includes('pending') ? 'pending' :
+                card.className.includes('accepted') ? 'accepted' : 'rejected';
+            console.log(`- ID: ${id}, Stato: ${stato}`);
+        });
+    }
+
+    // ✅ Inizializzazione quando il DOM è pronto
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('✅ Sistema gestione candidature caricato');
+
+        // Debug opzionale
+        if (window.location.search.includes('debug=1')) {
+            debugCandidature();
+        }
+
+        // Auto-refresh ogni 5 minuti per nuove candidature
+        setInterval(() => {
+            // Solo se non ci sono azioni in corso
+            const bottoniDisabilitati = document.querySelectorAll('button[disabled]');
+            if (bottoniDisabilitati.length === 0) {
+                location.reload();
+            }
+        }, 300000); // 5 minuti
+    });
 
     // Risposta ai commenti
     function rispondiCommento(commentoId, nomeProgetto) {

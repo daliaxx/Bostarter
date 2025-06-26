@@ -20,7 +20,7 @@ $isCreator = SessionManager::isCreator();
 $isAdmin = SessionManager::isAdmin();
 
 // Variabili filtro iniziali
-$searchQuery = $_GET['q'] ?? '';
+$searchQuery = trim($_GET['search'] ?? '');
 $statusFilter = $_GET['status'] ?? 'all';
 $categoryFilter = $_GET['category'] ?? 'all';
 
