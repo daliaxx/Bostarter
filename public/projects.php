@@ -65,8 +65,6 @@ $sql = "
     LEFT JOIN FOTO foto ON p.Nome = foto.Nome_Progetto
     $whereClause
     GROUP BY p.Nome, p.Descrizione, p.Data_Inserimento, p.Stato, p.Budget, p.Data_Limite, p.Tipo, u.Nickname, c.Affidabilita, foto.percorso
-     AND p.Stato = 'aperto'
-    AND p.Data_Limite >= CURDATE()
     ORDER BY p.Data_Inserimento DESC
 ";
 

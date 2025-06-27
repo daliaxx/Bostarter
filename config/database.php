@@ -42,15 +42,6 @@ class Database {
 
             $this->conn = new PDO($dsn, DB_USER, DB_PASS, $options);
 
-            /* Failsafe: chiude i progetti la cui data è passata */
-                $this->conn->exec("
-                    UPDATE PROGETTO
-                    SET Stato = 'scaduto'
-                    WHERE Stato      = 'aperto'
-                    AND Data_Limite < CURDATE()
-                ");
-
-
             if (DEBUG_MODE) {
                 error_log("✅ Database connesso: " . DB_HOST . "/" . DB_NAME);
             }
