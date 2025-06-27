@@ -54,6 +54,22 @@ $sql = "
 ";
 
 $progetto = $db->fetchOne($sql, [$nomeProgetto]);
+/* ─── Failsafe per lo stato ───────────────────────────────
+   Se il progetto è ancora “aperto” nel DB ma la data limite
+   è ormai passata, lo forziamo a “scaduto” così la UI è
+   sempre coerente, anche se il cron/evento notturno non
+   fosse ancora partito. */
+$oggi     = new DateTimeImmutable('today');
+$limite   = new DateTimeImmutable($progetto['Data_Limite']);
+
+if ($progetto['Stato'] === 'aperto' && $limite < $oggi) {
+    $progetto['Stato'] = 'scaduto';
+}
+
+/* (opzionale) aggiorna il contatore dei giorni in base alle
+   stesse date, se non arriva già dalla query SQL */
+$progetto['Giorni_Rimanenti'] = (int) $oggi->diff($limite)->format('%r%a');
+
 if (!$progetto) {
     die("<h3>Progetto non trovato.</h3>");
 }
