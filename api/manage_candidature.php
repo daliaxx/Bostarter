@@ -1,7 +1,7 @@
 <?php
 /**
  * BOSTARTER - API Gestione Candidature Unificata
- * File: api/manage_candidature.php
+ * File: api/
  */
 
 require_once '../config/database.php';
