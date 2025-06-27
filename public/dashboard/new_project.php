@@ -25,21 +25,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tipo = $_POST['tipo'] ?? '';
     $email = $_SESSION['user_email'];
 
-    // ✅ REWARD - Recupera le reward dal form
+    // Recupera reward o componenti in base al tipo
     $rewards = [];
-    if (isset($_POST['reward_codes']) && isset($_POST['reward_descriptions'])) {
-        $rewardCodes = $_POST['reward_codes'];
-        $rewardDescriptions = $_POST['reward_descriptions'];
+    $componenti = [];
 
-        for ($i = 0; $i < count($rewardCodes); $i++) {
-            $code = trim($rewardCodes[$i]);
-            $desc = trim($rewardDescriptions[$i]);
+    if ($tipo === 'Software') {
+        // Per progetti software, recupera le reward
+        if (isset($_POST['reward_codes']) && isset($_POST['reward_descriptions'])) {
+            $rewardCodes = $_POST['reward_codes'];
+            $rewardDescriptions = $_POST['reward_descriptions'];
 
-            if (!empty($code) && !empty($desc)) {
-                $rewards[] = [
-                    'codice' => $code,
-                    'descrizione' => $desc
-                ];
+            for ($i = 0; $i < count($rewardCodes); $i++) {
+                $code = trim($rewardCodes[$i]);
+                $desc = trim($rewardDescriptions[$i]);
+
+                if (!empty($code) && !empty($desc)) {
+                    $rewards[] = [
+                        'codice' => $code,
+                        'descrizione' => $desc
+                    ];
+                }
+            }
+        }
+    } elseif ($tipo === 'Hardware') {
+        // Per progetti hardware, recupera i componenti
+        if (isset($_POST['component_names']) && isset($_POST['component_descriptions'])
+            && isset($_POST['component_prices']) && isset($_POST['component_quantities'])) {
+
+            $componentNames = $_POST['component_names'];
+            $componentDescriptions = $_POST['component_descriptions'];
+            $componentPrices = $_POST['component_prices'];
+            $componentQuantities = $_POST['component_quantities'];
+
+            for ($i = 0; $i < count($componentNames); $i++) {
+                $name = trim($componentNames[$i]);
+                $desc = trim($componentDescriptions[$i]);
+                $price = floatval($componentPrices[$i]);
+                $quantity = intval($componentQuantities[$i]);
+
+                if (!empty($name) && !empty($desc) && $price > 0 && $quantity > 0) {
+                    $componenti[] = [
+                        'nome' => $name,
+                        'descrizione' => $desc,
+                        'prezzo' => $price,
+                        'quantita' => $quantity
+                    ];
+                }
             }
         }
     }
@@ -49,15 +80,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error_message = "Tutti i campi sono obbligatori e devono essere validi.";
     } elseif (strtotime($data_limite) <= strtotime(date('Y-m-d'))) {
         $error_message = "La data limite deve essere futura.";
-    } elseif (empty($rewards)) {
-        $error_message = "Devi aggiungere almeno una reward per il tuo progetto.";
+    } elseif ($tipo === 'Software' && empty($rewards)) {
+        $error_message = "Devi aggiungere almeno una reward per il progetto Software.";
+    } elseif ($tipo === 'Hardware' && empty($componenti)) {
+        $error_message = "Devi aggiungere almeno un componente per il progetto Hardware.";
     } else {
-        // Verifica che i codici reward siano univoci
-        $codiciUnivoci = array_unique(array_column($rewards, 'codice'));
-        if (count($codiciUnivoci) !== count($rewards)) {
-            $error_message = "I codici delle reward devono essere univoci.";
-        } else {
-            // Verifica che il nome progetto non esista già
+        // Verifica univocità dei codici/nomi
+        if ($tipo === 'Software') {
+            $codiciUnivoci = array_unique(array_column($rewards, 'codice'));
+            if (count($codiciUnivoci) !== count($rewards)) {
+                $error_message = "I codici delle reward devono essere univoci.";
+            }
+        } elseif ($tipo === 'Hardware') {
+            $nomiUnivoci = array_unique(array_column($componenti, 'nome'));
+            if (count($nomiUnivoci) !== count($componenti)) {
+                $error_message = "I nomi dei componenti devono essere univoci.";
+            }
+        }
+
+        // Verifica che il nome progetto non esista già
+        if (empty($error_message)) {
             $progettoEsistente = $db->fetchOne("SELECT Nome FROM PROGETTO WHERE Nome = ?", [$nome]);
             if ($progettoEsistente) {
                 $error_message = "Esiste già un progetto con questo nome.";
@@ -93,6 +135,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $budget,
                 $data_limite,
                 $stato,
+                $tipo,
                 $email
             ]);
 
@@ -104,17 +147,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
             }
 
-            // 3. ✅ INSERISCI LE REWARD OBBLIGATORIE
-            foreach ($rewards as $reward) {
-                $db->execute("
-                    INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) 
-                    VALUES (?, ?, 'default_reward.jpg', ?)
-                ", [$reward['codice'], $reward['descrizione'], $nome]);
+            // 3. Inserisci reward (solo per Software) o componenti (solo per Hardware)
+            if ($tipo === 'Software') {
+                foreach ($rewards as $reward) {
+                    $db->execute("
+                        INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) 
+                        VALUES (?, ?, 'default_reward.jpg', ?)
+                    ", [$reward['codice'], $reward['descrizione'], $nome]);
+                }
+                $countItems = count($rewards);
+                $itemType = "reward";
+            } else {
+                foreach ($componenti as $componente) {
+                    $db->execute("
+                        INSERT INTO COMPONENTE (Nome, Descrizione, Prezzo, Quantita, Nome_Progetto) 
+                        VALUES (?, ?, ?, ?, ?)
+                    ", [
+                        $componente['nome'],
+                        $componente['descrizione'],
+                        $componente['prezzo'],
+                        $componente['quantita'],
+                        $nome
+                    ]);
+                }
+                $countItems = count($componenti);
+                $itemType = "componenti";
             }
 
             $db->commit();
 
-            $success_message = "Progetto '{$nome}' creato con successo con " . count($rewards) . " reward!";
+            $success_message = "Progetto '{$nome}' ({$tipo}) creato con successo con {$countItems} {$itemType}!";
 
             // Redirect dopo 2 secondi
             header("refresh:2;url=creator_dashboard.php");
@@ -157,7 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-body {
             padding: 2rem;
         }
-        .reward-item {
+        .reward-item, .component-item {
             background: #f8f9fa;
             border: 2px solid #e9ecef;
             border-radius: 10px;
@@ -169,22 +231,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-color: #007bff;
             background: #e3f2fd;
         }
+        .component-item:hover {
+            border-color: #28a745;
+            background: #e8f5e8;
+        }
         .btn-add-reward {
+            background: linear-gradient(45deg, #007bff, #6f42c1);
+            border: none;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-add-component {
             background: linear-gradient(45deg, #28a745, #20c997);
             border: none;
             color: white;
             transition: all 0.3s ease;
         }
-        .btn-add-reward:hover {
+        .btn-add-reward:hover, .btn-add-component:hover {
             transform: translateY(-2px);
             color: white;
         }
-        .btn-remove-reward {
+        .btn-remove {
             background: linear-gradient(45deg, #dc3545, #c82333);
             border: none;
             color: white;
         }
-        .reward-counter {
+        .counter {
             background: linear-gradient(45deg, #17a2b8, #138496);
             color: white;
             padding: 0.5rem 1rem;
@@ -215,7 +287,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="form-container">
         <div class="form-header">
             <h2><i class="fas fa-plus-circle me-2"></i>Crea un Nuovo Progetto</h2>
-            <p class="lead mb-0">Lancia la tua idea innovativa con reward accattivanti</p>
+            <p class="lead mb-0">Lancia la tua idea innovativa</p>
         </div>
 
         <div class="form-body">
@@ -286,14 +358,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <small class="form-text text-muted">Carica un'immagine rappresentativa del tuo progetto.</small>
                 </div>
 
-                <!-- ✅ SEZIONE REWARD OBBLIGATORIE -->
-                <div class="card border-primary mb-4">
+                <!-- SEZIONE REWARD (solo per Software) -->
+                <div class="card border-primary mb-4" id="rewardsSection" style="display: none;">
                     <div class="card-header bg-primary text-white">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
                                 <i class="fas fa-gift me-2"></i>Reward del Progetto
                             </h5>
-                            <span class="reward-counter">
+                            <span class="counter">
                                 <span id="rewardCount">0</span> reward
                             </span>
                         </div>
@@ -318,9 +390,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
 
+                <!-- SEZIONE COMPONENTI (solo per Hardware) -->
+                <div class="card border-success mb-4" id="componentsSection" style="display: none;">
+                    <div class="card-header bg-success text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-microchip me-2"></i>Componenti Hardware Necessari
+                            </h5>
+                            <span class="counter">
+                                <span id="componentCount">0</span> componenti
+                            </span>
+                        </div>
+                        <small>Elenca i componenti fisici necessari per realizzare il progetto (minimo 1 richiesto)</small>
+                    </div>
+                    <div class="card-body">
+                        <div id="componentsContainer">
+                            <!-- I componenti verranno aggiunti qui dinamicamente -->
+                        </div>
+
+                        <button type="button" class="btn btn-add-component" onclick="addComponent()">
+                            <i class="fas fa-plus me-2"></i>Aggiungi Componente
+                        </button>
+
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <strong>Esempi di componenti:</strong> Sensori, motori, circuiti, batterie, case, connettori,
+                                display, microcontrollori, antenne, alimentatori, ecc.
+                            </small>
+                        </div>
+
+                        <!-- Riepilogo costi -->
+                        <div id="componentsSummary" class="mt-4 p-3 bg-light rounded" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Totale Componenti:</strong> <span id="totalComponents">0</span>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Costo Stimato:</strong> <span id="totalCost">€0.00</span>
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-calculator me-1"></i>
+                                Costo indicativo dei materiali necessari
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="d-grid gap-2">
                     <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="fas fa-rocket me-2"></i>Crea Progetto con Reward
+                        <i class="fas fa-rocket me-2"></i>Crea Progetto
                     </button>
                     <a href="creator_dashboard.php" class="btn btn-outline-secondary btn-lg">
                         <i class="fas fa-arrow-left me-2"></i>Torna alla Dashboard
@@ -335,8 +455,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <script>
     let rewardCount = 0;
+    let componentCount = 0;
 
-    // ✅ Funzione per aggiungere una reward
+    // Mostra/nascondi sezioni in base al tipo progetto
+    document.getElementById('tipo').addEventListener('change', function() {
+        const tipo = this.value;
+        const rewardsSection = document.getElementById('rewardsSection');
+        const componentsSection = document.getElementById('componentsSection');
+
+        if (tipo === 'Software') {
+            rewardsSection.style.display = 'block';
+            componentsSection.style.display = 'none';
+            // Aggiungi automaticamente una reward se non ce ne sono
+            if (rewardCount === 0) {
+                addReward();
+            }
+        } else if (tipo === 'Hardware') {
+            rewardsSection.style.display = 'none';
+            componentsSection.style.display = 'block';
+            // Aggiungi automaticamente un componente se non ce ne sono
+            if (componentCount === 0) {
+                addComponent();
+            }
+        } else {
+            rewardsSection.style.display = 'none';
+            componentsSection.style.display = 'none';
+        }
+    });
+
+    // Funzione per aggiungere una reward
     function addReward() {
         rewardCount++;
 
@@ -363,7 +510,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="col-md-1 d-flex align-items-end">
                     <button type="button"
-                            class="btn btn-remove-reward btn-sm"
+                            class="btn btn-remove btn-sm"
                             onclick="removeReward(${rewardCount})"
                             title="Rimuovi reward">
                         <i class="fas fa-trash"></i>
@@ -377,7 +524,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         updateRewardCount();
     }
 
-    // ✅ Funzione per rimuovere una reward
+    // Funzione per rimuovere una reward
     function removeReward(id) {
         const rewardElement = document.getElementById(`reward_${id}`);
         if (rewardElement) {
@@ -386,40 +533,167 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // ✅ Aggiorna il contatore delle reward
+    // Aggiorna il contatore delle reward
     function updateRewardCount() {
         const currentRewards = document.querySelectorAll('.reward-item').length;
         document.getElementById('rewardCount').textContent = currentRewards;
     }
 
-    // ✅ Validazione form prima dell'invio
-    document.getElementById('projectForm').addEventListener('submit', function(e) {
-        const rewards = document.querySelectorAll('.reward-item').length;
+    // Funzione per aggiungere componente
+    function addComponent() {
+        componentCount++;
 
-        if (rewards === 0) {
-            e.preventDefault();
-            alert('⚠️ Devi aggiungere almeno una reward per il tuo progetto!');
-            return false;
+        const componentHtml = `
+        <div class="component-item" id="component_${componentCount}">
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">Nome Componente</label>
+                    <input type="text"
+                           name="component_names[]"
+                           class="form-control"
+                           placeholder="es: Sensore Temperatura"
+                           required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Descrizione</label>
+                    <input type="text"
+                           name="component_descriptions[]"
+                           class="form-control"
+                           placeholder="es: Sensore digitale DS18B20"
+                           required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Prezzo (€)</label>
+                    <input type="number"
+                           name="component_prices[]"
+                           class="form-control component-price"
+                           placeholder="25.00"
+                           step="0.01"
+                           min="0.01"
+                           required
+                           onchange="updateComponentsSummary()">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Quantità</label>
+                    <input type="number"
+                           name="component_quantities[]"
+                           class="form-control component-quantity"
+                           placeholder="2"
+                           min="1"
+                           required
+                           onchange="updateComponentsSummary()">
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="button"
+                            class="btn btn-remove btn-sm"
+                            onclick="removeComponent(${componentCount})"
+                            title="Rimuovi componente">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+        document.getElementById('componentsContainer').insertAdjacentHTML('beforeend', componentHtml);
+        updateComponentsCount();
+        updateComponentsSummary();
+    }
+
+    // Funzione per rimuovere componente
+    function removeComponent(id) {
+        const componentElement = document.getElementById(`component_${id}`);
+        if (componentElement) {
+            componentElement.remove();
+            updateComponentsCount();
+            updateComponentsSummary();
+        }
+    }
+
+    // Aggiorna contatore componenti
+    function updateComponentsCount() {
+        const currentComponents = document.querySelectorAll('.component-item').length;
+        document.getElementById('componentCount').textContent = currentComponents;
+    }
+
+    // Aggiorna riepilogo costi
+    function updateComponentsSummary() {
+        const components = document.querySelectorAll('.component-item');
+        const summaryDiv = document.getElementById('componentsSummary');
+
+        if (components.length === 0) {
+            summaryDiv.style.display = 'none';
+            return;
         }
 
-        // Verifica che tutti i campi reward siano compilati
-        const rewardCodes = document.querySelectorAll('input[name="reward_codes[]"]');
-        const rewardDescriptions = document.querySelectorAll('input[name="reward_descriptions[]"]');
+        let totalCost = 0;
+        let totalComponents = 0;
 
-        for (let i = 0; i < rewardCodes.length; i++) {
-            if (!rewardCodes[i].value.trim() || !rewardDescriptions[i].value.trim()) {
+        components.forEach(component => {
+            const price = parseFloat(component.querySelector('.component-price').value) || 0;
+            const quantity = parseInt(component.querySelector('.component-quantity').value) || 0;
+            totalCost += price * quantity;
+            totalComponents += quantity;
+        });
+
+        document.getElementById('totalComponents').textContent = totalComponents;
+        document.getElementById('totalCost').textContent = `€${totalCost.toFixed(2)}`;
+
+        summaryDiv.style.display = 'block';
+    }
+
+    // Validazione form prima dell'invio
+    document.getElementById('projectForm').addEventListener('submit', function(e) {
+        const tipo = document.getElementById('tipo').value;
+
+        if (tipo === 'Software') {
+            const rewards = document.querySelectorAll('.reward-item').length;
+
+            if (rewards === 0) {
                 e.preventDefault();
-                alert('⚠️ Tutti i campi delle reward devono essere compilati!');
+                alert('Devi aggiungere almeno una reward per il progetto Software!');
                 return false;
+            }
+
+            // Verifica che tutti i campi reward siano compilati
+            const rewardCodes = document.querySelectorAll('input[name="reward_codes[]"]');
+            const rewardDescriptions = document.querySelectorAll('input[name="reward_descriptions[]"]');
+
+            for (let i = 0; i < rewardCodes.length; i++) {
+                if (!rewardCodes[i].value.trim() || !rewardDescriptions[i].value.trim()) {
+                    e.preventDefault();
+                    alert('Tutti i campi delle reward devono essere compilati!');
+                    return false;
+                }
+            }
+        } else if (tipo === 'Hardware') {
+            const components = document.querySelectorAll('.component-item').length;
+
+            if (components === 0) {
+                e.preventDefault();
+                alert('Devi aggiungere almeno un componente per il progetto Hardware!');
+                return false;
+            }
+
+            // Verifica che tutti i campi componenti siano compilati
+            const componentNames = document.querySelectorAll('input[name="component_names[]"]');
+            const componentDescriptions = document.querySelectorAll('input[name="component_descriptions[]"]');
+            const componentPrices = document.querySelectorAll('input[name="component_prices[]"]');
+            const componentQuantities = document.querySelectorAll('input[name="component_quantities[]"]');
+
+            for (let i = 0; i < componentNames.length; i++) {
+                if (!componentNames[i].value.trim() ||
+                    !componentDescriptions[i].value.trim() ||
+                    !componentPrices[i].value ||
+                    !componentQuantities[i].value) {
+                    e.preventDefault();
+                    alert('Tutti i campi dei componenti devono essere compilati!');
+                    return false;
+                }
             }
         }
 
         return true;
-    });
-
-    // ✅ Aggiungi automaticamente una reward all'avvio
-    document.addEventListener('DOMContentLoaded', function() {
-        addReward(); // Prima reward di default
     });
 </script>
 </body>

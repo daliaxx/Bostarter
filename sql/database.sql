@@ -253,7 +253,7 @@ BEGIN
     END IF;
 END$$
 
--- Procedure per inserimento progetto
+--- Procedure per inserimento progetto
 CREATE PROCEDURE InserisciProgetto(
     IN p_Nome VARCHAR(100),
     IN p_Descrizione TEXT,
@@ -261,13 +261,12 @@ CREATE PROCEDURE InserisciProgetto(
     IN p_Budget DECIMAL(10,2),
     IN p_DataLimite DATE,
     IN p_Stato ENUM('aperto', 'chiuso'),
-    IN p_EmailCreatore VARCHAR(100),
-    IN p_Tipo ENUM('Hardware', 'Software')
-
+    IN p_Tipo ENUM('Hardware', 'Software'),
+    IN p_EmailCreatore VARCHAR(100)
         )
 BEGIN
-INSERT INTO PROGETTO (Nome, Descrizione, Data_Inserimento, Stato, Budget, Data_Limite, Tipo, Email_Creatore)
-VALUES (p_Nome, p_Descrizione, p_DataInserimento, p_Stato, p_Budget, p_DataLimite, p_Tipo, p_EmailCreatore);
+INSERT INTO PROGETTO (Nome, Descrizione, Data_Inserimento, Budget, Data_Limite, Stato, Tipo, Email_Creatore)
+VALUES (p_Nome, p_Descrizione, p_DataInserimento, p_Budget, p_DataLimite, p_Stato, p_Tipo, p_EmailCreatore);
 END $$
 
 -- Procedure per inserimento foto
@@ -306,6 +305,19 @@ BEGIN
         INSERT INTO SKILL (Competenza, Livello)
         VALUES (p_Competenza, p_Livello);
     END IF;
+END $$
+
+-- Procedure per inserimento componente
+CREATE PROCEDURE InserisciComponente(
+    IN p_Nome VARCHAR(100),
+    IN p_Descrizione TEXT,
+    IN p_Prezzo DECIMAL(10,2),
+    IN p_Quantita INT,
+    IN p_NomeProgetto VARCHAR(100)
+)
+BEGIN
+INSERT INTO COMPONENTE (Nome, Descrizione, Prezzo, Quantita, Nome_Progetto)
+VALUES (p_Nome, p_Descrizione, p_Prezzo, p_Quantita, p_NomeProgetto);
 END $$
 
 -- Procedure per finanziamento progetto
