@@ -1,5 +1,5 @@
 <?php
-require_once '../config/database.php';
+require_once '../../config/database.php';
 
 // Attiva errori in fase di sviluppo
 ini_set('display_errors', 1);
@@ -509,7 +509,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="/Bostarter/public/projects.php">
+                    <a class="nav-link" href="/Bostarter/public/projects/project_detail.php"
                         <i class="fas fa-project-diagram me-1"></i>Progetti
                     </a>
                 </li>
@@ -532,15 +532,15 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                             <li><a class="dropdown-item" href="/Bostarter/public/dashboard/user_dashboard.php"><i class="fas fa-user me-2"></i>Il mio profilo</a></li>
                             <li><a class="dropdown-item" href="/Bostarter/public/statistiche.php"><i class="fas fa-chart-bar me-2"></i>Statistiche</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../auth/logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                            <li><a class="dropdown-item" href="../../auth/logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                         </ul>
                     </li>
                 <?php else: ?>
                     <li class="nav-item">
-                        <a class="nav-link" href="../auth/login.php"><i class="fas fa-sign-in-alt me-1"></i>Accedi</a>
+                        <a class="nav-link" href="../../auth/login.php"><i class="fas fa-sign-in-alt me-1"></i>Accedi</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="../auth/register.php"><i class="fas fa-user-plus me-1"></i>Registrati</a>
+                        <a class="nav-link" href="../../auth/register.php"><i class="fas fa-user-plus me-1"></i>Registrati</a>
                     </li>
                 <?php endif; ?>
             </ul>
@@ -685,7 +685,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                         <?php endif; ?>
                     </div>
                     <div class="card-body">
-                        <form action="/Bostarter/public/manage_comment.php" method="POST">
+                        <form action="/Bostarter/api/manage_comment.php" method="POST">
                             <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
                             <div class="mb-3">
                                 <label for="commentText" class="form-label visually-hidden">Il tuo commento</label>
@@ -783,7 +783,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                             <?php endforeach; ?>
                             
                             <!-- Form candidatura -->
-                            <form action="/Bostarter/public/manage_candidature.php" method="POST" class="mt-3">
+                            <form action="/Bostarter/api/manage_candidature.php" method="POST" class="mt-3">
                                 <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
 
                                 <div class="mb-3">
@@ -861,7 +861,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
 </div>
 
 <!-- ================================================================ -->
-<!-- MODAL FINANZIAMENTO COMPLETO - Sostituisci nel project_detail.php -->
+<!-- MODAL FINANZIAMENTO COMPLETO - Sostituisci nel projects/projects/project_detail.php -->
 <!-- Cerca la sezione <!-- Modal finanziamento --> e sostituisci tutto -->
 <!-- ================================================================ -->
 
@@ -884,7 +884,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                         <strong>Seleziona una reward</strong> per ricevere un ringraziamento speciale dal creatore.
                     </div>
 
-                    <form action="fund_project.php" method="POST" id="quickFundingForm">
+                    <form action="../../api/fund_project.php" method="POST" id="quickFundingForm">
                         <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
 
                         <!-- STEP 1: Reward obbligatoria -->

@@ -44,7 +44,7 @@ if (empty($rewards)) {
                 <h4><i class='fas fa-exclamation-triangle me-2'></i>Progetto Non Finanziabile</h4>
                 <p>Questo progetto non ha ancora definito le reward per i sostenitori.</p>
                 <p>Il creatore deve aggiungere almeno una reward prima che il progetto possa ricevere finanziamenti.</p>
-                <a href='project_detail.php?name=" . urlencode($nomeProgetto) . "' class='btn btn-primary'>
+                <a href='projects/project_detail.php?name=" . urlencode($nomeProgetto) . "' class='btn btn-primary'>
                     <i class='fas fa-arrow-left me-1'></i>Torna al Progetto
                 </a>
             </div>
@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Log per debug
             error_log("✅ Finanziamento inserito - Utente: $emailUtente, Progetto: $nomeProgetto, Importo: $importo, Reward: $codiceReward");
 
-            header("Location: project_detail.php?name=" . urlencode($nomeProgetto) . "&success=finanziato");
+            header("Location: ../public/projects/project_detail.php?name=" . urlencode($nomeProgetto) . "&success=finanziato");
             exit;
 
         } catch (Exception $e) {
@@ -155,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <i class="fas fa-lightbulb me-2"></i>BOSTARTER
         </a>
         <div class="navbar-nav ms-auto">
-            <a class="nav-link" href="project_detail.php?name=<?= urlencode($nomeProgetto) ?>">
+            <a class="nav-link" href="projects/project_detail.php?name=<?= urlencode($nomeProgetto) ?>">
                 <i class="fas fa-arrow-left me-1"></i>Torna al Progetto
             </a>
         </div>
@@ -267,7 +267,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <button type="submit" class="btn btn-success btn-lg" id="submitBtn" disabled>
                         <i class="fas fa-paper-plane me-2"></i>Conferma Finanziamento
                     </button>
-                    <a href="project_detail.php?name=<?= urlencode($nomeProgetto) ?>"
+                    <a href="projects/project_detail.php?name=<?= urlencode($nomeProgetto) ?>"
                        class="btn btn-outline-secondary">
                         <i class="fas fa-times me-2"></i>Annulla
                     </a>

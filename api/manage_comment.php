@@ -17,7 +17,7 @@ try {
     }
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        header('Location: projects.php');
+        header('Location: ../public/projects.php');
         exit;
     }
 
@@ -35,7 +35,7 @@ try {
             exit;
         }
         // Se è form normale, redirect con errore
-        header('Location: project_detail.php?name=' . urlencode($nomeProgetto) . '&error=dati_mancanti');
+        header('Location: ../public/projects/project_detail.php?name=' . urlencode($nomeProgetto) . '&error=dati_mancanti');
         exit;
     }
 
@@ -45,7 +45,7 @@ try {
             echo json_encode(['success' => false, 'message' => 'Il commento non può superare i 500 caratteri.']);
             exit;
         }
-        header('Location: project_detail.php?name=' . urlencode($nomeProgetto) . '&error=commento_troppo_lungo');
+        header('Location: ../public/projects/project_detail.php?name=' . urlencode($nomeProgetto) . '&error=commento_troppo_lungo');
         exit;
     }
 
@@ -56,7 +56,7 @@ try {
             echo json_encode(['success' => false, 'message' => 'Progetto non trovato.']);
             exit;
         }
-        header('Location: projects.php?error=progetto_non_trovato');
+        header('Location: ../public/projects.php?error=progetto_non_trovato');
         exit;
     }
 
@@ -74,7 +74,7 @@ try {
     }
 
     // Se è form normale, redirect con successo
-    header('Location: project_detail.php?name=' . urlencode($nomeProgetto) . '&success=commento_aggiunto');
+    header('Location: ../public/projects/project_detail.php?name=' . urlencode($nomeProgetto) . '&success=commento_aggiunto');
     exit;
 
 } catch (Exception $e) {
@@ -87,7 +87,7 @@ try {
     }
 
     $nomeProgetto = $_POST['nome_progetto'] ?? '';
-    header('Location: project_detail.php?name=' . urlencode($nomeProgetto) . '&error=errore_inserimento');
+    header('Location: ../public/projects/project_detail.php?name=' . urlencode($nomeProgetto) . '&error=errore_inserimento');
     exit;
 }
 ?>

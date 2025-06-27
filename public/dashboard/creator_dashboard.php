@@ -230,7 +230,7 @@ function getCompletionPercentage($raccolto, $budget) {
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="../projects.php">
+        <a class="navbar-brand fw-bold" href="../projects/projects.php">
             <i class="fas fa-rocket me-2"></i>BOSTARTER
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -239,7 +239,7 @@ function getCompletionPercentage($raccolto, $budget) {
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="../projects.php">
+                    <a class="nav-link" href="../projects/projects.php">
                         <i class="fas fa-project-diagram me-1"></i>Progetti
                     </a>
                 </li>
@@ -350,7 +350,7 @@ function getCompletionPercentage($raccolto, $budget) {
             </a>
         </div>
         <div class="col-md-4 mb-3">
-            <a href="../projects.php" class="card quick-action-card text-decoration-none">
+            <a href="../projects/projects.php" class="card quick-action-card text-decoration-none">
                 <div class="card-body text-center">
                     <i class="fas fa-search fa-2x mb-2"></i>
                     <h5 class="card-title">Esplora Progetti</h5>
@@ -437,7 +437,7 @@ function getCompletionPercentage($raccolto, $budget) {
                                     </div>
 
                                     <div class="mt-3">
-                                        <a href="../project_detail.php?name=<?= urlencode($progetto['Nome']) ?>"
+                                        <a href="../projects/projects/project_detail.php?name=<?= urlencode($progetto['Nome']) ?>"
                                            class="btn btn-outline-primary btn-sm">
                                             <i class="fas fa-eye me-1"></i>Visualizza
                                         </a>
@@ -488,7 +488,7 @@ function getCompletionPercentage($raccolto, $budget) {
                     <?php else: ?>
                         <?php foreach ($candidatureRicevute as $candidatura): ?>
                             <?php
-                            // ✅ LOGICA CORRETTA per determinare lo stato
+                            // LOGICA CORRETTA per determinare lo stato
                             $esitoRaw = $candidatura['Esito'];
 
                             if ($esitoRaw === null || $esitoRaw === '' || $esitoRaw === 'NULL') {

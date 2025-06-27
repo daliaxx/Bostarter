@@ -8,7 +8,7 @@ error_reporting(E_ALL);
  * File: public/projects.php
  */
 
-require_once '../config/database.php';
+require_once '../../config/database.php';
 
 // Avvia sessione
 SessionManager::start();
@@ -138,7 +138,7 @@ $isCreator = SessionManager::isCreator();
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="../index.html">
+        <a class="navbar-brand fw-bold" href="../../index.html">
             <i class="fas fa-rocket me-2"></i>BOSTARTER
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -161,25 +161,25 @@ $isCreator = SessionManager::isCreator();
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <?php if ($isAdmin): ?>
-                                <li><a class="dropdown-item" href="dashboard/admin_dashboard.php"><i class="fas fa-shield-alt me-2"></i>Dashboard Admin</a></li>
+                                <li><a class="dropdown-item" href="../dashboard/admin_dashboard.php"><i class="fas fa-shield-alt me-2"></i>Dashboard Admin</a></li>
                                 <li><hr class="dropdown-divider"></li>
                             <?php elseif ($isCreator): ?>
-                                <li><a class="dropdown-item" href="dashboard/creator_dashboard.php"><i class="fas fa-user-cog me-2"></i>Dashboard Creatore</a></li>
-                                <li><a class="dropdown-item" href="dashboard/new_project.php"><i class="fas fa-plus me-2"></i>Crea Progetto</a></li>
+                                <li><a class="dropdown-item" href="../dashboard/creator_dashboard.php"><i class="fas fa-user-cog me-2"></i>Dashboard Creatore</a></li>
+                                <li><a class="dropdown-item" href="../dashboard/new_project.php"><i class="fas fa-plus me-2"></i>Crea Progetto</a></li>
                                 <li><hr class="dropdown-divider"></li>
                             <?php endif; ?>
-                            <li><a class="dropdown-item" href="dashboard/user_dashboard.php"><i class="fas fa-user me-2"></i>Il mio profilo</a></li>
-                            <li><a class="dropdown-item" href="statistiche.php"><i class="fas fa-chart-bar me-2"></i>Statistiche</a></li>
+                            <li><a class="dropdown-item" href="../dashboard/user_dashboard.php"><i class="fas fa-user me-2"></i>Il mio profilo</a></li>
+                            <li><a class="dropdown-item" href="../statistiche.php"><i class="fas fa-chart-bar me-2"></i>Statistiche</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../auth/logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                            <li><a class="dropdown-item" href="../../auth/logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
                         </ul>
                     </li>
                 <?php else: ?>
                     <li class="nav-item">
-                        <a class="nav-link" href="../auth/login.php"><i class="fas fa-sign-in-alt me-1"></i>Accedi</a>
+                        <a class="nav-link" href="../../index.html"><i class="fas fa-sign-in-alt me-1"></i>Accedi</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="../auth/register.php"><i class="fas fa-user-plus me-1"></i>Registrati</a>
+                        <a class="nav-link" href="../../index.html"><i class="fas fa-user-plus me-1"></i>Registrati</a>
                     </li>
                 <?php endif; ?>
             </ul>
@@ -198,7 +198,7 @@ $isCreator = SessionManager::isCreator();
         </div>
         <div class="col-md-4 text-md-end">
             <?php if ($isLoggedIn && $isCreator): ?>
-                <a href="dashboard/creator_dashboard.php" class="btn btn-primary">
+                <a href="../dashboard/creator_dashboard.php" class="btn btn-primary">
                     <i class="fas fa-plus me-2"></i>Crea Progetto
                 </a>
             <?php elseif ($isLoggedIn && !$isCreator): ?>
@@ -207,7 +207,7 @@ $isCreator = SessionManager::isCreator();
                     Diventa creatore
                 </button>
             <?php else: ?>
-                <a href="../index.html" class="btn btn-outline-primary">
+                <a href="../../index.html" class="btn btn-outline-primary">
                     <i class="fas fa-sign-in-alt me-2"></i>Accedi per Creare
                 </a>
             <?php endif; ?>
@@ -258,7 +258,7 @@ $isCreator = SessionManager::isCreator();
                         <i class="fas fa-trophy fa-2x text-primary mb-2"></i>
                         <h5 class="card-title">Top Creatori</h5>
                         <p class="card-text">Classifica per affidabilità</p>
-                        <a href="statistiche.php?view=top-creatori" class="btn btn-outline-primary btn-sm">Visualizza</a>
+                        <a href="../statistiche.php?view=top-creatori" class="btn btn-outline-primary btn-sm">Visualizza</a>
                     </div>
                 </div>
             </div>
@@ -268,7 +268,7 @@ $isCreator = SessionManager::isCreator();
                         <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
                         <h5 class="card-title">Progetti in Crescita</h5>
                         <p class="card-text">Più vicini al completamento</p>
-                        <a href="statistiche.php?view=progetti-crescita" class="btn btn-outline-success btn-sm">Visualizza</a>
+                        <a href="../statistiche.php?view=progetti-crescita" class="btn btn-outline-success btn-sm">Visualizza</a>
                     </div>
                 </div>
             </div>
@@ -278,7 +278,7 @@ $isCreator = SessionManager::isCreator();
                         <i class="fas fa-users fa-2x text-info mb-2"></i>
                         <h5 class="card-title">Top Finanziatori</h5>
                         <p class="card-text">Maggiori investitori</p>
-                        <a href="statistiche.php?view=top-finanziatori" class="btn btn-outline-info btn-sm">Visualizza</a>
+                        <a href="../statistiche.php?view=top-finanziatori" class="btn btn-outline-info btn-sm">Visualizza</a>
                     </div>
                 </div>
             </div>
@@ -307,7 +307,7 @@ $isCreator = SessionManager::isCreator();
                         <?php endif; ?>
                     </p>
                     <?php if ($isLoggedIn && $isCreator): ?>
-                        <a href="dashboard/creator_dashboard.php" class="btn btn-primary">
+                        <a href="../dashboard/creator_dashboard.php" class="btn btn-primary">
                             <i class="fas fa-plus me-2"></i>Crea il Primo Progetto
                         </a>
                     <?php endif; ?>
@@ -418,7 +418,7 @@ $isCreator = SessionManager::isCreator();
                                                 <i class="fas fa-heart me-1"></i>Finanzia Progetto
                                             </a>
                                         <?php else: ?>
-                                            <a href="../index.html" class="btn btn-primary">
+                                            <a href="../../index.html" class="btn btn-primary">
                                                 <i class="fas fa-sign-in-alt me-1"></i>Accedi per Finanziare
                                             </a>
                                         <?php endif; ?>

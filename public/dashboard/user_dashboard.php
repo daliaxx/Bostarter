@@ -171,7 +171,7 @@ try {
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="../projects.php">
+        <a class="navbar-brand fw-bold" href="../projects/projects.php">
             <i class="fas fa-rocket me-2"></i>BOSTARTER
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -180,7 +180,7 @@ try {
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link" href="../projects.php">
+                    <a class="nav-link" href="../projects/projects.php">
                         <i class="fas fa-project-diagram me-1"></i>Progetti
                     </a>
                 </li>
@@ -291,7 +291,7 @@ try {
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5><i class="fas fa-heart me-2"></i>I Miei Investimenti</h5>
-                    <a href="../projects.php" class="btn btn-sm btn-outline-primary">
+                    <a href="../projects/projects.php" class="btn btn-sm btn-outline-primary">
                         <i class="fas fa-plus me-1"></i>Finanzia Altri
                     </a>
                 </div>
@@ -300,7 +300,7 @@ try {
                         <div class="text-center py-4">
                             <i class="fas fa-heart fa-3x text-muted mb-3"></i>
                             <h6 class="text-muted">Non hai ancora finanziato nessun progetto</h6>
-                            <a href="../projects.php" class="btn btn-primary">
+                            <a href="../projects/projects.php" class="btn btn-primary">
                                 <i class="fas fa-search me-2"></i>Esplora Progetti
                             </a>
                         </div>
@@ -371,7 +371,7 @@ try {
                                             <small><?= date('d/m/Y', strtotime($progetto['Ultima_Donazione'])) ?></small>
                                         </td>
                                         <td>
-                                            <a href="../project_detail.php?name=<?= urlencode($progetto['Nome']) ?>"
+                                            <a href="../projects/projects/project_detail.php?name=<?= urlencode($progetto['Nome']) ?>"
                                                class="btn btn-sm btn-outline-primary"
                                                title="Visualizza progetto">
                                                 <i class="fas fa-eye"></i>
@@ -424,7 +424,7 @@ try {
                         <div class="text-center py-4">
                             <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
                             <h6 class="text-muted">Non hai ancora inviato candidature</h6>
-                            <a href="../projects.php?category=software" class="btn btn-primary">
+                            <a href="../projects/projects.php?category=software" class="btn btn-primary">
                                 <i class="fas fa-search me-2"></i>Cerca Progetti Software
                             </a>
                         </div>
@@ -494,37 +494,7 @@ try {
                 </div>
             </div>
 
-            <!-- Azioni rapide -->
-            <div class="card">
-                <div class="card-header">
-                    <h5><i class="fas fa-lightning-bolt me-2"></i>Azioni Rapide</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="../projects.php" class="btn btn-outline-primary">
-                            <i class="fas fa-search me-2"></i>Esplora Progetti
-                        </a>
-                        <a href="../projects.php?category=software" class="btn btn-outline-info">
-                            <i class="fas fa-code me-2"></i>Progetti Software
-                        </a>
-                        <?php if (!$isCreator): ?>
-                            <a href="become_creator.php" class="btn btn-outline-success">
-                                <i class="fas fa-star me-2"></i>Diventa Creatore
-                            </a>
-                        <?php else: ?>
-                            <a href="creator_dashboard.php" class="btn btn-outline-success">
-                                <i class="fas fa-plus me-2"></i>Crea Progetto
-                            </a>
-                        <?php endif; ?>
-                        <a href="profile_settings.php" class="btn btn-outline-secondary">
-                            <i class="fas fa-cog me-2"></i>Impostazioni
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <!-- Modal Aggiungi Skill -->
 <div class="modal fade" id="addSkillModal" tabindex="-1">
@@ -541,18 +511,7 @@ try {
                     <div class="mb-3">
                         <label for="competenza" class="form-label">Competenza</label>
                         <select class="form-select" id="competenza" name="competenza" required>
-                            <option value="">Seleziona una competenza...</option>
-                            <!-- Queste opzioni dovrebbero essere caricate dinamicamente dal DB -->
-                            <option value="AI">AI</option>
-                            <option value="Machine Learning">Machine Learning</option>
-                            <option value="Web Development">Web Development</option>
-                            <option value="Database Management">Database Management</option>
-                            <option value="Cybersecurity">Cybersecurity</option>
-                            <option value="Data Analysis">Data Analysis</option>
-                            <option value="Cloud Computing">Cloud Computing</option>
-                            <option value="Networking">Networking</option>
-                            <option value="Software Engineering">Software Engineering</option>
-                            <option value="Embedded Systems">Embedded Systems</option>
+                            <option value="">Caricamento competenze...</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -594,7 +553,7 @@ try {
         formData.append('competenza', competenza);
         formData.append('livello', livello);
 
-        fetch('manage_skill.php', {
+        fetch('../../api/manage_skill.php', {
             method: 'POST',
             body: formData
         })
@@ -611,6 +570,38 @@ try {
                 console.error('Error:', error);
             });
     }
+
+    // Carica competenze dinamicamente
+    function loadAvailableSkills() {
+        fetch('../../api/manage_skill.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=get_available_skills'
+        })
+            .then(response => response.json())
+            .then(data => {
+                const select = document.getElementById('competenza');
+                if (data.success) {
+                    select.innerHTML = '<option value="">Seleziona una competenza...</option>';
+                    data.skills.forEach(skill => {
+                        select.innerHTML += `<option value="${skill.Competenza}">${skill.Competenza}</option>`;
+                    });
+                } else {
+                    select.innerHTML = '<option value="">Errore caricamento competenze</option>';
+                }
+            })
+            .catch(error => {
+                console.error('Errore:', error);
+                document.getElementById('competenza').innerHTML = '<option value="">Errore connessione</option>';
+            });
+    }
+
+    // Carica competenze all'apertura del modal
+    document.getElementById('addSkillModal').addEventListener('show.bs.modal', function() {
+        loadAvailableSkills();
+    });
 </script>
 </body>
 </html>

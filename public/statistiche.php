@@ -166,7 +166,7 @@ switch ($view) {
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
-                    <a class="nav-link active" href="projects.php">
+                    <a class="nav-link active" href="projects/projects.php">
                         <i class="fas fa-project-diagram me-1"></i>Progetti
                     </a>
                 </li>
@@ -250,7 +250,7 @@ switch ($view) {
     <!-- Pulsante Ritorno -->
     <div class="row mt-4 mb-5">
         <div class="col-12 text-center">
-            <a href="projects.php" class="btn btn-outline-primary back-btn">
+            <a href="projects/projects.php" class="btn btn-outline-primary back-btn">
                 <i class="fas fa-arrow-left me-2"></i>Torna ai Progetti
             </a>
         </div>

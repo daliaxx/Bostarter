@@ -72,7 +72,7 @@ try {
     }
 
     // Determina redirect
-    $redirect = '/Bostarter/public/projects.php';
+    $redirect = '/Bostarter/public/projects/projects.php';
     if ($isAdmin) {
         $redirect = '/Bostarter/public/dashboard/admin_dashboard.php';
     } elseif ($isCreator) {

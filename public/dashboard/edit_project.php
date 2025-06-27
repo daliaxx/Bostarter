@@ -12,6 +12,11 @@ SessionManager::requireLogin('../../index.html');
 SessionManager::requireCreator();
 
 $userEmail = SessionManager::getUserEmail();
+$userNickname = SessionManager::get('user_nickname') ?? 'Utente';
+$userName = SessionManager::get('user_nome') ?? '';
+$userCognome = SessionManager::get('user_cognome') ?? '';
+$isAdmin = SessionManager::isAdmin();
+$isCreator = SessionManager::isCreator();
 $projectName = $_GET['name'] ?? '';
 
 if (empty($projectName)) {
@@ -160,7 +165,7 @@ if ($project['Tipo'] === 'Software') {
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="../projects.php">
+        <a class="navbar-brand fw-bold" href="../projects/projects.php">
             <i class="fas fa-rocket me-2"></i>BOSTARTER
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -388,7 +393,11 @@ if ($project['Tipo'] === 'Software') {
         const form = document.getElementById('addRewardForm');
         const formData = new FormData(form);
 
-        fetch('../../api/add_reward.php', {
+        formData.append('action', 'add_reward');
+
+        formData.append('nome_progetto', '<?= htmlspecialchars($projectName) ?>');
+
+        fetch('../../api/manage_rewards.php', {
             method: 'POST',
             body: formData
         })
@@ -409,10 +418,13 @@ if ($project['Tipo'] === 'Software') {
         if (!confirm('Vuoi eliminare questa reward?')) return;
 
         const formData = new FormData();
+        formData.append('action', 'delete_reward');
         formData.append('codice', codice);
         formData.append('project_name', '<?= htmlspecialchars($projectName) ?>'); // Pass project name for context
 
-        fetch('../../api/delete_reward.php', {
+        formData.append('nome_progetto', '<?= htmlspecialchars($projectName) ?>');
+
+        fetch('../../api/manage_rewards.php', {
             method: 'POST',
             body: formData
         })
