@@ -202,10 +202,10 @@ $isCreator = SessionManager::isCreator();
                     <i class="fas fa-plus me-2"></i>Crea Progetto
                 </a>
             <?php elseif ($isLoggedIn && !$isCreator): ?>
-                <small class="text-muted">
-                    Vuoi creare progetti? <br>
-                    <a href="dashboard/become_creator.php">Diventa un creatore</a>
-                </small>
+                <!-- Visibile solo se NON è già creatore -->
+                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#becomeCreatorModal">
+                    Diventa creatore
+                </button>
             <?php else: ?>
                 <a href="../index.html" class="btn btn-outline-primary">
                     <i class="fas fa-sign-in-alt me-2"></i>Accedi per Creare
@@ -431,6 +431,61 @@ $isCreator = SessionManager::isCreator();
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
+
+    <!-- Modal: Diventa Creatore -->
+    <div class="modal fade" id="becomeCreatorModal" tabindex="-1" aria-labelledby="becomeCreatorLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title" id="becomeCreatorLabel">Diventa un Creatore</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Chiudi"></button>
+        </div>
+        <div class="modal-body">
+            <p>Vuoi davvero diventare un creatore di progetti? Potrai crearli e gestirli dalla tua area personale.</p>
+            <div id="becomeCreatorAlert" class="alert d-none"></div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+            <button type="button" class="btn btn-primary" onclick="promuoviACreatore()">Conferma</button>
+        </div>
+        </div>
+    </div>
+    </div>
+
+    <script>
+    function promuoviACreatore() {
+    fetch('/Bostarter/public/dashboard/become_creator.php', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        const alertBox = document.getElementById('becomeCreatorAlert');
+        alertBox.classList.remove('d-none', 'alert-success', 'alert-danger');
+
+        if (data.success) {
+        alertBox.classList.add('alert-success');
+        alertBox.textContent = data.message;
+
+        setTimeout(() => {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('becomeCreatorModal'));
+            modal.hide();
+            location.reload(); // Ricarica per aggiornare la visibilità del bottone
+        }, 1500);
+        } else {
+        alertBox.classList.add('alert-danger');
+        alertBox.textContent = data.message;
+        }
+    })
+    .catch(error => {
+        const alertBox = document.getElementById('becomeCreatorAlert');
+        alertBox.classList.remove('d-none', 'alert-success');
+        alertBox.classList.add('alert-danger');
+        alertBox.textContent = 'Errore di connessione. Riprova.';
+        console.error(error);
+    });
+    }
+    </script>
+
 
     <!-- Footer info -->
     <div class="row mt-5">

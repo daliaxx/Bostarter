@@ -1,43 +1,39 @@
 <?php
-require_once '../config/database.php';
+require_once '../config/bootstrap.php';
 
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+header('Content-Type: application/json');
 
-SessionManager::start();
+session_start();
 
-try {
-    if (!SessionManager::isLoggedIn()) {
-        header("Location: project_detail.php?error=accesso_non_autorizzato");
-        exit;
-    }
+$p_Email = $_SESSION['user_email'] ?? null;
+$p_IDProfilo = $_POST['id_profilo'] ?? null;
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        header("Location: project_detail.php?error=metodo_non_valido");
-        exit;
-    }
-
-    $db = Database::getInstance();
-    $userEmail = SessionManager::getUserEmail();
-
-    $idProfilo = intval($_POST['profilo'] ?? 0);
-    $nomeProgetto = trim($_POST['nome_progetto'] ?? '');
-
-    if (empty($idProfilo) || empty($nomeProgetto)) {
-        header("Location: project_detail.php?error=dati_mancanti");
-        exit;
-    }
-
-    $db->callStoredProcedure('InserisciCandidatura', [
-        $userEmail,
-        $idProfilo
-    ]);
-
-    header("Location: project_detail.php?name=" . urlencode($nomeProgetto) . "&success=candidatura_inviata");
-    exit;
-
-} catch (Exception $e) {
-    header("Location: project_detail.php?name=" . urlencode($nomeProgetto) . "&error=" . urlencode($e->getMessage()));
+if (!$p_Email || !$p_IDProfilo) {
+    echo json_encode(['success' => false, 'message' => 'Dati mancanti per la candidatura.']);
     exit;
 }
-?>
+
+$db = Database::getInstance();
+
+try {
+    // 🔒 1. Controllo: l'utente è il creatore del progetto?
+    $creatore = $db->fetchOne("
+        SELECT p.Email_Creatore
+        FROM PROFILO pr
+        JOIN PROGETTO p ON pr.ID_Progetto = p.Nome
+        WHERE pr.ID = ?
+    ", [$p_IDProfilo]);
+
+    if ($creatore && $creatore['Email_Creatore'] === $p_Email) {
+        echo json_encode(['success' => false, 'message' => 'Non puoi candidarti al tuo stesso progetto.']);
+        exit;
+    }
+
+    // ✅ 2. Chiama la stored procedure
+    $stmt = $db->callStoredProcedure("InserisciCandidatura", [$p_Email, $p_IDProfilo]);
+    $stmt->closeCursor();
+
+    echo json_encode(['success' => true, 'message' => 'Candidatura inviata con successo.']);
+} catch (PDOException $e) {
+    echo json_encode(['success' => false, 'message' => 'Errore procedura: ' . $e->getMessage()]);
+}

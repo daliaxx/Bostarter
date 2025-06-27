@@ -96,7 +96,7 @@ CREATE TABLE PROFILO(
 
 -- Tabella SKILL_RICHIESTA
 CREATE TABLE SKILL_RICHIESTA(
-    ID_Profilo  INT AUTO_INCREMENT,
+    ID_Profilo  INT,
     Competenza  VARCHAR(100),
     Livello     INT,
     PRIMARY KEY (ID_Profilo, Competenza, Livello),
@@ -191,17 +191,23 @@ CREATE PROCEDURE RegistraUtente(
     IN p_Nome VARCHAR(50),
     IN p_Cognome VARCHAR(50),
     IN p_Anno_Di_Nascita DATE,
-    IN p_Luogo_Di_Nascita VARCHAR(100)
+    IN p_Luogo_Di_Nascita VARCHAR(100),
+    IN p_IsCreatore BOOLEAN
 )
 BEGIN
-INSERT INTO UTENTE (
-    Email, Nickname, Password, Nome, Cognome,
-    Anno_Di_Nascita, Luogo_Di_Nascita
-) VALUES (
-             p_Email, p_Nickname, p_Password, p_Nome, p_Cognome,
-             p_Anno_Di_Nascita, p_Luogo_Di_Nascita
-         );
-END $$
+    INSERT INTO UTENTE (
+        Email, Nickname, Password, Nome, Cognome,
+        Anno_Di_Nascita, Luogo_Di_Nascita
+    ) VALUES (
+        p_Email, p_Nickname, p_Password, p_Nome, p_Cognome,
+        p_Anno_Di_Nascita, p_Luogo_Di_Nascita
+    );
+
+    IF p_IsCreatore THEN
+        INSERT INTO CREATORE (Email, Nr_Progetti, Affidabilita)
+        VALUES (p_Email, 0, 0);
+    END IF;
+END$$
 
 CREATE PROCEDURE LoginUtente (
     IN in_email VARCHAR(255),
@@ -234,6 +240,19 @@ SELECT 'Credenziali amministratore non valide' AS Messaggio, NULL AS Email;
 END IF;
 END $$
 
+-- Procedure per diventare creatore
+CREATE PROCEDURE PromuoviACreatore(IN p_Email VARCHAR(100))
+BEGIN
+    -- Controlla se l'utente esiste
+    IF EXISTS (SELECT 1 FROM UTENTE WHERE Email = p_Email) THEN
+        -- Controlla se è già creatore
+        IF NOT EXISTS (SELECT 1 FROM CREATORE WHERE Email = p_Email) THEN
+            INSERT INTO CREATORE (Email, Nr_Progetti, Affidabilita)
+            VALUES (p_Email, 0, 0);
+        END IF;
+    END IF;
+END$$
+
 -- Procedure per inserimento progetto
 CREATE PROCEDURE InserisciProgetto(
     IN p_Nome VARCHAR(100),
@@ -242,11 +261,13 @@ CREATE PROCEDURE InserisciProgetto(
     IN p_Budget DECIMAL(10,2),
     IN p_DataLimite DATE,
     IN p_Stato ENUM('aperto', 'chiuso'),
-    IN p_EmailCreatore VARCHAR(100)
+    IN p_EmailCreatore VARCHAR(100),
+    IN p_Tipo ENUM('Hardware', 'Software')
+
         )
 BEGIN
-INSERT INTO PROGETTO (Nome, Descrizione, Data_Inserimento, Stato, Budget, Data_Limite, Email_Creatore)
-VALUES (p_Nome, p_Descrizione, p_DataInserimento, p_Stato, p_Budget, p_DataLimite, p_EmailCreatore);
+INSERT INTO PROGETTO (Nome, Descrizione, Data_Inserimento, Stato, Budget, Data_Limite, Tipo, Email_Creatore)
+VALUES (p_Nome, p_Descrizione, p_DataInserimento, p_Stato, p_Budget, p_DataLimite, p_Tipo, p_EmailCreatore);
 END $$
 
 -- Procedure per inserimento foto
@@ -341,17 +362,13 @@ END $$
 
 -- Procedure per inserimento profilo richiesto
 CREATE PROCEDURE InserisciProfiloRichiesto(
-    IN p_ID INT,
     IN p_NomeProfilo VARCHAR(100),
     IN p_NomeProgetto VARCHAR(100)
 )
 BEGIN
-INSERT INTO PROFILO (ID, Nome)
-VALUES (p_ID, p_NomeProfilo)
-    ON DUPLICATE KEY UPDATE Nome = VALUES(Nome);
-
-INSERT IGNORE INTO PROFILO_SOFTWARE (Nome_Progetto, ID_Profilo)
-    VALUES (p_NomeProgetto, p_ID);
+    INSERT INTO PROFILO (Nome, Nome_Progetto)
+    VALUES (p_NomeProfilo, p_NomeProgetto);
+    SELECT LAST_INSERT_ID() AS ID_Profilo; -- Restituisce l'ID del profilo appena inserito
 END $$
 
 -- Procedure per inserimento risposta commento

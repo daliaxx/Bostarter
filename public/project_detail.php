@@ -36,6 +36,7 @@ $sql = "
         p.Budget,
         p.Data_Limite,
         p.Tipo,
+        p.Email_Creatore,
         u.Nickname AS CreatoreNickname,
         u.Nome AS CreatoreNome,
         u.Cognome AS CreatoreCognome,
@@ -90,7 +91,7 @@ if ($fotoDb !== '') {
         ? "/Bostarter/{$fotoDb}"
         : "/Bostarter/img/{$fotoDb}";
 } else {
-    $src = null;
+    $src = "/Bostarter/img/placeholder.jpg"; 
 }
 
 // Ottieni le rewards disponibili per questo progetto
@@ -499,7 +500,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="../projects.php">
+        <a class="navbar-brand fw-bold" href="/Bostarter/public/projects.php">
             <i class="fas fa-rocket me-2"></i>BOSTARTER
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -780,7 +781,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                                     <?php endif; ?>
                                 </div>
                             <?php endforeach; ?>
-
+                            
                             <!-- Form candidatura -->
                             <form action="/Bostarter/public/manage_candidature.php" method="POST" class="mt-3">
                                 <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
@@ -809,7 +810,17 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                                 }
                                 ?>
 
-                                <?php if ($hasEligibleProfile): ?>
+                                <?php
+                                $utenteEmail = $_SESSION['user_email'] ?? null;
+                                $creatoreEmail = $progetto['Email_Creatore']; // o il nome corretto del campo
+
+                                if ($utenteEmail === $creatoreEmail): ?>
+                                    <div class="alert alert-danger">
+                                        <i class="fas fa-user-shield me-2"></i>
+                                        <strong>Sei il creatore di questo progetto.</strong><br>
+                                        Non puoi candidarti al tuo stesso progetto.
+                                    </div>
+                                <?php elseif ($hasEligibleProfile): ?>
                                     <button type="submit" class="btn btn-success">
                                         <i class="fas fa-user-plus me-2"></i>Invia Candidatura
                                     </button>
@@ -823,6 +834,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                                         </small>
                                     </div>
                                 <?php endif; ?>
+
                             </form>
 
                         <?php else: ?>

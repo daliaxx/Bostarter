@@ -46,3 +46,5 @@ function asset($path) {
 function route($path) {
     return '/public/' . ltrim($path, '/');
 }
+$pdo = new PDO("mysql:host=localhost;dbname=bostarter;charset=utf8", "root", "root");
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
