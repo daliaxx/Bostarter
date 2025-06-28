@@ -4,7 +4,7 @@ require_once '../../config/database.php';
 
 // Controlla se è admin
 if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
-    header('Location: ../projects.php');
+    header('Location: ../projects/projects.php');
     exit;
 }
 ?>

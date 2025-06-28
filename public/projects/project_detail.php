@@ -60,16 +60,14 @@ $sql = "
 $progetto = $db->fetchOne($sql, [$nomeProgetto]);
 
 // AGGIORNAMENTO AUTOMATICO STATO PROGETTO SCADUTO
-if ($progetto && $progetto['Stato'] === 'aperto' && $progetto['Data_Limite'] < date('Y-m-d')) {
+if ($progetto && $progetto['Stato'] === 'aperto' && $progetto['Data_Limite'] <= date('Y-m-d')) {
     $db->execute("UPDATE PROGETTO SET Stato = 'chiuso' WHERE Nome = ?", [$nomeProgetto]);
     $progetto['Stato'] = 'chiuso';
 }
 
-$oggi     = new DateTimeImmutable('today');
-$limite   = new DateTimeImmutable($progetto['Data_Limite']);
-
-// Calcolo consistente dei giorni rimanenti (stesso metodo di projects.php)
-$progetto['Giorni_Rimanenti'] = (int) $oggi->diff($limite)->format('%r%a');
+// Calcolo consistente dei giorni rimanenti (usa solo il valore SQL)
+// Il valore Giorni_Rimanenti viene già calcolato dalla query SQL con DATEDIFF
+// Non serve ricalcolarlo con PHP per evitare inconsistenze
 
 if (!$progetto) {
     die("<h3>Progetto non trovato.</h3>");
@@ -553,10 +551,10 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                     </li>
                 <?php else: ?>
                     <li class="nav-item">
-                        <a class="nav-link" href="../../auth/login.php"><i class="fas fa-sign-in-alt me-1"></i>Accedi</a>
+                        <a class="nav-link" href="../../index.html"><i class="fas fa-sign-in-alt me-1"></i>Accedi</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="../../auth/register.php"><i class="fas fa-user-plus me-1"></i>Registrati</a>
+                        <a class="nav-link" href="../../index.html"><i class="fas fa-user-plus me-1"></i>Registrati</a>
                     </li>
                 <?php endif; ?>
             </ul>

@@ -19,6 +19,17 @@ $userEmail = SessionManager::getUserEmail();
 $isCreator = SessionManager::isCreator();
 $isAdmin = SessionManager::isAdmin();
 
+// AGGIORNAMENTO AUTOMATICO STATO PROGETTI SCADUTI
+$db = Database::getInstance();
+$db->ensureEventScheduler(); // Assicura che l'evento MySQL sia attivo
+
+// Esegui l'aggiornamento automatico
+$db->execute("
+    UPDATE PROGETTO 
+    SET Stato = 'chiuso' 
+    WHERE Stato = 'aperto' AND Data_Limite <= CURDATE()
+");
+
 // Variabili filtro iniziali
 $searchQuery = trim($_GET['search'] ?? '');
 $statusFilter = $_GET['status'] ?? 'all';
@@ -68,7 +79,6 @@ $sql = "
     ORDER BY p.Data_Inserimento DESC
 ";
 
-$db = Database::getInstance();
 $progetti = $db->fetchAll($sql, $params);
 
 // Gestione accesso utente

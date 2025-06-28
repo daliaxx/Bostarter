@@ -46,6 +46,20 @@ try {
         ORDER BY p.Data_Inserimento DESC
     ", [$userEmail]);
 
+    // AGGIORNAMENTO AUTOMATICO STATO PROGETTI SCADUTI DEL CREATORE
+    $db->execute("
+        UPDATE PROGETTO 
+        SET Stato = 'chiuso' 
+        WHERE Email_Creatore = ? AND Stato = 'aperto' AND Data_Limite <= CURDATE()
+    ", [$userEmail]);
+
+    // Aggiorna i dati locali se necessario
+    foreach ($mieiProgetti as &$progetto) {
+        if ($progetto['Stato'] === 'aperto' && $progetto['Data_Limite'] <= date('Y-m-d')) {
+            $progetto['Stato'] = 'chiuso';
+        }
+    }
+
     // Gestione eliminazione progetto
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['elimina_progetto'])) {
         $nome = $_POST['elimina_progetto'];
@@ -657,7 +671,7 @@ function getCompletionPercentage($raccolto, $budget) {
         });
 
         // Chiamata API
-        fetch('../../api/manage_candidature.php', {
+        fetch('../../api/manage_candidatures.php', {
             method: 'POST',
             body: formData
         })

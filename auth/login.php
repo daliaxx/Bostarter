@@ -65,6 +65,10 @@ try {
     SessionManager::set('user_cognome', $user['Cognome']);
     SessionManager::set('is_admin', $isAdmin);
     SessionManager::set('is_creator', $isCreator);
+    SessionManager::set('login_time', time()); // Timestamp di login
+
+    // Rigenera ID sessione per sicurezza
+    SessionManager::regenerateSession();
 
     if ($isCreator && $creatorData) {
         SessionManager::set('creator_progetti', $creatorData['Nr_Progetti']);

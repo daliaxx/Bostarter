@@ -25,7 +25,7 @@ class Database {
 
     public static function getInstance() {
         if (self::$instance === null) {
-            self::$instance = new Database();
+            self::$instance = new self();
         }
         return self::$instance;
     }
@@ -92,6 +92,10 @@ class Database {
         return $this->query($sql, $params)->rowCount();
     }
 
+    public function getAffectedRows() {
+        return $this->conn->rowCount();
+    }
+
     public function lastInsertId() {
         return $this->conn->lastInsertId();
     }
@@ -113,6 +117,60 @@ class Database {
     public function beginTransaction() { return $this->conn->beginTransaction(); }
     public function commit() { return $this->conn->commit(); }
     public function rollback() { return $this->conn->rollback(); }
+
+    /**
+     * Verifica e attiva l'evento per la chiusura automatica dei progetti scaduti
+     */
+    public function ensureEventScheduler() {
+        try {
+            // Verifica se l'event scheduler è attivo
+            $result = $this->fetchOne("SHOW VARIABLES LIKE 'event_scheduler'");
+            if ($result && $result['Value'] !== 'ON') {
+                // Attiva l'event scheduler
+                $this->execute("SET GLOBAL event_scheduler = ON");
+            }
+            
+            // Verifica se l'evento esiste
+            $eventExists = $this->fetchOne("
+                SELECT COUNT(*) as count 
+                FROM information_schema.EVENTS 
+                WHERE EVENT_SCHEMA = DATABASE() 
+                AND EVENT_NAME = 'ChiudiProgettiScaduti'
+            ");
+            
+            if ($eventExists['count'] == 0) {
+                // Crea l'evento se non esiste
+                $this->execute("
+                    CREATE EVENT ChiudiProgettiScaduti
+                    ON SCHEDULE EVERY 1 DAY
+                    DO
+                    BEGIN
+                        UPDATE PROGETTO
+                        SET Stato = 'chiuso'
+                        WHERE Stato = 'aperto' AND Data_Limite <= CURDATE();
+                    END
+                ");
+            } else {
+                // Aggiorna l'evento esistente se necessario
+                $this->execute("
+                    DROP EVENT IF EXISTS ChiudiProgettiScaduti
+                ");
+                $this->execute("
+                    CREATE EVENT ChiudiProgettiScaduti
+                    ON SCHEDULE EVERY 1 DAY
+                    DO
+                    BEGIN
+                        UPDATE PROGETTO
+                        SET Stato = 'chiuso'
+                        WHERE Stato = 'aperto' AND Data_Limite <= CURDATE();
+                    END
+                ");
+            }
+        } catch (Exception $e) {
+            // Log dell'errore ma non bloccare l'applicazione
+            error_log("Errore nell'attivazione dell'event scheduler: " . $e->getMessage());
+        }
+    }
 }
 
 // Gestione sessioni
@@ -140,11 +198,48 @@ class SessionManager {
 
     public static function destroy() {
         self::start();
+        
+        // Pulisci tutte le variabili di sessione
+        $_SESSION = array();
+        
+        // Se viene usato un cookie di sessione, distruggilo
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
+            );
+        }
+        
+        // Distruggi la sessione
         session_destroy();
+        
+        // Assicurati che la sessione sia completamente chiusa
+        if (session_status() == PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
     }
 
     public static function isLoggedIn() {
-        return self::get('user_email') !== null;
+        return self::get('user_email') !== null && self::isSessionValid();
+    }
+
+    public static function isSessionValid() {
+        self::start();
+        
+        // Verifica se la sessione esiste e ha un ID valido
+        if (session_status() !== PHP_SESSION_ACTIVE || empty(session_id())) {
+            return false;
+        }
+        
+        // Verifica se il timestamp di login è presente e valido (opzionale)
+        $loginTime = self::get('login_time');
+        if ($loginTime && (time() - $loginTime) > 86400) { // 24 ore
+            self::destroy();
+            return false;
+        }
+        
+        return true;
     }
 
     public static function isAdmin() {
@@ -169,7 +264,7 @@ class SessionManager {
     public static function requireAdmin() {
         self::requireLogin();
         if (!self::isAdmin()) {
-            header("Location: /public/projects.php");
+            header("Location: /Bostarter/public/projects/projects.php");
             exit;
         }
     }
@@ -177,8 +272,17 @@ class SessionManager {
     public static function requireCreator() {
         self::requireLogin();
         if (!self::isCreator()) {
-            header("Location: /public/projects.php");
+            header("Location: /Bostarter/public/projects/projects.php");
             exit;
+        }
+    }
+
+    public static function regenerateSession() {
+        self::start();
+        
+        // Rigenera l'ID di sessione per sicurezza
+        if (session_status() == PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
         }
     }
 }

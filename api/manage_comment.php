@@ -17,7 +17,7 @@ try {
     }
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        header('Location: ../public/projects.php');
+        header('Location: ../public/projects/projects.php');
         exit;
     }
 
@@ -56,7 +56,7 @@ try {
             echo json_encode(['success' => false, 'message' => 'Progetto non trovato.']);
             exit;
         }
-        header('Location: ../public/projects.php?error=progetto_non_trovato');
+        header('Location: ../public/projects/projects.php?error=progetto_non_trovato');
         exit;
     }
 
