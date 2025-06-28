@@ -145,13 +145,6 @@ $isCreator = SessionManager::isCreator();
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link active" href="projects.php">
-                        <i class="fas fa-project-diagram me-1"></i>Progetti
-                    </a>
-                </li>
-            </ul>
             <ul class="navbar-nav ms-auto">
                 <?php if ($isLoggedIn): ?>
                     <li class="nav-item dropdown">

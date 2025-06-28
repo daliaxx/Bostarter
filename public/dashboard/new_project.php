@@ -14,6 +14,12 @@ if (!isset($_SESSION['user_email']) || $_SESSION['is_creator'] != 1) {
 
 $db = Database::getInstance();
 
+// Verifica se l'utente è loggato
+$isLoggedIn = SessionManager::isLoggedIn();
+$userEmail = SessionManager::getUserEmail();
+$isCreator = SessionManager::isCreator();
+$isAdmin = SessionManager::isAdmin();
+
 $error_message = '';
 $success_message = '';
 
@@ -263,22 +269,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 50px;
             font-weight: bold;
         }
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --small-radius: 12px;
+        }
+        .navbar {
+            background: var(--primary-gradient) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+            z-index: 50;
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+        .nav-link {
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
+            border-radius: var(--small-radius);
+            margin: 0 0.25rem;
+        }
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        .project-card {
+            transition: transform 0.2s;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        .progress-bar-custom {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+        }
+        .badge-hardware {
+            background: linear-gradient(45deg, #28a745, #20c997);
+        }
+        .badge-software {
+            background: linear-gradient(45deg, #6f42c1, #e83e8c);
+        }
+        .creator-badge {
+            background: linear-gradient(45deg, #fd7e14, #ffc107);
+        }
     </style>
 </head>
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container">
-        <a class="navbar-brand fw-bold" href="../projects.php">
-            <i class="fas fa-lightbulb me-2"></i>BOSTARTER
+        <a class="navbar-brand fw-bold" href="../projects/projects.php">
+            <i class="fas fa-rocket me-2"></i>BOSTARTER
         </a>
-        <div class="navbar-nav ms-auto">
-            <a class="nav-link" href="../projects.php">
-                <i class="fas fa-project-diagram me-1"></i>Progetti
-            </a>
-            <a class="nav-link" href="creator_dashboard.php">
-                <i class="fas fa-arrow-left me-1"></i>Dashboard
-            </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <?php if ($isLoggedIn): ?>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle me-1"></i>
+                            <?= htmlspecialchars(SessionManager::get('user_nickname', 'Utente')) ?>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <?php if ($isAdmin): ?>
+                                <li><a class="dropdown-item" href="../dashboard/admin_dashboard.php"><i class="fas fa-shield-alt me-2"></i>Dashboard Admin</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                            <?php elseif ($isCreator): ?>
+                                <li><a class="dropdown-item" href="../dashboard/creator_dashboard.php"><i class="fas fa-user-cog me-2"></i>Dashboard Creatore</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                            <?php endif; ?>
+                            <li><a class="dropdown-item" href="../dashboard/user_dashboard.php"><i class="fas fa-user me-2"></i>Il mio profilo</a></li>
+                            <li><a class="dropdown-item" href="../statistiche.php"><i class="fas fa-chart-bar me-2"></i>Statistiche</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="../../auth/logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                        </ul>
+                    </li>
+                <?php else: ?>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../../index.html"><i class="fas fa-sign-in-alt me-1"></i>Accedi</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../../index.html"><i class="fas fa-user-plus me-1"></i>Registrati</a>
+                    </li>
+                <?php endif; ?>
+            </ul>
         </div>
     </div>
 </nav>

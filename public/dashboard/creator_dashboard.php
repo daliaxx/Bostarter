@@ -437,7 +437,7 @@ function getCompletionPercentage($raccolto, $budget) {
                                     </div>
 
                                     <div class="mt-3">
-                                        <a href="../projects/projects/project_detail.php?name=<?= urlencode($progetto['Nome']) ?>"
+                                        <a href="../projects/project_detail.php?name=<?= urlencode($progetto['Nome']) ?>"
                                            class="btn btn-outline-primary btn-sm">
                                             <i class="fas fa-eye me-1"></i>Visualizza
                                         </a>

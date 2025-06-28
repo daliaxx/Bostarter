@@ -371,7 +371,7 @@ try {
                                             <small><?= date('d/m/Y', strtotime($progetto['Ultima_Donazione'])) ?></small>
                                         </td>
                                         <td>
-                                            <a href="../projects/projects/project_detail.php?name=<?= urlencode($progetto['Nome']) ?>"
+                                            <a href="../projects/project_detail.php?name=<?= urlencode($progetto['Nome']) ?>"
                                                class="btn btn-sm btn-outline-primary"
                                                title="Visualizza progetto">
                                                 <i class="fas fa-eye"></i>
