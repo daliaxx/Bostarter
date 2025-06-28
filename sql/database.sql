@@ -253,7 +253,7 @@ BEGIN
     END IF;
 END$$
 
---- Procedure per inserimento progetto
+-- Procedure per inserimento progetto
 CREATE PROCEDURE InserisciProgetto(
     IN p_Nome VARCHAR(100),
     IN p_Descrizione TEXT,
