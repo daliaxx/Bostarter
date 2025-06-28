@@ -646,6 +646,7 @@ function getCompletionPercentage($raccolto, $budget) {
 
         // Prepara i dati
         const formData = new FormData();
+        formData.append('action', 'manage_candidatura');
         formData.append('id_candidatura', idCandidatura);
         formData.append('accettata', accettata ? '1' : '0');
 
@@ -656,7 +657,7 @@ function getCompletionPercentage($raccolto, $budget) {
         });
 
         // Chiamata API
-        fetch('../../api/gestisci_candidatura.php', {
+        fetch('../../api/manage_candidature.php', {
             method: 'POST',
             body: formData
         })

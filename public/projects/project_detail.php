@@ -776,7 +776,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                             <?php endforeach; ?>
                             
                             <!-- Form candidatura -->
-                            <form action="/Bostarter/api/manage_candidature.php" method="POST" class="mt-3">
+                            <form id="candidaturaForm" class="mt-3">
                                 <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
 
                                 <div class="mb-3">
@@ -814,7 +814,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                                         Non puoi candidarti al tuo stesso progetto.
                                     </div>
                                 <?php elseif ($hasEligibleProfile): ?>
-                                    <button type="submit" class="btn btn-success">
+                                    <button type="button" class="btn btn-success" onclick="inviaCandidatura()">
                                         <i class="fas fa-user-plus me-2"></i>Invia Candidatura
                                     </button>
                                 <?php else: ?>
@@ -975,6 +975,17 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
     </div>
 </div>
 
+<!-- Toast per notifiche -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="toastNotifica" class="toast" role="alert">
+        <div class="toast-header">
+            <strong class="me-auto">BOSTARTER</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="toastMessage"></div>
+    </div>
+</div>
+
 <!-- ✅ JavaScript per il modal (aggiungi prima della chiusura del body) -->
 <script>
     // Funzione per impostare importo rapido
@@ -1094,6 +1105,122 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                 alertBox.style.display = 'none';
             }, 3000);
         }
+    });
+</script>
+
+<!-- JavaScript per gestione candidature -->
+<script>
+    // Funzione per mostrare toast
+    function mostraToast(message, type = 'info') {
+        const toast = document.getElementById('toastNotifica');
+        const toastMessage = document.getElementById('toastMessage');
+
+        if (!toast || !toastMessage) {
+            // Fallback se il toast non esiste
+            if (type === 'error') {
+                alert(`❌ ${message}`);
+            } else {
+                alert(`✅ ${message}`);
+            }
+            return;
+        }
+
+        // Configura il toast
+        toastMessage.textContent = message;
+
+        // Colori in base al tipo
+        const colorClasses = {
+            'success': 'bg-success text-white',
+            'error': 'bg-danger text-white',
+            'warning': 'bg-warning text-dark',
+            'info': 'bg-info text-white'
+        };
+
+        toast.className = `toast ${colorClasses[type] || colorClasses.info}`;
+
+        // Mostra il toast
+        const bsToast = new bootstrap.Toast(toast, {
+            autohide: true,
+            delay: type === 'error' ? 5000 : 3000
+        });
+        bsToast.show();
+    }
+
+    // Funzione per inviare candidatura
+    function inviaCandidatura() {
+        const form = document.getElementById('candidaturaForm');
+        const profiloSelect = document.getElementById('profiloCandidatura');
+        const submitBtn = form.querySelector('button[type="button"]');
+
+        // Validazione
+        if (!profiloSelect.value) {
+            mostraToast('Seleziona un profilo per candidarti', 'error');
+            return;
+        }
+
+        // Disabilita il bottone e mostra loading
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Invio in corso...';
+
+        // Prepara i dati
+        const formData = new FormData();
+        formData.append('action', 'submit_candidatura');
+        formData.append('profilo', profiloSelect.value);
+        formData.append('nome_progetto', form.querySelector('input[name="nome_progetto"]').value);
+
+        // Debug
+        console.log('🔍 Invio candidatura:', {
+            profilo: profiloSelect.value,
+            progetto: form.querySelector('input[name="nome_progetto"]').value
+        });
+
+        // Chiamata API
+        fetch('/Bostarter/api/manage_candidature.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('✅ Risposta candidatura:', data);
+
+            if (data.success) {
+                mostraToast(data.message, 'success');
+                
+                // Reset form
+                form.reset();
+                
+                // Opzionale: redirect dopo 2 secondi
+                setTimeout(() => {
+                    window.location.href = '/Bostarter/public/dashboard/user_dashboard.php';
+                }, 2000);
+            } else {
+                mostraToast(data.message || 'Errore durante l\'invio della candidatura', 'error');
+                // Riabilita il bottone
+                riabilitaBottoneCandidatura(submitBtn);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Errore candidatura:', error);
+            mostraToast(`Errore di connessione: ${error.message}`, 'error');
+            // Riabilita il bottone
+            riabilitaBottoneCandidatura(submitBtn);
+        });
+    }
+
+    // Funzione per riabilitare il bottone
+    function riabilitaBottoneCandidatura(btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>Invia Candidatura';
+    }
+
+    // Inizializzazione quando il DOM è pronto
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('✅ Sistema candidature caricato');
     });
 </script>
 
