@@ -28,76 +28,92 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $descrizione = trim($_POST['descrizione'] ?? '');
     $budget = floatval($_POST['budget'] ?? 0);
     $data_limite = $_POST['data_limite'] ?? '';
-    $tipo = $_POST['tipo'] ?? '';
+    $tipo = trim($_POST['tipo'] ?? '');
     $email = $_SESSION['user_email'];
 
-    // Recupera reward o componenti in base al tipo
+    // Recupera reward, componenti e profili
     $rewards = [];
     $componenti = [];
+    $profili = [];
 
-    if ($tipo === 'Software') {
-        // Per progetti software, recupera le reward
-        if (isset($_POST['reward_codes']) && isset($_POST['reward_descriptions'])) {
-            $rewardCodes = $_POST['reward_codes'];
-            $rewardDescriptions = $_POST['reward_descriptions'];
+    // Le reward sono sempre obbligatorie per entrambi i tipi
+    if (isset($_POST['reward_codes']) && isset($_POST['reward_descriptions'])) {
+        $rewardCodes = $_POST['reward_codes'];
+        $rewardDescriptions = $_POST['reward_descriptions'];
 
-            for ($i = 0; $i < count($rewardCodes); $i++) {
-                $code = trim($rewardCodes[$i]);
-                $desc = trim($rewardDescriptions[$i]);
+        for ($i = 0; $i < count($rewardCodes); $i++) {
+            $code = trim($rewardCodes[$i]);
+            $desc = trim($rewardDescriptions[$i]);
 
-                if (!empty($code) && !empty($desc)) {
-                    $rewards[] = [
-                        'codice' => $code,
-                        'descrizione' => $desc
-                    ];
-                }
+            if (!empty($code) && !empty($desc)) {
+                $rewards[] = [
+                    'codice' => $code,
+                    'descrizione' => $desc
+                ];
             }
         }
-    } elseif ($tipo === 'Hardware') {
-        // Per progetti hardware, recupera i componenti
-        if (isset($_POST['component_names']) && isset($_POST['component_descriptions'])
-            && isset($_POST['component_prices']) && isset($_POST['component_quantities'])) {
+    }
 
-            $componentNames = $_POST['component_names'];
-            $componentDescriptions = $_POST['component_descriptions'];
-            $componentPrices = $_POST['component_prices'];
-            $componentQuantities = $_POST['component_quantities'];
+    // Gestisci profili per progetti software
+    if ($tipo === 'Software' && isset($_POST['profili']) && $_POST['profili'] === 'si' && !empty($_POST['profilo_richiesto_nome'])) {
+        $profiloNome = trim($_POST['profilo_richiesto_nome']);
+        $competenze = $_POST['competenze'] ?? [];
+        $livelli = $_POST['livelli'] ?? [];
 
-            for ($i = 0; $i < count($componentNames); $i++) {
-                $name = trim($componentNames[$i]);
-                $desc = trim($componentDescriptions[$i]);
-                $price = floatval($componentPrices[$i]);
-                $quantity = intval($componentQuantities[$i]);
+        if (!empty($profiloNome) && count($competenze) > 0) {
+            $profili[] = [
+                'nome' => $profiloNome,
+                'competenze' => array_combine($competenze, $livelli)
+            ];
+        }
+    }
 
-                if (!empty($name) && !empty($desc) && $price > 0 && $quantity > 0) {
-                    $componenti[] = [
-                        'nome' => $name,
-                        'descrizione' => $desc,
-                        'prezzo' => $price,
-                        'quantita' => $quantity
-                    ];
-                }
+    // Gestisci componenti per progetti hardware
+    if ($tipo === 'Hardware' && isset($_POST['component_names']) && isset($_POST['component_descriptions'])
+        && isset($_POST['component_prices']) && isset($_POST['component_quantities'])) {
+
+        $componentNames = $_POST['component_names'];
+        $componentDescriptions = $_POST['component_descriptions'];
+        $componentPrices = $_POST['component_prices'];
+        $componentQuantities = $_POST['component_quantities'];
+
+        for ($i = 0; $i < count($componentNames); $i++) {
+            $name = trim($componentNames[$i]);
+            $desc = trim($componentDescriptions[$i]);
+            $price = floatval($componentPrices[$i]);
+            $quantity = intval($componentQuantities[$i]);
+
+            if (!empty($name) && !empty($desc) && $price > 0 && $quantity > 0) {
+                $componenti[] = [
+                    'nome' => $name,
+                    'descrizione' => $desc,
+                    'prezzo' => $price,
+                    'quantita' => $quantity
+                ];
             }
         }
     }
 
     // Validazioni
+    $error_message = '';
+    
+    // Validazioni base
     if (empty($nome) || empty($descrizione) || $budget <= 0 || empty($data_limite) || empty($tipo)) {
         $error_message = "Tutti i campi sono obbligatori e devono essere validi.";
     } elseif (strtotime($data_limite) <= strtotime(date('Y-m-d'))) {
         $error_message = "La data limite deve essere futura.";
-    } elseif ($tipo === 'Software' && empty($rewards)) {
-        $error_message = "Devi aggiungere almeno una reward per il progetto Software.";
+    } elseif (empty($rewards)) {
+        $error_message = "Devi aggiungere almeno una reward per il progetto.";
     } elseif ($tipo === 'Hardware' && empty($componenti)) {
         $error_message = "Devi aggiungere almeno un componente per il progetto Hardware.";
+    } elseif ($tipo === 'Software' && isset($_POST['profili']) && $_POST['profili'] === 'si' && empty($profili)) {
+        $error_message = "Se hai selezionato 'Sì' per i profili, devi compilare almeno un profilo con le relative skill.";
     } else {
-        // Verifica univocità dei codici/nomi
-        if ($tipo === 'Software') {
-            $codiciUnivoci = array_unique(array_column($rewards, 'codice'));
-            if (count($codiciUnivoci) !== count($rewards)) {
-                $error_message = "I codici delle reward devono essere univoci.";
-            }
-        } elseif ($tipo === 'Hardware') {
+        // Verifica univocità
+        $codiciUnivoci = array_unique(array_column($rewards, 'codice'));
+        if (count($codiciUnivoci) !== count($rewards)) {
+            $error_message = "I codici delle reward devono essere univoci.";
+        } elseif ($tipo === 'Hardware' && !empty($componenti)) {
             $nomiUnivoci = array_unique(array_column($componenti, 'nome'));
             if (count($nomiUnivoci) !== count($componenti)) {
                 $error_message = "I nomi dei componenti devono essere univoci.";
@@ -114,13 +130,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($error_message)) {
-        // Carica immagine
+        // Carica immagine se fornita
         $immaginePath = null;
         if (isset($_FILES['immagine']) && $_FILES['immagine']['error'] === UPLOAD_ERR_OK) {
             $fileName = time() . "_" . basename($_FILES['immagine']['name']);
             $tmpName = $_FILES['immagine']['tmp_name'];
             $uploadDir = __DIR__ . '/../../img/';
-            if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+            
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0777, true);
+            }
+            
             $destPath = $uploadDir . $fileName;
             if (move_uploaded_file($tmpName, $destPath)) {
                 $immaginePath = 'img/' . $fileName;
@@ -132,52 +152,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $oggi = date('Y-m-d');
             $stato = 'aperto';
-
+            
+            // Validazione aggiuntiva per il tipo
+            if (!in_array($tipo, ['Hardware', 'Software'])) {
+                throw new Exception("Tipo progetto non valido: '$tipo'. Deve essere 'Hardware' o 'Software'");
+            }
+            
             // 1. Inserisci progetto
-            $db->callStoredProcedure('InserisciProgetto', [
-                $nome,
-                $descrizione,
-                $oggi,
-                $budget,
-                $data_limite,
-                $stato,
-                $tipo,
-                $email
+            $db->execute("
+                INSERT INTO PROGETTO (Nome, Descrizione, Data_Inserimento, Budget, Data_Limite, Stato, Tipo, Email_Creatore)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ", [
+                $nome, $descrizione, $oggi, $budget, $data_limite, $stato, $tipo, $email
             ]);
 
             // 2. Inserisci foto se caricata
             if ($immaginePath) {
-                $db->callStoredProcedure('InserisciFoto', [
-                    $immaginePath,
-                    $nome
-                ]);
+                $db->callStoredProcedure('InserisciFoto', [$immaginePath, $nome]);
             }
 
-            // 3. Inserisci reward (solo per Software) o componenti (solo per Hardware)
-            if ($tipo === 'Software') {
-                foreach ($rewards as $reward) {
-                    $db->execute("
-                        INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) 
-                        VALUES (?, ?, 'default_reward.jpg', ?)
-                    ", [$reward['codice'], $reward['descrizione'], $nome]);
-                }
-                $countItems = count($rewards);
-                $itemType = "reward";
-            } else {
+            // 3. Inserisci reward per entrambi i tipi
+            foreach ($rewards as $reward) {
+                $db->execute("
+                    INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) 
+                    VALUES (?, ?, 'default_reward.jpg', ?)
+                ", [$reward['codice'], $reward['descrizione'], $nome]);
+            }
+
+            // 4. Inserisci componenti per hardware o profili per software
+            if ($tipo === 'Hardware') {
                 foreach ($componenti as $componente) {
                     $db->execute("
                         INSERT INTO COMPONENTE (Nome, Descrizione, Prezzo, Quantita, Nome_Progetto) 
                         VALUES (?, ?, ?, ?, ?)
                     ", [
-                        $componente['nome'],
-                        $componente['descrizione'],
-                        $componente['prezzo'],
-                        $componente['quantita'],
-                        $nome
+                        $componente['nome'], $componente['descrizione'], 
+                        $componente['prezzo'], $componente['quantita'], $nome
                     ]);
                 }
-                $countItems = count($componenti);
-                $itemType = "componenti";
+                $countItems = count($componenti) + count($rewards);
+                $itemType = "componenti e reward";
+            } else {
+                // Software: inserisci profili se richiesti
+                if (!empty($profili)) {
+                    foreach ($profili as $profilo) {
+                        $stmt = $db->callStoredProcedure('InserisciProfiloRichiesto', [$profilo['nome'], $nome]);
+                        $result = $stmt->fetch();
+                        $id_profilo = $result['ID_Profilo'] ?? null;
+
+                        if ($id_profilo) {
+                            foreach ($profilo['competenze'] as $competenza => $livello) {
+                                $competenza = trim($competenza);
+                                $livello = intval($livello);
+
+                                if (!empty($competenza) && $livello >= 0 && $livello <= 5) {
+                                    $db->callStoredProcedure('InserisciSkill', [$competenza, $livello]);
+                                    $db->callStoredProcedure('InserisciSkillRichiesta', [
+                                        $id_profilo, $competenza, $livello
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                    $countItems = count($rewards) + count($profili);
+                    $itemType = "reward e profili";
+                } else {
+                    $countItems = count($rewards);
+                    $itemType = "reward";
+                }
             }
 
             $db->commit();
@@ -438,8 +480,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <small class="form-text text-muted">Carica un'immagine rappresentativa del tuo progetto.</small>
                 </div>
 
-                <!-- SEZIONE REWARD (solo per Software) -->
-                <div class="card border-primary mb-4" id="rewardsSection" style="display: none;">
+                <!-- SEZIONE REWARD (sempre visibile) -->
+                <div class="card border-primary mb-4" id="rewardsSection">
                     <div class="card-header bg-primary text-white">
                         <div class="d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">
@@ -449,7 +491,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <span id="rewardCount">0</span> reward
                             </span>
                         </div>
-                        <small>Aggiungi le ricompense che i sostenitori riceveranno (minimo 1 richiesta)</small>
+                        <small>Aggiungi le ricompense che i sostenitori riceveranno (obbligatorio per tutti i progetti)</small>
                     </div>
                     <div class="card-body">
                         <div id="rewardsContainer">
@@ -466,6 +508,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <strong>Esempi di reward:</strong> Accesso beta, T-shirt personalizzata, Menzione nei credits,
                                 Invito a evento esclusivo, Prodotto finale con sconto, ecc.
                             </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SEZIONE PROFILI SOFTWARE -->
+                <div class="card border-info mb-4" id="softwareProfilesSection" style="display: none;">
+                    <div class="card-header bg-info text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-users-cog me-2"></i>Profili Richiesti per il Progetto Software
+                            </h5>
+                        </div>
+                        <small>Definisci i profili professionali che cerchi per il tuo progetto</small>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-question-circle me-1"></i>Vuoi specificare profili con skill specifiche?
+                            </label>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="profili" id="profiliSi" value="si" onchange="toggleProfiloInput('si')">
+                                <label class="form-check-label" for="profiliSi">Sì</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="profili" id="profiliNo" value="no" onchange="toggleProfiloInput('no')" checked>
+                                <label class="form-check-label" for="profiliNo">No</label>
+                            </div>
+                        </div>
+
+                        <div id="profili-input" class="mt-3" style="display: none;">
+                            <div class="mb-3">
+                                <label for="profilo_richiesto_nome" class="form-label">
+                                    <i class="fas fa-id-badge me-1"></i>Nome del Profilo Richiesto
+                                </label>
+                                <input type="text" class="form-control" id="profilo_richiesto_nome" name="profilo_richiesto_nome"
+                                       placeholder="Es: Sviluppatore Backend, Esperto AI, Data Scientist">
+                                <small class="form-text text-muted">Dai un nome al tipo di profilo che cerchi.</small>
+                            </div>
+                            
+                            <h6><i class="fas fa-list-ul me-1"></i>Skill richieste per questo profilo:</h6>
+                            <div id="lista-profili">
+                                <!-- Le skill verranno aggiunte qui dinamicamente -->
+                            </div>
+                            <button type="button" class="btn btn-outline-info btn-sm mt-2" onclick="aggiungiProfilo()">
+                                <i class="fas fa-plus me-1"></i>Aggiungi un'altra skill
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -542,17 +630,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const tipo = this.value;
         const rewardsSection = document.getElementById('rewardsSection');
         const componentsSection = document.getElementById('componentsSection');
+        const softwareProfilesSection = document.getElementById('softwareProfilesSection');
 
         if (tipo === 'Software') {
             rewardsSection.style.display = 'block';
             componentsSection.style.display = 'none';
+            softwareProfilesSection.style.display = 'block';
             // Aggiungi automaticamente una reward se non ce ne sono
             if (rewardCount === 0) {
                 addReward();
             }
         } else if (tipo === 'Hardware') {
-            rewardsSection.style.display = 'none';
+            rewardsSection.style.display = 'block';
             componentsSection.style.display = 'block';
+            softwareProfilesSection.style.display = 'none';
+            // Aggiungi automaticamente una reward se non ce ne sono
+            if (rewardCount === 0) {
+                addReward();
+            }
             // Aggiungi automaticamente un componente se non ce ne sono
             if (componentCount === 0) {
                 addComponent();
@@ -560,6 +655,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             rewardsSection.style.display = 'none';
             componentsSection.style.display = 'none';
+            softwareProfilesSection.style.display = 'none';
+        }
+    });
+
+    // Inizializzazione quando il DOM è pronto
+    document.addEventListener('DOMContentLoaded', function() {
+        // Aggiungi automaticamente una reward all'avvio
+        if (rewardCount === 0) {
+            addReward();
         }
     });
 
@@ -726,24 +830,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     document.getElementById('projectForm').addEventListener('submit', function(e) {
         const tipo = document.getElementById('tipo').value;
 
-        if (tipo === 'Software') {
-            const rewards = document.querySelectorAll('.reward-item').length;
+        // Verifica sempre le reward (obbligatorie per tutti i tipi)
+        const rewards = document.querySelectorAll('.reward-item').length;
+        if (rewards === 0) {
+            e.preventDefault();
+            alert('Devi aggiungere almeno una reward per il progetto!');
+            return false;
+        }
 
-            if (rewards === 0) {
+        // Verifica che tutti i campi reward siano compilati
+        const rewardCodes = document.querySelectorAll('input[name="reward_codes[]"]');
+        const rewardDescriptions = document.querySelectorAll('input[name="reward_descriptions[]"]');
+
+        for (let i = 0; i < rewardCodes.length; i++) {
+            if (!rewardCodes[i].value.trim() || !rewardDescriptions[i].value.trim()) {
                 e.preventDefault();
-                alert('Devi aggiungere almeno una reward per il progetto Software!');
+                alert('Tutti i campi delle reward devono essere compilati!');
                 return false;
             }
+        }
 
-            // Verifica che tutti i campi reward siano compilati
-            const rewardCodes = document.querySelectorAll('input[name="reward_codes[]"]');
-            const rewardDescriptions = document.querySelectorAll('input[name="reward_descriptions[]"]');
-
-            for (let i = 0; i < rewardCodes.length; i++) {
-                if (!rewardCodes[i].value.trim() || !rewardDescriptions[i].value.trim()) {
+        if (tipo === 'Software') {
+            // Verifica profili se "Sì" è selezionato
+            const profiliSi = document.getElementById('profiliSi');
+            if (profiliSi.checked) {
+                const profiloNome = document.getElementById('profilo_richiesto_nome').value.trim();
+                const skillEntries = document.querySelectorAll('#lista-profili .profilo-entry');
+                
+                if (!profiloNome) {
                     e.preventDefault();
-                    alert('Tutti i campi delle reward devono essere compilati!');
+                    alert('Devi inserire il nome del profilo richiesto!');
                     return false;
+                }
+                
+                if (skillEntries.length === 0) {
+                    e.preventDefault();
+                    alert('Devi aggiungere almeno una skill per il profilo!');
+                    return false;
+                }
+                
+                // Verifica che tutte le skill siano compilate
+                for (let skill of skillEntries) {
+                    const competenza = skill.querySelector('input[name="competenze[]"]').value.trim();
+                    const livello = skill.querySelector('input[name="livelli[]"]').value;
+                    
+                    if (!competenza || !livello) {
+                        e.preventDefault();
+                        alert('Tutti i campi delle skill devono essere compilati!');
+                        return false;
+                    }
                 }
             }
         } else if (tipo === 'Hardware') {
@@ -775,6 +910,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         return true;
     });
+
+    // Funzioni per gestire profili software
+    function toggleProfiloInput(valore) {
+        const profiliInput = document.getElementById("profili-input");
+        profiliInput.style.display = (valore === "si") ? "block" : "none";
+
+        // If "Si" is selected and no skill inputs exist, add one
+        if (valore === "si" && document.querySelectorAll('#lista-profili .profilo-entry').length === 0) {
+            aggiungiProfilo();
+        }
+        // If "No" is selected, clear skill inputs and profile name
+        if (valore === "no") {
+            const listaProfili = document.getElementById("lista-profili");
+            if(listaProfili) listaProfili.innerHTML = '';
+            const profiloNomeInput = document.getElementById('profilo_richiesto_nome');
+            if (profiloNomeInput) profiloNomeInput.value = '';
+        }
+    }
+
+    function aggiungiProfilo() {
+        const nuovo = document.createElement("div");
+        nuovo.className = "profilo-entry";
+        nuovo.innerHTML = `
+            <div class="row mb-2">
+                <div class="col-md-5">
+                    <input type="text" name="competenze[]" class="form-control" placeholder="Competenza (es: AI)" required>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" name="livelli[]" class="form-control" placeholder="Livello (0-5)" min="0" max="5" required>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="rimuoviProfilo(this)">
+                        <i class="fas fa-minus-circle"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        document.getElementById("lista-profili").appendChild(nuovo);
+    }
+
+    function rimuoviProfilo(button) {
+        button.closest('.profilo-entry').remove();
+    }
 </script>
 </body>
 </html>

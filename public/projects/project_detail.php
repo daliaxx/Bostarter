@@ -26,6 +26,9 @@ if (!isset($_GET['name']) || empty($_GET['name'])) {
 $nomeProgetto = $_GET['name'];
 $db = Database::getInstance();
 
+// Assicura che l'evento MySQL sia attivo
+$db->ensureEventScheduler();
+
 // Ottieni dettagli progetto
 $sql = "
     SELECT
@@ -56,15 +59,16 @@ $sql = "
 
 $progetto = $db->fetchOne($sql, [$nomeProgetto]);
 
-$oggi     = new DateTimeImmutable('today');
-$limite   = new DateTimeImmutable($progetto['Data_Limite']);
-
-if ($progetto['Stato'] === 'aperto' && $limite < $oggi) {
+// AGGIORNAMENTO AUTOMATICO STATO PROGETTO SCADUTO
+if ($progetto && $progetto['Stato'] === 'aperto' && $progetto['Data_Limite'] < date('Y-m-d')) {
+    $db->execute("UPDATE PROGETTO SET Stato = 'chiuso' WHERE Nome = ?", [$nomeProgetto]);
     $progetto['Stato'] = 'chiuso';
 }
 
-/* (opzionale) aggiorna il contatore dei giorni in base alle
-   stesse date, se non arriva già dalla query SQL */
+$oggi     = new DateTimeImmutable('today');
+$limite   = new DateTimeImmutable($progetto['Data_Limite']);
+
+// Calcolo consistente dei giorni rimanenti (stesso metodo di projects.php)
 $progetto['Giorni_Rimanenti'] = (int) $oggi->diff($limite)->format('%r%a');
 
 if (!$progetto) {
@@ -101,6 +105,25 @@ $profiliRicercati = $db->fetchAll(
     "SELECT ID, Nome FROM PROFILO WHERE Nome_Progetto = ?",
     [$nomeProgetto]
 );
+
+// START: NEW CODE FOR COMPONENTS (Hardware projects)
+$componenti = [];
+if ($progetto['Tipo'] === 'Hardware') {
+    $componenti = $db->fetchAll("
+        SELECT ID, Nome, Descrizione, Prezzo, Quantita, 
+               (Prezzo * Quantita) as Totale
+        FROM COMPONENTE 
+        WHERE Nome_Progetto = ?
+        ORDER BY Nome ASC
+    ", [$nomeProgetto]);
+    
+    // Calcola totale generale componenti
+    $totaleComponenti = 0;
+    foreach ($componenti as $componente) {
+        $totaleComponenti += $componente['Totale'];
+    }
+}
+// END: NEW CODE FOR COMPONENTS
 
 // NUOVA SEZIONE: Verifica skill per candidature
 if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'aperto' && !empty($profiliRicercati)) {
@@ -636,6 +659,75 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                     </div>
                 </div>
             </div>
+
+            <!-- START: NEW SECTION FOR HARDWARE COMPONENTS -->
+            <?php if ($progetto['Tipo'] === 'Hardware' && !empty($componenti)): ?>
+                <div class="project-details-card fade-in-up">
+                    <h3 class="mb-3 text-warning">
+                        <i class="fas fa-microchip me-2"></i>Componenti Hardware Necessari
+                    </h3>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-warning">
+                                <tr>
+                                    <th><i class="fas fa-cube me-1"></i>Componente</th>
+                                    <th><i class="fas fa-info-circle me-1"></i>Descrizione</th>
+                                    <th><i class="fas fa-euro-sign me-1"></i>Prezzo Unitario</th>
+                                    <th><i class="fas fa-boxes me-1"></i>Quantità</th>
+                                    <th><i class="fas fa-calculator me-1"></i>Totale</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($componenti as $componente): ?>
+                                    <tr>
+                                        <td>
+                                            <strong><?= htmlspecialchars($componente['Nome']) ?></strong>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted"><?= htmlspecialchars($componente['Descrizione']) ?></small>
+                                        </td>
+                                        <td>
+                                            <span class="text-success fw-bold"><?= formatCurrency($componente['Prezzo']) ?></span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary"><?= htmlspecialchars($componente['Quantita']) ?></span>
+                                        </td>
+                                        <td>
+                                            <span class="text-primary fw-bold"><?= formatCurrency($componente['Totale']) ?></span>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="4" class="text-end">
+                                        <strong>Totale Componenti:</strong>
+                                    </td>
+                                    <td>
+                                        <span class="text-primary fw-bold fs-5"><?= formatCurrency($totaleComponenti) ?></span>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            <?php elseif ($progetto['Tipo'] === 'Hardware' && empty($componenti)): ?>
+                <div class="project-details-card fade-in-up">
+                    <h3 class="mb-3 text-warning">
+                        <i class="fas fa-microchip me-2"></i>Componenti Hardware
+                    </h3>
+                    <div class="text-center py-4">
+                        <i class="fas fa-info-circle fa-2x text-muted mb-3"></i>
+                        <p class="text-muted">
+                            Questo progetto hardware non ha ancora specificato i componenti necessari.
+                            <br>
+                            Il creatore aggiungerà presto la lista dettagliata dei componenti hardware.
+                        </p>
+                    </div>
+                </div>
+            <?php endif; ?>
+            <!-- END: NEW SECTION FOR HARDWARE COMPONENTS -->
 
             <div class="mt-4">
                 <a href="projects.php" class="btn btn-secondary-modern btn-lg"><i class="fas fa-arrow-left me-2"></i>Torna ai Progetti</a>

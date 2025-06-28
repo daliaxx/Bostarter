@@ -96,6 +96,18 @@ if ($project['Tipo'] === 'Software') {
 }
 // END: MODIFIED CODE FOR PROFILES
 
+// START: NEW CODE FOR COMPONENTS (Hardware projects)
+$components = [];
+if ($project['Tipo'] === 'Hardware') {
+    $components = $db->fetchAll("
+        SELECT ID, Nome, Descrizione, Prezzo, Quantita
+        FROM COMPONENTE
+        WHERE Nome_Progetto = ?
+        ORDER BY Nome
+    ", [$projectName]);
+}
+// END: NEW CODE FOR COMPONENTS
+
 ?>
 
 <!DOCTYPE html>
@@ -160,6 +172,28 @@ if ($project['Tipo'] === 'Software') {
             display: inline-block;
         }
         /* END: NEW CSS FOR PROFILE SECTION */
+        /* START: NEW CSS FOR COMPONENT SECTION */
+        .component-item {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        .component-item:hover {
+            border-color: #28a745;
+            background: #e8f5e8;
+        }
+        .component-price {
+            font-weight: bold;
+            color: #28a745;
+        }
+        .component-quantity {
+            font-weight: bold;
+            color: #007bff;
+        }
+        /* END: NEW CSS FOR COMPONENT SECTION */
     </style>
 </head>
 <body>
@@ -312,6 +346,47 @@ if ($project['Tipo'] === 'Software') {
                     </div>
                 </div>
             <?php endif; ?>
+            <?php if ($project['Tipo'] === 'Hardware'): ?>
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h4 class="mb-0"><i class="fas fa-microchip me-2"></i>Componenti Hardware</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group mb-3">
+                            <?php if (empty($components)): ?>
+                                <p>Nessun componente aggiunto a questo progetto hardware.</p>
+                            <?php else: ?>
+                                <?php foreach ($components as $component): ?>
+                                    <div class="list-group-item list-group-item-action component-item">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h5><i class="fas fa-cube me-1"></i><?= htmlspecialchars($component['Nome']) ?></h5>
+                                            <button class="btn btn-danger btn-sm" onclick="deleteComponent(<?= $component['ID'] ?>)">
+                                                <i class="fas fa-trash-alt"></i> Elimina Componente
+                                            </button>
+                                        </div>
+                                        <p class="mb-2"><?= htmlspecialchars($component['Descrizione']) ?></p>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <span class="component-price">
+                                                    <i class="fas fa-euro-sign me-1"></i>Prezzo: €<?= number_format($component['Prezzo'], 2) ?>
+                                                </span>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <span class="component-quantity">
+                                                    <i class="fas fa-boxes me-1"></i>Quantità: <?= htmlspecialchars($component['Quantita']) ?>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                        <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addComponentModal">
+                            <i class="fas fa-plus me-2"></i>Aggiungi Nuovo Componente
+                        </button>
+                    </div>
+                </div>
+            <?php endif; ?>
             </div>
         <div class="col-lg-4">
             <div class="card shadow-sm">
@@ -382,6 +457,42 @@ if ($project['Tipo'] === 'Software') {
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
                     <button type="button" class="btn btn-success" onclick="addProfile()">Salva Profilo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="addComponentModal" tabindex="-1" aria-labelledby="addComponentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="addComponentModalLabel">Aggiungi Nuovo Componente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addComponentForm">
+                <div class="modal-body">
+                    <input type="hidden" name="project_name" value="<?= htmlspecialchars($projectName) ?>">
+                    <div class="mb-3">
+                        <label for="componentName" class="form-label">Nome Componente</label>
+                        <input type="text" class="form-control" id="componentName" name="nome" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="componentDescription" class="form-label">Descrizione Componente</label>
+                        <textarea class="form-control" id="componentDescription" name="descrizione" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="componentPrice" class="form-label">Prezzo (€)</label>
+                        <input type="number" step="0.01" class="form-control" id="componentPrice" name="prezzo" required min="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <label for="componentQuantity" class="form-label">Quantità</label>
+                        <input type="number" class="form-control" id="componentQuantity" name="quantita" required min="1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                    <button type="button" class="btn btn-warning" onclick="addComponent()">Aggiungi Componente</button>
                 </div>
             </form>
         </div>
@@ -550,6 +661,87 @@ if ($project['Tipo'] === 'Software') {
             });
     }
     // END: NEW JAVASCRIPT FUNCTIONS FOR PROFILES
+
+    // START: NEW JAVASCRIPT FUNCTIONS FOR COMPONENTS
+    function addComponent() {
+        const form = document.getElementById('addComponentForm');
+        const formData = new FormData(form);
+
+        // Basic validation
+        const nome = formData.get('nome').trim();
+        const descrizione = formData.get('descrizione').trim();
+        const prezzo = parseFloat(formData.get('prezzo'));
+        const quantita = parseInt(formData.get('quantita'));
+
+        if (!nome || !descrizione) {
+            alert('Nome e descrizione sono obbligatori.');
+            return;
+        }
+
+        if (prezzo <= 0) {
+            alert('Il prezzo deve essere maggiore di zero.');
+            return;
+        }
+
+        if (quantita <= 0) {
+            alert('La quantità deve essere maggiore di zero.');
+            return;
+        }
+
+        // Prepare form data with correct parameter names
+        const apiFormData = new FormData();
+        apiFormData.append('action', 'add_component');
+        apiFormData.append('nome_progetto', formData.get('project_name'));
+        apiFormData.append('nome_componente', nome);
+        apiFormData.append('descrizione', descrizione);
+        apiFormData.append('prezzo', prezzo);
+        apiFormData.append('quantita', quantita);
+
+        fetch('../../api/manage_components.php', {
+            method: 'POST',
+            body: apiFormData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message || 'Componente aggiunto con successo!');
+                    location.reload();
+                } else {
+                    alert(data.message || 'Errore durante l\'aggiunta del componente.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Errore di rete o del server durante l\'aggiunta del componente.');
+            });
+    }
+
+    function deleteComponent(componentId) {
+        if (!confirm('Vuoi eliminare questo componente?')) return;
+
+        const formData = new FormData();
+        formData.append('action', 'delete_component');
+        formData.append('component_id', componentId);
+
+        fetch('../../api/manage_components.php', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message || 'Componente eliminato con successo!');
+                    location.reload();
+                } else {
+                    alert(data.message || 'Errore durante l\'eliminazione del componente.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Errore di rete o del server durante l\'eliminazione del componente.');
+            });
+    }
+    // END: NEW JAVASCRIPT FUNCTIONS FOR COMPONENTS
 
     // Ensure at least one skill input is present when opening the modal for the first time
     document.addEventListener('DOMContentLoaded', function() {
