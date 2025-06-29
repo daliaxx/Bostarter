@@ -30,21 +30,20 @@ try {
         GROUP BY c.Nr_Progetti, c.Affidabilita
     ", [$userEmail]);
 
-    // I miei progetti
     $mieiProgetti = $db->fetchAll("
-        SELECT p.*, 
-               COALESCE(SUM(f.Importo), 0) as Totale_Raccolto,
-               COUNT(DISTINCT f.Email_Utente) as Num_Sostenitori,
-               COUNT(DISTINCT c.ID) as Num_Commenti,
-               DATEDIFF(p.Data_Limite, CURDATE()) as Giorni_Rimanenti,
-               p.Tipo as Categoria
-        FROM PROGETTO p
-        LEFT JOIN FINANZIAMENTO f ON p.Nome = f.Nome_Progetto
-        LEFT JOIN COMMENTO c ON p.Nome = c.Nome_Progetto
-        WHERE p.Email_Creatore = ?
-        GROUP BY p.Nome
-        ORDER BY p.Data_Inserimento DESC
-    ", [$userEmail]);
+    SELECT p.*, 
+           COALESCE(SUM(f.Importo), 0) as Totale_Raccolto,
+           COUNT(DISTINCT f.Email_Utente) as Num_Sostenitori,
+           COUNT(DISTINCT c.ID) as Num_Commenti,
+           DATEDIFF(p.Data_Limite, CURDATE()) as Giorni_Rimanenti,
+           p.Tipo as Categoria
+    FROM PROGETTO p
+    LEFT JOIN FINANZIAMENTO f ON p.Nome = f.Nome_Progetto
+    LEFT JOIN COMMENTO c ON p.Nome = c.Nome_Progetto
+    WHERE p.Email_Creatore = ?
+    GROUP BY p.Nome
+    ORDER BY p.Data_Inserimento DESC
+", [$userEmail]);
 
     // AGGIORNAMENTO AUTOMATICO STATO PROGETTI SCADUTI DEL CREATORE
     $db->execute("
@@ -59,6 +58,7 @@ try {
             $progetto['Stato'] = 'chiuso';
         }
     }
+    unset($progetto); // Importante per liberare il riferimento
 
     // Gestione eliminazione progetto
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['elimina_progetto'])) {
@@ -77,7 +77,7 @@ try {
             header("Location: creator_dashboard.php");
             exit;
         } catch (Exception $e) {
-            echo "<p>❌ Errore nell'eliminazione: " . $e->getMessage() . "</p>";
+            echo "<p>Errore nell'eliminazione: " . $e->getMessage() . "</p>";
         }
     }
 
@@ -397,7 +397,9 @@ function getCompletionPercentage($raccolto, $budget) {
                             </a>
                         </div>
                     <?php else: ?>
+
                         <?php foreach ($mieiProgetti as $progetto): ?>
+
                             <?php
                             $percentuale = getCompletionPercentage($progetto['Totale_Raccolto'], $progetto['Budget']);
                             $classeProgetto = $progetto['Tipo'] === 'Hardware' ? 'project-hardware' : 'project-software';

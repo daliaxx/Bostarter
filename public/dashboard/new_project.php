@@ -622,10 +622,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+    // ================================================================
+    // VARIABILI GLOBALI
+    // ================================================================
     let rewardCount = 0;
     let componentCount = 0;
+    window.competenzeDisponibili = [];
 
-    // Mostra/nascondi sezioni in base al tipo progetto
+    // ================================================================
+    // FUNZIONI PER GESTIONE COMPETENZE DAL DATABASE
+    // ================================================================
+    function loadCompetenze() {
+        fetch('../../api/manage_skill.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=get_available_skills'
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.competenzeDisponibili = data.skills;
+                    aggiornaSelectCompetenze();
+                }
+            })
+            .catch(error => {
+                console.error('Errore caricamento competenze:', error);
+            });
+    }
+
+    function aggiornaSelectCompetenze() {
+        document.querySelectorAll('.competenza-select').forEach(select => {
+            select.innerHTML = '<option value="">Seleziona competenza...</option>';
+            window.competenzeDisponibili.forEach(skill => {
+                select.innerHTML += `<option value="${skill.Competenza}">${skill.Competenza}</option>`;
+            });
+        });
+    }
+
+    // ================================================================
+    // GESTIONE TIPO PROGETTO
+    // ================================================================
     document.getElementById('tipo').addEventListener('change', function() {
         const tipo = this.value;
         const rewardsSection = document.getElementById('rewardsSection');
@@ -639,6 +677,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Aggiungi automaticamente una reward se non ce ne sono
             if (rewardCount === 0) {
                 addReward();
+            }
+            // Carica competenze per progetti software
+            if (!window.competenzeDisponibili || window.competenzeDisponibili.length === 0) {
+                loadCompetenze();
             }
         } else if (tipo === 'Hardware') {
             rewardsSection.style.display = 'block';
@@ -659,7 +701,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     });
 
-    // Inizializzazione quando il DOM è pronto
+    // ================================================================
+    // INIZIALIZZAZIONE
+    // ================================================================
     document.addEventListener('DOMContentLoaded', function() {
         // Aggiungi automaticamente una reward all'avvio
         if (rewardCount === 0) {
@@ -667,7 +711,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     });
 
-    // Funzione per aggiungere una reward
+    // ================================================================
+    // FUNZIONI REWARD
+    // ================================================================
     function addReward() {
         rewardCount++;
 
@@ -708,7 +754,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         updateRewardCount();
     }
 
-    // Funzione per rimuovere una reward
     function removeReward(id) {
         const rewardElement = document.getElementById(`reward_${id}`);
         if (rewardElement) {
@@ -717,13 +762,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Aggiorna il contatore delle reward
     function updateRewardCount() {
         const currentRewards = document.querySelectorAll('.reward-item').length;
         document.getElementById('rewardCount').textContent = currentRewards;
     }
 
-    // Funzione per aggiungere componente
+    // ================================================================
+    // FUNZIONI COMPONENTI
+    // ================================================================
     function addComponent() {
         componentCount++;
 
@@ -784,7 +830,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         updateComponentsSummary();
     }
 
-    // Funzione per rimuovere componente
     function removeComponent(id) {
         const componentElement = document.getElementById(`component_${id}`);
         if (componentElement) {
@@ -794,13 +839,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Aggiorna contatore componenti
     function updateComponentsCount() {
         const currentComponents = document.querySelectorAll('.component-item').length;
         document.getElementById('componentCount').textContent = currentComponents;
     }
 
-    // Aggiorna riepilogo costi
     function updateComponentsSummary() {
         const components = document.querySelectorAll('.component-item');
         const summaryDiv = document.getElementById('componentsSummary');
@@ -826,7 +869,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         summaryDiv.style.display = 'block';
     }
 
-    // Validazione form prima dell'invio
+    // ================================================================
+    // FUNZIONI PROFILI SOFTWARE
+    // ================================================================
+    function toggleProfiloInput(valore) {
+        const profiliInput = document.getElementById("profili-input");
+        profiliInput.style.display = (valore === "si") ? "block" : "none";
+
+        if (valore === "si") {
+            // Carica competenze quando si abilita la sezione profili
+            if (!window.competenzeDisponibili || window.competenzeDisponibili.length === 0) {
+                loadCompetenze();
+            }
+            if (document.querySelectorAll('#lista-profili .profilo-entry').length === 0) {
+                aggiungiProfilo();
+            }
+        }
+        if (valore === "no") {
+            const listaProfili = document.getElementById("lista-profili");
+            if(listaProfili) listaProfili.innerHTML = '';
+            const profiloNomeInput = document.getElementById('profilo_richiesto_nome');
+            if (profiloNomeInput) profiloNomeInput.value = '';
+        }
+    }
+
+    function aggiungiProfilo() {
+        const nuovo = document.createElement("div");
+        nuovo.className = "profilo-entry";
+        nuovo.innerHTML = `
+            <div class="row mb-2">
+                <div class="col-md-5">
+                    <select name="competenze[]" class="form-control competenza-select" required>
+                        <option value="">Caricamento...</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" name="livelli[]" class="form-control" placeholder="Livello (0-5)" min="0" max="5" required>
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="rimuoviProfilo(this)">
+                        <i class="fas fa-minus-circle"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+        document.getElementById("lista-profili").appendChild(nuovo);
+
+        // Popola il nuovo select appena creato
+        const newSelect = nuovo.querySelector('.competenza-select');
+        if (window.competenzeDisponibili && Array.isArray(window.competenzeDisponibili) && window.competenzeDisponibili.length > 0) {
+            newSelect.innerHTML = '<option value="">Seleziona competenza...</option>';
+            window.competenzeDisponibili.forEach(skill => {
+                newSelect.innerHTML += `<option value="${skill.Competenza}">${skill.Competenza}</option>`;
+            });
+        }
+    }
+
+    function rimuoviProfilo(button) {
+        button.closest('.profilo-entry').remove();
+    }
+
+    // ================================================================
+    // VALIDAZIONE FORM
+    // ================================================================
     document.getElementById('projectForm').addEventListener('submit', function(e) {
         const tipo = document.getElementById('tipo').value;
 
@@ -856,24 +961,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (profiliSi.checked) {
                 const profiloNome = document.getElementById('profilo_richiesto_nome').value.trim();
                 const skillEntries = document.querySelectorAll('#lista-profili .profilo-entry');
-                
+
                 if (!profiloNome) {
                     e.preventDefault();
                     alert('Devi inserire il nome del profilo richiesto!');
                     return false;
                 }
-                
+
                 if (skillEntries.length === 0) {
                     e.preventDefault();
                     alert('Devi aggiungere almeno una skill per il profilo!');
                     return false;
                 }
-                
+
                 // Verifica che tutte le skill siano compilate
                 for (let skill of skillEntries) {
-                    const competenza = skill.querySelector('input[name="competenze[]"]').value.trim();
+                    const competenza = skill.querySelector('select[name="competenze[]"]').value;
                     const livello = skill.querySelector('input[name="livelli[]"]').value;
-                    
+
                     if (!competenza || !livello) {
                         e.preventDefault();
                         alert('Tutti i campi delle skill devono essere compilati!');
@@ -910,49 +1015,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         return true;
     });
-
-    // Funzioni per gestire profili software
-    function toggleProfiloInput(valore) {
-        const profiliInput = document.getElementById("profili-input");
-        profiliInput.style.display = (valore === "si") ? "block" : "none";
-
-        // If "Si" is selected and no skill inputs exist, add one
-        if (valore === "si" && document.querySelectorAll('#lista-profili .profilo-entry').length === 0) {
-            aggiungiProfilo();
-        }
-        // If "No" is selected, clear skill inputs and profile name
-        if (valore === "no") {
-            const listaProfili = document.getElementById("lista-profili");
-            if(listaProfili) listaProfili.innerHTML = '';
-            const profiloNomeInput = document.getElementById('profilo_richiesto_nome');
-            if (profiloNomeInput) profiloNomeInput.value = '';
-        }
-    }
-
-    function aggiungiProfilo() {
-        const nuovo = document.createElement("div");
-        nuovo.className = "profilo-entry";
-        nuovo.innerHTML = `
-            <div class="row mb-2">
-                <div class="col-md-5">
-                    <input type="text" name="competenze[]" class="form-control" placeholder="Competenza (es: AI)" required>
-                </div>
-                <div class="col-md-3">
-                    <input type="number" name="livelli[]" class="form-control" placeholder="Livello (0-5)" min="0" max="5" required>
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-danger btn-sm" onclick="rimuoviProfilo(this)">
-                        <i class="fas fa-minus-circle"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-        document.getElementById("lista-profili").appendChild(nuovo);
-    }
-
-    function rimuoviProfilo(button) {
-        button.closest('.profilo-entry').remove();
-    }
 </script>
 </body>
 </html>

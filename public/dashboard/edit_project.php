@@ -500,12 +500,52 @@ if ($project['Tipo'] === 'Hardware') {
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    // ================================================================
+    // VARIABILI GLOBALI
+    // ================================================================
+    window.competenzeDisponibili = [];
+    let profileSkillCounter = 0;
+
+    // ================================================================
+    // FUNZIONI PER GESTIONE COMPETENZE DAL DATABASE
+    // ================================================================
+    function loadCompetenze() {
+        fetch('../../api/manage_skill.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=get_available_skills'
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.competenzeDisponibili = data.skills;
+                    aggiornaSelectCompetenze();
+                }
+            })
+            .catch(error => {
+                console.error('Errore caricamento competenze:', error);
+            });
+    }
+
+    function aggiornaSelectCompetenze() {
+        document.querySelectorAll('.competenza-select').forEach(select => {
+            select.innerHTML = '<option value="">Seleziona competenza...</option>';
+            window.competenzeDisponibili.forEach(skill => {
+                select.innerHTML += `<option value="${skill.Competenza}">${skill.Competenza}</option>`;
+            });
+        });
+    }
+
+    // ================================================================
+    // FUNZIONI REWARD
+    // ================================================================
     function addReward() {
         const form = document.getElementById('addRewardForm');
         const formData = new FormData(form);
 
         formData.append('action', 'add_reward');
-
         formData.append('nome_progetto', '<?= htmlspecialchars($projectName) ?>');
 
         fetch('../../api/manage_rewards.php', {
@@ -531,8 +571,7 @@ if ($project['Tipo'] === 'Hardware') {
         const formData = new FormData();
         formData.append('action', 'delete_reward');
         formData.append('codice', codice);
-        formData.append('project_name', '<?= htmlspecialchars($projectName) ?>'); // Pass project name for context
-
+        formData.append('project_name', '<?= htmlspecialchars($projectName) ?>');
         formData.append('nome_progetto', '<?= htmlspecialchars($projectName) ?>');
 
         fetch('../../api/manage_rewards.php', {
@@ -552,9 +591,9 @@ if ($project['Tipo'] === 'Hardware') {
             });
     }
 
-    // START: NEW JAVASCRIPT FUNCTIONS FOR PROFILES (previously added)
-    let profileSkillCounter = 0; // To ensure unique names for skill inputs in the modal
-
+    // ================================================================
+    // FUNZIONI PROFILI (per progetti Software)
+    // ================================================================
     function addSkillToProfileModal() {
         const skillsContainer = document.getElementById('skillsContainer');
         const skillId = `skill-${profileSkillCounter++}`;
@@ -564,7 +603,9 @@ if ($project['Tipo'] === 'Hardware') {
         skillDiv.id = skillId;
         skillDiv.innerHTML = `
             <div class="col-md-5">
-                <input type="text" class="form-control" name="profile_skills[${skillId}][competenza]" placeholder="Competenza" required>
+                <select class="form-control competenza-select" name="profile_skills[${skillId}][competenza]" required>
+                    <option value="">Caricamento...</option>
+                </select>
             </div>
             <div class="col-md-5">
                 <input type="number" class="form-control" name="profile_skills[${skillId}][livello]" placeholder="Livello (0-5)" min="0" max="5" required>
@@ -576,6 +617,15 @@ if ($project['Tipo'] === 'Hardware') {
             </div>
         `;
         skillsContainer.appendChild(skillDiv);
+
+        // Popola il nuovo select appena creato
+        const newSelect = skillDiv.querySelector('.competenza-select');
+        if (window.competenzeDisponibili && Array.isArray(window.competenzeDisponibili) && window.competenzeDisponibili.length > 0) {
+            newSelect.innerHTML = '<option value="">Seleziona competenza...</option>';
+            window.competenzeDisponibili.forEach(skill => {
+                newSelect.innerHTML += `<option value="${skill.Competenza}">${skill.Competenza}</option>`;
+            });
+        }
     }
 
     function removeSkillFromProfileModal(id) {
@@ -597,7 +647,7 @@ if ($project['Tipo'] === 'Hardware') {
         }
 
         // Basic validation for skills
-        const skillInputs = document.querySelectorAll('#skillsContainer input[type="text"][name^="profile_skills"]');
+        const skillInputs = document.querySelectorAll('#skillsContainer select[name^="profile_skills"]');
         const levelInputs = document.querySelectorAll('#skillsContainer input[type="number"][name^="profile_skills"]');
 
         if (skillInputs.length === 0) {
@@ -624,7 +674,7 @@ if ($project['Tipo'] === 'Hardware') {
             .then(data => {
                 if (data.success) {
                     alert(data.message || 'Profilo aggiunto con successo!');
-                    location.reload(); // Reload to show the new profile
+                    location.reload();
                 } else {
                     alert(data.message || 'Errore durante l\'aggiunta del profilo.');
                 }
@@ -640,8 +690,8 @@ if ($project['Tipo'] === 'Hardware') {
 
         const formData = new FormData();
         formData.append('profile_id', profileId);
-        formData.append('project_name', '<?= htmlspecialchars($projectName) ?>'); // Pass project name for context
-        formData.append('action', 'delete'); // Nuovo parametro per la nuova API
+        formData.append('project_name', '<?= htmlspecialchars($projectName) ?>');
+        formData.append('action', 'delete');
 
         fetch('../../api/manage_profile.php', {
             method: 'POST',
@@ -651,7 +701,7 @@ if ($project['Tipo'] === 'Hardware') {
             .then(data => {
                 if (data.success) {
                     alert(data.message || 'Profilo eliminato con successo!');
-                    location.reload(); // Reload to reflect changes
+                    location.reload();
                 } else {
                     alert(data.message || 'Errore durante l\'eliminazione del profilo.');
                 }
@@ -661,9 +711,10 @@ if ($project['Tipo'] === 'Hardware') {
                 alert('Errore di rete o del server durante l\'eliminazione del profilo.');
             });
     }
-    // END: NEW JAVASCRIPT FUNCTIONS FOR PROFILES
 
-    // START: NEW JAVASCRIPT FUNCTIONS FOR COMPONENTS
+    // ================================================================
+    // FUNZIONI COMPONENTI (per progetti Hardware)
+    // ================================================================
     function addComponent() {
         const form = document.getElementById('addComponentForm');
         const formData = new FormData(form);
@@ -742,23 +793,31 @@ if ($project['Tipo'] === 'Hardware') {
                 alert('Errore di rete o del server durante l\'eliminazione del componente.');
             });
     }
-    // END: NEW JAVASCRIPT FUNCTIONS FOR COMPONENTS
 
-    // Ensure at least one skill input is present when opening the modal for the first time
+    // ================================================================
+    // INIZIALIZZAZIONE E EVENT LISTENERS
+    // ================================================================
     document.addEventListener('DOMContentLoaded', function() {
+        // Carica competenze quando si apre il modal per aggiungere profili
         const addProfileModalElement = document.getElementById('addProfileModal');
-        addProfileModalElement.addEventListener('shown.bs.modal', function () {
-            const skillsContainer = document.getElementById('skillsContainer');
-            if (skillsContainer.children.length === 0) {
-                addSkillToProfileModal();
-            }
-        });
-        // Clear previous inputs if modal is closed and reopened
-        addProfileModalElement.addEventListener('hidden.bs.modal', function () {
-            document.getElementById('addProfileForm').reset();
-            document.getElementById('skillsContainer').innerHTML = ''; // Clear dynamically added skills
-            profileSkillCounter = 0; // Reset counter
-        });
+        if (addProfileModalElement) {
+            addProfileModalElement.addEventListener('show.bs.modal', function () {
+                if (!window.competenzeDisponibili || window.competenzeDisponibili.length === 0) {
+                    loadCompetenze();
+                }
+                const skillsContainer = document.getElementById('skillsContainer');
+                if (skillsContainer && skillsContainer.children.length === 0) {
+                    addSkillToProfileModal();
+                }
+            });
+
+            // Clear previous inputs if modal is closed and reopened
+            addProfileModalElement.addEventListener('hidden.bs.modal', function () {
+                document.getElementById('addProfileForm').reset();
+                document.getElementById('skillsContainer').innerHTML = '';
+                profileSkillCounter = 0;
+            });
+        }
     });
 </script>
 </body>
