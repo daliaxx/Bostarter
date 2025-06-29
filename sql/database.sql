@@ -607,6 +607,266 @@ FROM PROGETTO p
 GROUP BY p.Nome, p.Stato, p.Budget, p.Data_Limite, c.Nr_Progetti, c.Affidabilita, u.Nickname;
 
 -- ================================================================
+-- SISTEMA DI LOGGING EVENTI BOSTARTER
+-- ================================================================
+
+-- Tabella per il logging degli eventi
+CREATE TABLE IF NOT EXISTS LOG_EVENTI (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    evento VARCHAR(255) NOT NULL,
+    email_utente VARCHAR(255) NOT NULL,
+    data TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    descrizione TEXT NOT NULL,
+    sincronizzato BOOLEAN DEFAULT FALSE
+) ENGINE=INNODB;
+
+-- Procedura per inserimento log eventi
+DELIMITER //
+CREATE PROCEDURE InserisciLogEvento(
+    IN p_evento VARCHAR(255),
+    IN p_email_utente VARCHAR(255),
+    IN p_descrizione TEXT
+)
+BEGIN
+    -- Inserimento del log
+    INSERT INTO LOG_EVENTI (evento, email_utente, descrizione)
+    VALUES (p_evento, p_email_utente, p_descrizione);
+END //
+DELIMITER ;
+
+-- ================================================================
+-- TRIGGER PER LOGGING EVENTI
+-- ================================================================
+
+DELIMITER $$
+
+-- Trigger per log registrazione nuovo utente
+CREATE TRIGGER LogNuovoUtente
+    AFTER INSERT ON UTENTE
+    FOR EACH ROW
+BEGIN
+    CALL InserisciLogEvento(
+        'NUOVO_UTENTE',
+        NEW.Email,
+        CONCAT('Nuovo utente registrato: ', NEW.Nickname, ' (', NEW.Nome, ' ', NEW.Cognome, ')')
+    );
+END $$
+
+-- Trigger per log promozione a creatore
+CREATE TRIGGER LogNuovoCreatore
+    AFTER INSERT ON CREATORE
+    FOR EACH ROW
+BEGIN
+    CALL InserisciLogEvento(
+        'NUOVO_CREATORE',
+        NEW.Email,
+        CONCAT('Utente promosso a creatore: ', NEW.Email)
+    );
+END $$
+
+-- Trigger per log nuovo progetto
+CREATE TRIGGER LogNuovoProgetto
+    AFTER INSERT ON PROGETTO
+    FOR EACH ROW
+BEGIN
+    CALL InserisciLogEvento(
+        'NUOVO_PROGETTO',
+        NEW.Email_Creatore,
+        CONCAT('Nuovo progetto creato: ', NEW.Nome, ' (', NEW.Tipo, ') - Budget: €', NEW.Budget)
+    );
+END $$
+
+-- Trigger per log nuovo finanziamento
+CREATE TRIGGER LogNuovoFinanziamento
+    AFTER INSERT ON FINANZIAMENTO
+    FOR EACH ROW
+BEGIN
+    CALL InserisciLogEvento(
+        'NUOVO_FINANZIAMENTO',
+        NEW.Email_Utente,
+        CONCAT('Nuovo finanziamento di €', NEW.Importo, ' per il progetto: ', NEW.Nome_Progetto)
+    );
+END $$
+
+-- Trigger per log chiusura progetto
+CREATE TRIGGER LogChiusuraProgetto
+    AFTER UPDATE ON PROGETTO
+    FOR EACH ROW
+BEGIN
+    IF OLD.Stato = 'aperto' AND NEW.Stato = 'chiuso' THEN
+        CALL InserisciLogEvento(
+            'PROGETTO_CHIUSO',
+            NEW.Email_Creatore,
+            CONCAT('Progetto chiuso: ', NEW.Nome, ' - Motivo: ', 
+                   CASE 
+                       WHEN NEW.Data_Limite <= CURDATE() THEN 'Scadenza termine'
+                       ELSE 'Budget raggiunto'
+                   END)
+        );
+    END IF;
+END $$
+
+-- Trigger per log nuova candidatura
+CREATE TRIGGER LogNuovaCandidatura
+    AFTER INSERT ON CANDIDATURA
+    FOR EACH ROW
+BEGIN
+    DECLARE v_nome_profilo VARCHAR(100);
+    DECLARE v_nome_progetto VARCHAR(100);
+    
+    SELECT p.Nome, pr.Nome INTO v_nome_profilo, v_nome_progetto
+    FROM PROFILO p
+    JOIN PROGETTO pr ON p.Nome_Progetto = pr.Nome
+    WHERE p.ID = NEW.ID_Profilo;
+    
+    CALL InserisciLogEvento(
+        'NUOVA_CANDIDATURA',
+        NEW.Email_Utente,
+        CONCAT('Nuova candidatura per il profilo: ', v_nome_profilo, ' nel progetto: ', v_nome_progetto)
+    );
+END $$
+
+-- Trigger per log accettazione candidatura
+CREATE TRIGGER LogAccettazioneCandidatura
+AFTER UPDATE ON CANDIDATURA
+FOR EACH ROW
+BEGIN
+    DECLARE v_nome_profilo VARCHAR(100);
+    DECLARE v_nome_progetto VARCHAR(100);
+    DECLARE v_email_creatore VARCHAR(100);
+
+    IF OLD.Esito IS NULL AND NEW.Esito IS NOT NULL THEN
+        IF EXISTS (
+            SELECT 1
+            FROM PROFILO p
+            JOIN PROGETTO pr ON p.Nome_Progetto = pr.Nome
+            WHERE p.ID = NEW.ID_Profilo
+        ) THEN
+            SELECT p.Nome, pr.Nome, pr.Email_Creatore 
+            INTO v_nome_profilo, v_nome_progetto, v_email_creatore
+            FROM PROFILO p
+            JOIN PROGETTO pr ON p.Nome_Progetto = pr.Nome
+            WHERE p.ID = NEW.ID_Profilo;
+
+            CALL InserisciLogEvento(
+                'CANDIDATURA_VALUTATA',
+                v_email_creatore,
+                CONCAT(
+                    'Candidatura ',
+                    CASE WHEN NEW.Esito = 1 THEN 'accettata' ELSE 'rifiutata' END,
+                    ' per il profilo: ', v_nome_profilo,
+                    ' nel progetto: ', v_nome_progetto
+                )
+            );
+        END IF;
+    END IF;
+END $$
+
+-- Trigger per log nuovo commento
+CREATE TRIGGER LogNuovoCommento
+    AFTER INSERT ON COMMENTO
+    FOR EACH ROW
+BEGIN
+    CALL InserisciLogEvento(
+        'NUOVO_COMMENTO',
+        NEW.Email_Utente,
+        CONCAT('Nuovo commento sul progetto: ', NEW.Nome_Progetto)
+    );
+END $$
+
+-- Trigger per log nuova risposta
+CREATE TRIGGER LogNuovaRisposta
+    AFTER INSERT ON RISPOSTA
+    FOR EACH ROW
+BEGIN
+    CALL InserisciLogEvento(
+        'NUOVA_RISPOSTA',
+        NEW.Email_Creatore,
+        CONCAT('Nuova risposta al commento ID: ', NEW.ID_Commento)
+    );
+END $$
+
+-- Trigger per log nuova skill aggiunta
+CREATE TRIGGER LogNuovaSkill
+    AFTER INSERT ON SKILL
+    FOR EACH ROW
+BEGIN
+    CALL InserisciLogEvento(
+        'NUOVA_SKILL',
+        'admin@bostarter.com',
+        CONCAT('Nuova skill aggiunta alla piattaforma: ', NEW.Competenza, ' livello ', NEW.Livello)
+    );
+END $$
+
+-- Trigger per log aggiornamento skill curriculum
+CREATE TRIGGER LogAggiornamentoSkillCurriculum
+    AFTER INSERT ON SKILL_CURRICULUM
+    FOR EACH ROW
+BEGIN
+    CALL InserisciLogEvento(
+        'AGGIORNAMENTO_SKILL_CURRICULUM',
+        NEW.Email_Utente,
+        CONCAT('Skill curriculum aggiornata: ', NEW.Competenza, ' livello ', NEW.Livello)
+    );
+END $$
+
+-- Trigger per log nuovo componente
+CREATE TRIGGER LogNuovoComponente
+    AFTER INSERT ON COMPONENTE
+    FOR EACH ROW
+BEGIN
+    DECLARE v_email_creatore VARCHAR(100);
+    
+    SELECT Email_Creatore INTO v_email_creatore
+    FROM PROGETTO
+    WHERE Nome = NEW.Nome_Progetto;
+    
+    CALL InserisciLogEvento(
+        'NUOVO_COMPONENTE',
+        v_email_creatore,
+        CONCAT('Nuovo componente aggiunto al progetto ', NEW.Nome_Progetto, ': ', NEW.Nome, ' (€', NEW.Prezzo, ')')
+    );
+END $$
+
+-- Trigger per log nuovo profilo richiesto
+CREATE TRIGGER LogNuovoProfilo
+    AFTER INSERT ON PROFILO
+    FOR EACH ROW
+BEGIN
+    DECLARE v_email_creatore VARCHAR(100);
+    
+    SELECT Email_Creatore INTO v_email_creatore
+    FROM PROGETTO
+    WHERE Nome = NEW.Nome_Progetto;
+    
+    CALL InserisciLogEvento(
+        'NUOVO_PROFILO_RICHIESTO',
+        v_email_creatore,
+        CONCAT('Nuovo profilo richiesto per il progetto ', NEW.Nome_Progetto, ': ', NEW.Nome)
+    );
+END $$
+
+-- Trigger per log nuova reward
+CREATE TRIGGER LogNuovaReward
+    AFTER INSERT ON REWARD
+    FOR EACH ROW
+BEGIN
+    DECLARE v_email_creatore VARCHAR(100);
+    
+    SELECT Email_Creatore INTO v_email_creatore
+    FROM PROGETTO
+    WHERE Nome = NEW.Nome_Progetto;
+    
+    CALL InserisciLogEvento(
+        'NUOVA_REWARD',
+        v_email_creatore,
+        CONCAT('Nuova reward aggiunta al progetto ', NEW.Nome_Progetto, ': ', NEW.Codice)
+    );
+END $$
+
+DELIMITER ;
+
+-- ================================================================
 -- DATI DI ESEMPIO
 -- ================================================================
 

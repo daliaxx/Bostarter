@@ -1,0 +1,706 @@
+[
+  {
+    "id": 88,
+    "evento": "PROGETTO_CHIUSO",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:55:17.000Z",
+    "descrizione": "Progetto chiuso: SmartHome AI - Motivo: Scadenza termine",
+    "sincronizzato": 0
+  },
+  {
+    "id": 1,
+    "evento": "NUOVO_UTENTE",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo utente registrato: dalia28 (Dalia Barone)",
+    "sincronizzato": 0
+  },
+  {
+    "id": 2,
+    "evento": "NUOVO_UTENTE",
+    "email_utente": "sofia.neamtu@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo utente registrato: sofia_n (Sofia Neamtu)",
+    "sincronizzato": 0
+  },
+  {
+    "id": 3,
+    "evento": "NUOVO_UTENTE",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo utente registrato: admin (Admin System)",
+    "sincronizzato": 0
+  },
+  {
+    "id": 4,
+    "evento": "NUOVO_CREATORE",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Utente promosso a creatore: dalia.barone@email.com",
+    "sincronizzato": 0
+  },
+  {
+    "id": 5,
+    "evento": "NUOVO_CREATORE",
+    "email_utente": "sofia.neamtu@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Utente promosso a creatore: sofia.neamtu@email.com",
+    "sincronizzato": 0
+  },
+  {
+    "id": 6,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: AI livello 1",
+    "sincronizzato": 0
+  },
+  {
+    "id": 7,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: AI livello 2",
+    "sincronizzato": 0
+  },
+  {
+    "id": 8,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: AI livello 3",
+    "sincronizzato": 0
+  },
+  {
+    "id": 9,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: AI livello 4",
+    "sincronizzato": 0
+  },
+  {
+    "id": 10,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: AI livello 5",
+    "sincronizzato": 0
+  },
+  {
+    "id": 11,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Machine Learning livello 1",
+    "sincronizzato": 0
+  },
+  {
+    "id": 12,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Machine Learning livello 2",
+    "sincronizzato": 0
+  },
+  {
+    "id": 13,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Machine Learning livello 3",
+    "sincronizzato": 0
+  },
+  {
+    "id": 14,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Machine Learning livello 4",
+    "sincronizzato": 0
+  },
+  {
+    "id": 15,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Machine Learning livello 5",
+    "sincronizzato": 0
+  },
+  {
+    "id": 16,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Web Development livello 1",
+    "sincronizzato": 0
+  },
+  {
+    "id": 17,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Web Development livello 2",
+    "sincronizzato": 0
+  },
+  {
+    "id": 18,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Web Development livello 3",
+    "sincronizzato": 0
+  },
+  {
+    "id": 19,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Web Development livello 4",
+    "sincronizzato": 0
+  },
+  {
+    "id": 20,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Web Development livello 5",
+    "sincronizzato": 0
+  },
+  {
+    "id": 21,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Database Management livello 1",
+    "sincronizzato": 0
+  },
+  {
+    "id": 22,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Database Management livello 2",
+    "sincronizzato": 0
+  },
+  {
+    "id": 23,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Database Management livello 3",
+    "sincronizzato": 0
+  },
+  {
+    "id": 24,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Database Management livello 4",
+    "sincronizzato": 0
+  },
+  {
+    "id": 25,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Database Management livello 5",
+    "sincronizzato": 0
+  },
+  {
+    "id": 26,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Cybersecurity livello 1",
+    "sincronizzato": 0
+  },
+  {
+    "id": 27,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Cybersecurity livello 2",
+    "sincronizzato": 0
+  },
+  {
+    "id": 28,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Cybersecurity livello 3",
+    "sincronizzato": 0
+  },
+  {
+    "id": 29,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Cybersecurity livello 4",
+    "sincronizzato": 0
+  },
+  {
+    "id": 30,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Cybersecurity livello 5",
+    "sincronizzato": 0
+  },
+  {
+    "id": 31,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Data Analysis livello 1",
+    "sincronizzato": 0
+  },
+  {
+    "id": 32,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Data Analysis livello 2",
+    "sincronizzato": 0
+  },
+  {
+    "id": 33,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Data Analysis livello 3",
+    "sincronizzato": 0
+  },
+  {
+    "id": 34,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Data Analysis livello 4",
+    "sincronizzato": 0
+  },
+  {
+    "id": 35,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Data Analysis livello 5",
+    "sincronizzato": 0
+  },
+  {
+    "id": 36,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Cloud Computing livello 1",
+    "sincronizzato": 0
+  },
+  {
+    "id": 37,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Cloud Computing livello 2",
+    "sincronizzato": 0
+  },
+  {
+    "id": 38,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Cloud Computing livello 3",
+    "sincronizzato": 0
+  },
+  {
+    "id": 39,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Cloud Computing livello 4",
+    "sincronizzato": 0
+  },
+  {
+    "id": 40,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Cloud Computing livello 5",
+    "sincronizzato": 0
+  },
+  {
+    "id": 41,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Networking livello 1",
+    "sincronizzato": 0
+  },
+  {
+    "id": 42,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Networking livello 2",
+    "sincronizzato": 0
+  },
+  {
+    "id": 43,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Networking livello 3",
+    "sincronizzato": 0
+  },
+  {
+    "id": 44,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Networking livello 4",
+    "sincronizzato": 0
+  },
+  {
+    "id": 45,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Networking livello 5",
+    "sincronizzato": 0
+  },
+  {
+    "id": 46,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Software Engineering livello 1",
+    "sincronizzato": 0
+  },
+  {
+    "id": 47,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Software Engineering livello 2",
+    "sincronizzato": 0
+  },
+  {
+    "id": 48,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Software Engineering livello 3",
+    "sincronizzato": 0
+  },
+  {
+    "id": 49,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Software Engineering livello 4",
+    "sincronizzato": 0
+  },
+  {
+    "id": 50,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Software Engineering livello 5",
+    "sincronizzato": 0
+  },
+  {
+    "id": 51,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Embedded Systems livello 1",
+    "sincronizzato": 0
+  },
+  {
+    "id": 52,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Embedded Systems livello 2",
+    "sincronizzato": 0
+  },
+  {
+    "id": 53,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Embedded Systems livello 3",
+    "sincronizzato": 0
+  },
+  {
+    "id": 54,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Embedded Systems livello 4",
+    "sincronizzato": 0
+  },
+  {
+    "id": 55,
+    "evento": "NUOVA_SKILL",
+    "email_utente": "admin@bostarter.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova skill aggiunta alla piattaforma: Embedded Systems livello 5",
+    "sincronizzato": 0
+  },
+  {
+    "id": 56,
+    "evento": "AGGIORNAMENTO_SKILL_CURRICULUM",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Skill curriculum aggiornata: Web Development livello 4",
+    "sincronizzato": 0
+  },
+  {
+    "id": 57,
+    "evento": "AGGIORNAMENTO_SKILL_CURRICULUM",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Skill curriculum aggiornata: Database Management livello 3",
+    "sincronizzato": 0
+  },
+  {
+    "id": 58,
+    "evento": "AGGIORNAMENTO_SKILL_CURRICULUM",
+    "email_utente": "sofia.neamtu@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Skill curriculum aggiornata: Data Analysis livello 3",
+    "sincronizzato": 0
+  },
+  {
+    "id": 59,
+    "evento": "AGGIORNAMENTO_SKILL_CURRICULUM",
+    "email_utente": "sofia.neamtu@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Skill curriculum aggiornata: AI livello 4",
+    "sincronizzato": 0
+  },
+  {
+    "id": 60,
+    "evento": "AGGIORNAMENTO_SKILL_CURRICULUM",
+    "email_utente": "sofia.neamtu@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Skill curriculum aggiornata: Machine Learning livello 5",
+    "sincronizzato": 0
+  },
+  {
+    "id": 61,
+    "evento": "NUOVO_PROGETTO",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo progetto creato: SmartHome AI (Hardware) - Budget: €5000.00",
+    "sincronizzato": 0
+  },
+  {
+    "id": 62,
+    "evento": "NUOVO_PROGETTO",
+    "email_utente": "sofia.neamtu@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo progetto creato: CyberShield (Hardware) - Budget: €12000.00",
+    "sincronizzato": 0
+  },
+  {
+    "id": 63,
+    "evento": "NUOVO_PROGETTO",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo progetto creato: AutoPilot System (Software) - Budget: €15000.00",
+    "sincronizzato": 0
+  },
+  {
+    "id": 64,
+    "evento": "NUOVO_PROGETTO",
+    "email_utente": "sofia.neamtu@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo progetto creato: E-Health Monitor (Software) - Budget: €7000.00",
+    "sincronizzato": 0
+  },
+  {
+    "id": 65,
+    "evento": "NUOVO_COMPONENTE",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo componente aggiunto al progetto SmartHome AI: Sensore di Movimento (€20.00)",
+    "sincronizzato": 0
+  },
+  {
+    "id": 66,
+    "evento": "NUOVO_COMPONENTE",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo componente aggiunto al progetto SmartHome AI: Modulo Bluetooth (€15.00)",
+    "sincronizzato": 0
+  },
+  {
+    "id": 67,
+    "evento": "NUOVO_COMPONENTE",
+    "email_utente": "sofia.neamtu@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo componente aggiunto al progetto CyberShield: Camera HD (€50.00)",
+    "sincronizzato": 0
+  },
+  {
+    "id": 68,
+    "evento": "NUOVO_COMPONENTE",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo componente aggiunto al progetto AutoPilot System: Motore Elettrico (€120.00)",
+    "sincronizzato": 0
+  },
+  {
+    "id": 69,
+    "evento": "NUOVO_COMPONENTE",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo componente aggiunto al progetto AutoPilot System: Sensore LiDAR (€200.00)",
+    "sincronizzato": 0
+  },
+  {
+    "id": 70,
+    "evento": "NUOVO_COMPONENTE",
+    "email_utente": "sofia.neamtu@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo componente aggiunto al progetto CyberShield: Batteria al Litio (€90.00)",
+    "sincronizzato": 0
+  },
+  {
+    "id": 71,
+    "evento": "NUOVO_PROFILO_RICHIESTO",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo profilo richiesto per il progetto SmartHome AI: Esperto AI",
+    "sincronizzato": 0
+  },
+  {
+    "id": 72,
+    "evento": "NUOVO_PROFILO_RICHIESTO",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo profilo richiesto per il progetto SmartHome AI: Sviluppatore Full Stack",
+    "sincronizzato": 0
+  },
+  {
+    "id": 73,
+    "evento": "NUOVO_PROFILO_RICHIESTO",
+    "email_utente": "sofia.neamtu@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo profilo richiesto per il progetto CyberShield: Analista di Sicurezza",
+    "sincronizzato": 0
+  },
+  {
+    "id": 74,
+    "evento": "NUOVO_PROFILO_RICHIESTO",
+    "email_utente": "sofia.neamtu@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo profilo richiesto per il progetto CyberShield: Ingegnere DevOps",
+    "sincronizzato": 0
+  },
+  {
+    "id": 75,
+    "evento": "NUOVO_PROFILO_RICHIESTO",
+    "email_utente": "sofia.neamtu@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo profilo richiesto per il progetto E-Health Monitor: Data Scientist",
+    "sincronizzato": 0
+  },
+  {
+    "id": 76,
+    "evento": "NUOVO_PROFILO_RICHIESTO",
+    "email_utente": "sofia.neamtu@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo profilo richiesto per il progetto CyberShield: Cloud Architect",
+    "sincronizzato": 0
+  },
+  {
+    "id": 77,
+    "evento": "NUOVA_REWARD",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova reward aggiunta al progetto AutoPilot System: RWD1",
+    "sincronizzato": 0
+  },
+  {
+    "id": 78,
+    "evento": "NUOVA_REWARD",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova reward aggiunta al progetto AutoPilot System: RWD2",
+    "sincronizzato": 0
+  },
+  {
+    "id": 79,
+    "evento": "NUOVA_REWARD",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova reward aggiunta al progetto AutoPilot System: RWD3",
+    "sincronizzato": 0
+  },
+  {
+    "id": 80,
+    "evento": "NUOVA_REWARD",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova reward aggiunta al progetto AutoPilot System: RWD4",
+    "sincronizzato": 0
+  },
+  {
+    "id": 81,
+    "evento": "NUOVA_REWARD",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova reward aggiunta al progetto AutoPilot System: RWD5",
+    "sincronizzato": 0
+  },
+  {
+    "id": 82,
+    "evento": "NUOVO_FINANZIAMENTO",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo finanziamento di €100.00 per il progetto: SmartHome AI",
+    "sincronizzato": 0
+  },
+  {
+    "id": 83,
+    "evento": "NUOVO_FINANZIAMENTO",
+    "email_utente": "sofia.neamtu@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo finanziamento di €150.00 per il progetto: CyberShield",
+    "sincronizzato": 0
+  },
+  {
+    "id": 84,
+    "evento": "NUOVO_FINANZIAMENTO",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo finanziamento di €300.00 per il progetto: AutoPilot System",
+    "sincronizzato": 0
+  },
+  {
+    "id": 85,
+    "evento": "NUOVO_FINANZIAMENTO",
+    "email_utente": "sofia.neamtu@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuovo finanziamento di €250.00 per il progetto: E-Health Monitor",
+    "sincronizzato": 0
+  },
+  {
+    "id": 86,
+    "evento": "NUOVA_CANDIDATURA",
+    "email_utente": "dalia.barone@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova candidatura per il profilo: Esperto AI nel progetto: SmartHome AI",
+    "sincronizzato": 0
+  },
+  {
+    "id": 87,
+    "evento": "NUOVA_CANDIDATURA",
+    "email_utente": "sofia.neamtu@email.com",
+    "data": "2025-06-29T09:54:37.000Z",
+    "descrizione": "Nuova candidatura per il profilo: Analista di Sicurezza nel progetto: CyberShield",
+    "sincronizzato": 0
+  }
+]

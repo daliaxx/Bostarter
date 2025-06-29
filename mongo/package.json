@@ -1,0 +1,27 @@
+{
+  "name": "bostarter-events-sync",
+  "version": "1.0.0",
+  "description": "Sistema di sincronizzazione eventi da MySQL a MongoDB per Bostarter",
+  "main": "events_sync.js",
+  "scripts": {
+    "start": "node events_sync.js",
+    "watch": "node events_sync.js --watch",
+    "test": "node test_sync.js"
+  },
+  "dependencies": {
+    "mongodb": "^5.9.2",
+    "mysql2": "^3.14.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "mysql",
+    "mongodb",
+    "events",
+    "sync",
+    "bostarter"
+  ],
+  "author": "Bostarter Team",
+  "license": "MIT"
+}
