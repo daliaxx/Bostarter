@@ -169,8 +169,6 @@ try {
         // Aggiorna la candidatura usando la stored procedure
         try {
             $stmt = $db->callStoredProcedure('AccettaCandidatura', [$idCandidatura, $accettataBoolean ? 1 : 0]);
-
-            // Verifica che la stored procedure sia stata eseguita
             if ($stmt) {
                 $stmt->closeCursor();
             }

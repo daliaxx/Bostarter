@@ -671,7 +671,7 @@ function getCompletionPercentage($raccolto, $budget) {
         });
 
         // Chiamata API
-        fetch('../../api/manage_candidatures.php', {
+        fetch('../../api/manage_candidature.php', {
             method: 'POST',
             body: formData
         })

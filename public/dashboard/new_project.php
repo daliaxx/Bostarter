@@ -159,16 +159,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // 1. Inserisci progetto
-            $db->execute("
-                INSERT INTO PROGETTO (Nome, Descrizione, Data_Inserimento, Budget, Data_Limite, Stato, Tipo, Email_Creatore)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ", [
-                $nome, $descrizione, $oggi, $budget, $data_limite, $stato, $tipo, $email
-            ]);
+            $stmt = $db->callStoredProcedure('InserisciProgetto', [$nome, $descrizione, $oggi, $budget, $data_limite, $stato, $tipo, $email]);
+            $stmt->closeCursor();
 
             // 2. Inserisci foto se caricata
             if ($immaginePath) {
-                $db->callStoredProcedure('InserisciFoto', [$immaginePath, $nome]);
+                $stmt = $db->callStoredProcedure('InserisciFoto', [$immaginePath, $nome]);
+                $stmt->closeCursor();
             }
 
             // 3. Inserisci reward per entrambi i tipi
@@ -198,6 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     foreach ($profili as $profilo) {
                         $stmt = $db->callStoredProcedure('InserisciProfiloRichiesto', [$profilo['nome'], $nome]);
                         $result = $stmt->fetch();
+                        $stmt->closeCursor();
                         $id_profilo = $result['ID_Profilo'] ?? null;
 
                         if ($id_profilo) {
@@ -206,10 +204,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $livello = intval($livello);
 
                                 if (!empty($competenza) && $livello >= 0 && $livello <= 5) {
-                                    $db->callStoredProcedure('InserisciSkill', [$competenza, $livello]);
-                                    $db->callStoredProcedure('InserisciSkillRichiesta', [
+                                    $stmtSkill = $db->callStoredProcedure('InserisciSkill', [$competenza, $livello]);
+                                    $stmtSkill->closeCursor();
+                                    $stmtSkillRich = $db->callStoredProcedure('InserisciSkillRichiesta', [
                                         $id_profilo, $competenza, $livello
                                     ]);
+                                    $stmtSkillRich->closeCursor();
                                 }
                             }
                         }

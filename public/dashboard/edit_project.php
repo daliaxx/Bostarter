@@ -616,7 +616,7 @@ if ($project['Tipo'] === 'Hardware') {
             }
         }
 
-        fetch('../../api/add_profile.php', {
+        fetch('../../api/manage_profile.php', {
             method: 'POST',
             body: formData
         })
@@ -641,8 +641,9 @@ if ($project['Tipo'] === 'Hardware') {
         const formData = new FormData();
         formData.append('profile_id', profileId);
         formData.append('project_name', '<?= htmlspecialchars($projectName) ?>'); // Pass project name for context
+        formData.append('action', 'delete'); // Nuovo parametro per la nuova API
 
-        fetch('../../api/delete_profile.php', {
+        fetch('../../api/manage_profile.php', {
             method: 'POST',
             body: formData
         })
