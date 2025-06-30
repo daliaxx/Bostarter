@@ -256,9 +256,22 @@ if ($project['Tipo'] === 'Hardware') {
                             <p>Nessuna reward aggiunta a questo progetto.</p>
                         <?php else: ?>
                             <?php foreach ($rewards as $reward): ?>
+                                <?php
+                                $fotoReward = $reward['Foto'] ?? '';
+                                if ($fotoReward !== '') {
+                                    $src = (strpos($fotoReward, 'img/') === 0)
+                                        ? "/Bostarter/{$fotoReward}"
+                                        : "/Bostarter/img/{$fotoReward}";
+                                } else {
+                                    $src = null;
+                                }
+                                ?>
                                 <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                                     <div>
                                         <strong><?= htmlspecialchars($reward['Codice']) ?>:</strong> <?= htmlspecialchars($reward['Descrizione']) ?>
+                                        <?php if ($src): ?>
+                                            <br><img src="<?= htmlspecialchars($src) ?>" alt="Foto Reward" style="max-width:60px;max-height:60px;border-radius:8px;">
+                                        <?php endif; ?>
                                     </div>
                                     <button class="btn btn-danger btn-sm" onclick="deleteReward('<?= htmlspecialchars($reward['Codice']) ?>')">
                                         <i class="fas fa-trash-alt"></i> Elimina

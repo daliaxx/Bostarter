@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         error_log("Finanziamento inserito - Utente: $emailUtente, Progetto: $nomeProgetto, Importo: $importo, Reward: $codiceReward");
 
         // Redirect con successo
-        header("Location: projects/project_detail.php?name=" . urlencode($nomeProgetto) . "&success=finanziato");
+        header("Location: ../public/projects/project_detail.php?name=" . urlencode($nomeProgetto) . "&success=finanziato");
         exit;
 
     } catch (Exception $e) {

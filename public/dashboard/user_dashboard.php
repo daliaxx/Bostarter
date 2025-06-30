@@ -58,7 +58,7 @@ try {
         SUM(f.Importo) AS Mio_Investimento, 
         MAX(f.Data) AS Ultima_Donazione,
         GROUP_CONCAT(
-            DISTINCT CONCAT(r.Codice, '|', r.Descrizione) 
+            DISTINCT CONCAT(r.Codice, '|', r.Descrizione, '|', r.Foto) 
             ORDER BY f.Data DESC 
             SEPARATOR ';;;'
         ) AS Rewards_Ricevute,
@@ -286,10 +286,11 @@ try {
                                         $rewardsList = explode(';;;', $progetto['Rewards_Ricevute']);
                                         foreach ($rewardsList as $rewardData) {
                                             if (!empty($rewardData) && strpos($rewardData, '|') !== false) {
-                                                list($codice, $descrizione) = explode('|', $rewardData, 2);
+                                                list($codice, $descrizione, $foto) = explode('|', $rewardData, 3);
                                                 $rewardsRicevute[] = [
                                                     'codice' => $codice,
-                                                    'descrizione' => $descrizione
+                                                    'descrizione' => $descrizione,
+                                                    'foto' => $foto
                                                 ];
                                             }
                                         }
@@ -313,10 +314,23 @@ try {
                                             <?php if (!empty($rewardsRicevute)): ?>
                                                 <div class="reward-list">
                                                     <?php foreach (array_unique($rewardsRicevute, SORT_REGULAR) as $reward): ?>
+                                                        <?php
+                                                        $fotoReward = $reward['foto'] ?? '';
+                                                        if ($fotoReward !== '') {
+                                                            $src = (strpos($fotoReward, 'img/') === 0)
+                                                                ? "/Bostarter/{$fotoReward}"
+                                                                : "/Bostarter/img/{$fotoReward}";
+                                                        } else {
+                                                            $src = null;
+                                                        }
+                                                        ?>
                                                         <div class="reward-item mb-1">
-                                                    <span class="badge bg-primary me-1">
-                                                        <i class="fas fa-gift me-1"></i><?= htmlspecialchars($reward['codice']) ?>
-                                                    </span>
+                                                            <span class="badge bg-primary me-1">
+                                                                <i class="fas fa-gift me-1"></i><?= htmlspecialchars($reward['codice']) ?>
+                                                            </span>
+                                                            <?php if ($src): ?>
+                                                                <img src="<?= htmlspecialchars($src) ?>" alt="Foto Reward" style="max-width:40px;max-height:40px;border-radius:6px;">
+                                                            <?php endif; ?>
                                                             <br>
                                                             <small class="text-muted"><?= htmlspecialchars($reward['descrizione']) ?></small>
                                                         </div>

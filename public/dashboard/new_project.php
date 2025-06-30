@@ -214,11 +214,24 @@ if (empty($error_message)) {
         }
 
         // 3. Inserisci reward per entrambi i tipi
-        foreach ($rewards as $reward) {
-            $db->execute("
-                    INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) 
-                    VALUES (?, ?, 'default_reward.jpg', ?)
-                ", [$reward['codice'], $reward['descrizione'], $nome]);
+        foreach ($rewards as $i => $reward) {
+            $fotoRewardPath = 'img/default_reward.jpg';
+            if (isset($_FILES['reward_photos']) && isset($_FILES['reward_photos']['error'][$i]) && $_FILES['reward_photos']['error'][$i] === UPLOAD_ERR_OK) {
+                $fileName = time() . "_" . uniqid() . "_" . basename($_FILES['reward_photos']['name'][$i]);
+                $tmpName = $_FILES['reward_photos']['tmp_name'][$i];
+                $uploadDir = __DIR__ . '/../../img/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0777, true);
+                }
+                $destPath = $uploadDir . $fileName;
+                if (move_uploaded_file($tmpName, $destPath)) {
+                    $fotoRewardPath = 'img/' . $fileName;
+                }
+            }
+            $db->execute(
+                "INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) VALUES (?, ?, ?, ?)",
+                [$reward['codice'], $reward['descrizione'], $fotoRewardPath, $nome]
+            );
         }
 
         // 4. Inserisci componenti per hardware o profili per software
@@ -290,8 +303,11 @@ if (empty($error_message)) {
 
     } catch (Exception $e) {
         $db->rollback();
-        error_log("❌ Errore creazione progetto: " . $e->getMessage());
-        $error_message = "Errore durante l'inserimento: " . $e->getMessage();
+        if (strpos($e->getMessage(), '1062') !== false) {
+            $error_message = "Attenzione: esiste già una reward con questo codice. I codici delle reward devono essere univoci.";
+        } else {
+            $error_message = "Errore durante l'inserimento: " . $e->getMessage();
+        }
     }
 }
 }
@@ -755,43 +771,29 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
         }
     }
 
-    // Gestione tipo progetto
-    document.getElementById('tipo').addEventListener('change', function() {
-        const tipo = this.value;
+    // === VISIBILITÀ SEZIONI IN BASE AL TIPO DI PROGETTO ===
+    function updateFormVisibility() {
+        const tipo = document.getElementById('tipo').value;
         const rewardsSection = document.getElementById('rewardsSection');
         const componentsSection = document.getElementById('componentsSection');
         const softwareProfilesSection = document.getElementById('softwareProfilesSection');
 
+        // La reward è sempre visibile
+        rewardsSection.style.display = 'block';
         if (tipo === 'Software') {
-            rewardsSection.style.display = 'block';
             componentsSection.style.display = 'none';
             softwareProfilesSection.style.display = 'block';
-            // Aggiungi automaticamente una reward se non ce ne sono
-            if (rewardCount === 0) {
-                addReward();
-            }
-            // Carica competenze per progetti software
-            if (!window.competenzeDisponibili || window.competenzeDisponibili.length === 0) {
-                loadCompetenze();
-            }
         } else if (tipo === 'Hardware') {
-            rewardsSection.style.display = 'block';
             componentsSection.style.display = 'block';
             softwareProfilesSection.style.display = 'none';
-            // Aggiungi automaticamente una reward se non ce ne sono
-            if (rewardCount === 0) {
-                addReward();
-            }
-            // Aggiungi automaticamente un componente se non ce ne sono
-            if (componentCount === 0) {
-                addComponent();
-            }
         } else {
-            rewardsSection.style.display = 'none';
             componentsSection.style.display = 'none';
             softwareProfilesSection.style.display = 'none';
         }
-    });
+    }
+
+    document.getElementById('tipo').addEventListener('change', updateFormVisibility);
+    document.addEventListener('DOMContentLoaded', updateFormVisibility);
 
     // Inizializzazione
     document.addEventListener('DOMContentLoaded', function() {
@@ -817,7 +819,7 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
                            required>
                     <small class="text-muted">Identificativo univoco</small>
                 </div>
-                <div class="col-md-7">
+                <div class="col-md-5">
                     <label class="form-label">Descrizione</label>
                     <input type="text"
                            name="reward_descriptions[]"
@@ -825,6 +827,11 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
                            placeholder="es: Accesso anticipato al prodotto"
                            required>
                     <small class="text-muted">Cosa riceverà il sostenitore</small>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Foto Reward</label>
+                    <input type="file" name="reward_photos[]" class="form-control" accept="image/*" required>
+                    <small class="text-muted">Immagine della reward</small>
                 </div>
                 <div class="col-md-1 d-flex align-items-end">
                     <button type="button"
@@ -1247,6 +1254,41 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
         }
 
         return true;
+    });
+
+    // Mostra nome file e anteprima immagine per ogni reward
+    document.addEventListener('change', function(e) {
+        if (e.target.matches('input[type="file"][name="reward_photos[]"]')) {
+            // Rimuovi eventuali preview precedenti
+            const parent = e.target.parentNode;
+            const oldPreview = parent.querySelector('.reward-file-preview');
+            if (oldPreview) oldPreview.remove();
+
+            const preview = document.createElement('div');
+            preview.className = 'reward-file-preview';
+            preview.style.marginTop = '5px';
+            if (e.target.files && e.target.files[0]) {
+                // Mostra nome file
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = e.target.files[0].name;
+                nameSpan.style.fontSize = '0.9em';
+                nameSpan.style.marginRight = '8px';
+                preview.appendChild(nameSpan);
+                // Mostra anteprima immagine
+                const img = document.createElement('img');
+                img.style.maxWidth = '60px';
+                img.style.maxHeight = '60px';
+                img.style.borderRadius = '8px';
+                img.style.marginLeft = '5px';
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(e.target.files[0]);
+                preview.appendChild(img);
+            }
+            parent.appendChild(preview);
+        }
     });
 </script>
 </body>

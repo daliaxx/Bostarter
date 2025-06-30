@@ -1,8 +1,3 @@
--- ================================================================
--- BOSTARTER DATABASE - Versione Corretta per phpMyAdmin
--- ================================================================
-
--- Eliminazione e Creazione del Database
 DROP DATABASE IF EXISTS BOSTARTER;
 CREATE DATABASE IF NOT EXISTS BOSTARTER;
 USE BOSTARTER;

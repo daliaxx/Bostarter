@@ -107,7 +107,7 @@ if ($fotoDb !== '') {
 }
 
 // Recupero rewards del progetto
-$rewards = $db->fetchAll("SELECT Codice, Descrizione FROM REWARD WHERE Nome_Progetto = ? ORDER BY Codice ASC", [$nomeProgetto]);
+$rewards = $db->fetchAll("SELECT Codice, Descrizione, Foto FROM REWARD WHERE Nome_Progetto = ? ORDER BY Codice ASC", [$nomeProgetto]);
 
 // Recupero profili richiesti per progetti software
 $profiliRicercati = $db->fetchAll("SELECT ID, Nome FROM PROFILO WHERE Nome_Progetto = ?", [$nomeProgetto]);
@@ -959,6 +959,16 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                             </label>
 
                             <?php foreach ($rewards as $index => $reward): ?>
+                                <?php
+                                $fotoReward = $reward['Foto'] ?? '';
+                                if ($fotoReward !== '') {
+                                    $src = (strpos($fotoReward, 'img/') === 0)
+                                        ? "/Bostarter/{$fotoReward}"
+                                        : "/Bostarter/img/{$fotoReward}";
+                                } else {
+                                    $src = null;
+                                }
+                                ?>
                                 <div class="form-check border rounded p-3 mb-2" style="cursor: pointer;">
                                     <input class="form-check-input"
                                            type="radio"
@@ -969,11 +979,12 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                                     <label class="form-check-label w-100" for="modal_reward_<?= $index ?>">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
-                                                <strong class="text-primary"><?= htmlspecialchars($reward['Codice']) ?></strong>
-                                                <br>
+                                                <strong class="text-primary"><?= htmlspecialchars($reward['Codice']) ?></strong><br>
                                                 <small class="text-muted"><?= htmlspecialchars($reward['Descrizione']) ?></small>
                                             </div>
-                                            <i class="fas fa-gift fa-2x text-success"></i>
+                                            <?php if ($src): ?>
+                                                <img src="<?= htmlspecialchars($src) ?>" alt="Foto Reward" style="max-width:60px;max-height:60px;border-radius:8px;">
+                                            <?php endif; ?>
                                         </div>
                                     </label>
                                 </div>
