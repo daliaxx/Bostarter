@@ -7,6 +7,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 require_once '../../config/database.php';
+require_once '../../includes/navbar.php';
 
 SessionManager::requireLogin('../../index.html');
 SessionManager::requireCreator();
@@ -197,48 +198,9 @@ if ($project['Tipo'] === 'Hardware') {
     </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="../projects/projects.php">
-            <i class="fas fa-rocket me-2"></i>BOSTARTER
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="creator_dashboard.php">
-                        <i class="fas fa-arrow-left me-1"></i>Dashboard
-                    </a>
-                </li>
-            </ul>
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-user-circle me-1"></i><?= htmlspecialchars($userNickname ?? 'Utente') ?>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <?php if (isset($isAdmin) && $isAdmin): ?>
-                            <li><a class="dropdown-item" href="admin_dashboard.php"><i class="fas fa-shield-alt me-2"></i>Dashboard Admin</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                        <?php else: ?>
-                            <li><a class="dropdown-item" href="creator_dashboard.php"><i class="fas fa-user-cog me-2"></i>Dashboard Creatore</a></li>
-                            <li><a class="dropdown-item" href="new_project.php"><i class="fas fa-plus me-2"></i>Crea Progetto</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                        <?php endif; ?>
-                        <li><a class="dropdown-item" href="user_dashboard.php"><i class="fas fa-user me-2"></i>Il mio profilo</a></li>
-                        <li><a class="dropdown-item" href="../statistiche.php"><i class="fas fa-chart-bar me-2"></i>Statistiche</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="../../auth/logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-                    </ul>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
 
 <div class="container mt-4">
+    <div id="alertContainer"></div>
     <div class="row">
         <div class="col-lg-8">
             <div class="card shadow-sm mb-4">
@@ -500,15 +462,11 @@ if ($project['Tipo'] === 'Hardware') {
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // ================================================================
-    // VARIABILI GLOBALI
-    // ================================================================
+    // Variabili globali
     window.competenzeDisponibili = [];
     let profileSkillCounter = 0;
 
-    // ================================================================
-    // FUNZIONI PER GESTIONE COMPETENZE DAL DATABASE
-    // ================================================================
+    // Funzioni per gestione competenze dal database
     function loadCompetenze() {
         fetch('../../api/manage_skill.php', {
             method: 'POST',
@@ -538,9 +496,7 @@ if ($project['Tipo'] === 'Hardware') {
         });
     }
 
-    // ================================================================
-    // FUNZIONI REWARD
-    // ================================================================
+    // Funzioni reward
     function addReward() {
         const form = document.getElementById('addRewardForm');
         const formData = new FormData(form);
@@ -591,9 +547,60 @@ if ($project['Tipo'] === 'Hardware') {
             });
     }
 
-    // ================================================================
-    // FUNZIONI PROFILI (per progetti Software)
-    // ================================================================
+    // Funzioni profili per progetti Software con controllo anti-duplicati
+
+    // Funzione per validazione real-time
+    function validateSkillSelection() {
+        const skillSelects = document.querySelectorAll('#skillsContainer select[name^="profile_skills"]');
+        const selectedCompetenze = [];
+        const duplicates = [];
+
+        skillSelects.forEach((select) => {
+            const competenza = select.value.trim();
+
+            // Reset stile
+            select.style.borderColor = '';
+            select.style.backgroundColor = '';
+
+            if (competenza) {
+                if (selectedCompetenze.includes(competenza)) {
+                    // Duplicato trovato
+                    select.style.borderColor = '#dc3545';
+                    select.style.backgroundColor = '#ffe6e6';
+                    if (!duplicates.includes(competenza)) {
+                        duplicates.push(competenza);
+                    }
+                } else {
+                    selectedCompetenze.push(competenza);
+                }
+            }
+        });
+
+        // Mostra warning se ci sono duplicati
+        const warningDiv = document.getElementById('duplicateWarning');
+        if (duplicates.length > 0) {
+            if (!warningDiv) {
+                const warning = document.createElement('div');
+                warning.id = 'duplicateWarning';
+                warning.className = 'alert alert-warning mt-2';
+                warning.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Attenzione:</strong> Competenze duplicate rilevate: ${duplicates.join(', ')}
+                `;
+                document.getElementById('skillsContainer').parentNode.appendChild(warning);
+            } else {
+                warningDiv.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Attenzione:</strong> Competenze duplicate rilevate: ${duplicates.join(', ')}
+                `;
+            }
+        } else {
+            if (warningDiv) {
+                warningDiv.remove();
+            }
+        }
+    }
+
     function addSkillToProfileModal() {
         const skillsContainer = document.getElementById('skillsContainer');
         const skillId = `skill-${profileSkillCounter++}`;
@@ -603,15 +610,25 @@ if ($project['Tipo'] === 'Hardware') {
         skillDiv.id = skillId;
         skillDiv.innerHTML = `
             <div class="col-md-5">
-                <select class="form-control competenza-select" name="profile_skills[${skillId}][competenza]" required>
+                <select class="form-control competenza-select"
+                        name="profile_skills[${skillId}][competenza]"
+                        onchange="validateSkillSelection()"
+                        required>
                     <option value="">Caricamento...</option>
                 </select>
             </div>
             <div class="col-md-5">
-                <input type="number" class="form-control" name="profile_skills[${skillId}][livello]" placeholder="Livello (0-5)" min="0" max="5" required>
+                <input type="number"
+                       class="form-control"
+                       name="profile_skills[${skillId}][livello]"
+                       placeholder="Livello (0-5)"
+                       min="0" max="5"
+                       required>
             </div>
             <div class="col-md-2">
-                <button type="button" class="btn btn-outline-danger w-100" onclick="removeSkillFromProfileModal('${skillId}')">
+                <button type="button"
+                        class="btn btn-outline-danger w-100"
+                        onclick="removeSkillFromProfileModal('${skillId}')">
                     <i class="fas fa-minus"></i>
                 </button>
             </div>
@@ -632,9 +649,12 @@ if ($project['Tipo'] === 'Hardware') {
         const skillToRemove = document.getElementById(id);
         if (skillToRemove) {
             skillToRemove.remove();
+            // Rimuovi warning dopo rimozione
+            validateSkillSelection();
         }
     }
 
+    // Funzione addProfile con controllo anti-duplicati
     function addProfile() {
         const form = document.getElementById('addProfileForm');
         const formData = new FormData(form);
@@ -643,6 +663,18 @@ if ($project['Tipo'] === 'Hardware') {
         const profileName = formData.get('profile_name').trim();
         if (!profileName) {
             alert('Il nome del profilo è obbligatorio.');
+            return;
+        }
+
+        // Controllo duplicati nome profilo
+        const existingProfileNames = Array.from(document.querySelectorAll('.profile-item h5'))
+            .map(h5 => h5.textContent.trim().toLowerCase());
+
+        if (existingProfileNames.includes(profileName.toLowerCase())) {
+            alert(
+                `ERRORE: Esiste già un profilo con il nome "${profileName}".\n\n` +
+                `Scegli un nome diverso per il nuovo profilo.`
+            );
             return;
         }
 
@@ -655,17 +687,46 @@ if ($project['Tipo'] === 'Hardware') {
             return;
         }
 
+        // Controllo anti-duplicati
+        const competenzeSelezionate = [];
+        const competenzeDuplicate = [];
+
         for (let i = 0; i < skillInputs.length; i++) {
-            if (!skillInputs[i].value.trim() || !levelInputs[i].value.trim()) {
+            const competenza = skillInputs[i].value.trim();
+            const livello = parseInt(levelInputs[i].value);
+
+            // Validazione campi base
+            if (!competenza || !livello) {
                 alert('Tutti i campi skill e livello devono essere compilati.');
                 return;
             }
-            if (parseInt(levelInputs[i].value) < 0 || parseInt(levelInputs[i].value) > 5) {
+            if (livello < 0 || livello > 5) {
                 alert('Il livello della skill deve essere tra 0 e 5.');
                 return;
             }
+
+            // Controllo duplicati: stessa competenza = errore
+            if (competenzeSelezionate.includes(competenza)) {
+                if (!competenzeDuplicate.includes(competenza)) {
+                    competenzeDuplicate.push(competenza);
+                }
+            } else {
+                competenzeSelezionate.push(competenza);
+            }
         }
 
+        // Se ci sono duplicati, blocca e mostra errore
+        if (competenzeDuplicate.length > 0) {
+            alert(
+                `ERRORE: Le seguenti competenze sono duplicate:\n\n` +
+                `${competenzeDuplicate.join(', ')}\n\n` +
+                `Ogni competenza può essere richiesta solo UNA volta per profilo.\n` +
+                `Rimuovi i duplicati prima di salvare.`
+            );
+            return;
+        }
+
+        // Se tutto ok, invia al server
         fetch('../../api/manage_profile.php', {
             method: 'POST',
             body: formData
@@ -712,9 +773,7 @@ if ($project['Tipo'] === 'Hardware') {
             });
     }
 
-    // ================================================================
-    // FUNZIONI COMPONENTI (per progetti Hardware)
-    // ================================================================
+    // Funzioni componenti per progetti Hardware
     function addComponent() {
         const form = document.getElementById('addComponentForm');
         const formData = new FormData(form);
@@ -794,9 +853,7 @@ if ($project['Tipo'] === 'Hardware') {
             });
     }
 
-    // ================================================================
-    // INIZIALIZZAZIONE E EVENT LISTENERS
-    // ================================================================
+    // Inizializzazione e event listeners
     document.addEventListener('DOMContentLoaded', function() {
         // Carica competenze quando si apre il modal per aggiungere profili
         const addProfileModalElement = document.getElementById('addProfileModal');
@@ -816,6 +873,12 @@ if ($project['Tipo'] === 'Hardware') {
                 document.getElementById('addProfileForm').reset();
                 document.getElementById('skillsContainer').innerHTML = '';
                 profileSkillCounter = 0;
+
+                // Rimuovi warning duplicati quando chiudi modal
+                const warningDiv = document.getElementById('duplicateWarning');
+                if (warningDiv) {
+                    warningDiv.remove();
+                }
             });
         }
     });

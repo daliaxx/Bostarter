@@ -1,7 +1,6 @@
 <?php
 require_once '../../config/database.php';
 
-// Attiva errori in fase di sviluppo
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -10,39 +9,27 @@ function formatCurrency($amount) {
     return '€ ' . number_format($amount, 2, ',', '.');
 }
 
-// Verifica se l'utente è loggato per la navbar dinamica
-session_start();
+// Sessione e verifica utente
+SessionManager::start();
 $isLoggedIn = isset($_SESSION['user_email']);
 $userEmail = $_SESSION['user_email'] ?? null;
-
 $isAdmin = SessionManager::isAdmin();
 $isCreator = SessionManager::isCreator();
 
-// Controllo parametro
+// Controllo nome progetto
 if (!isset($_GET['name']) || empty($_GET['name'])) {
     die("<h3>Errore: nome del progetto non specificato.</h3>");
 }
 
 $nomeProgetto = $_GET['name'];
 $db = Database::getInstance();
-
-// Assicura che l'evento MySQL sia attivo
 $db->ensureEventScheduler();
 
-// Ottieni dettagli progetto
+// Query principale per i dettagli del progetto
 $sql = "
     SELECT
-        p.Nome,
-        p.Descrizione,
-        p.Data_Inserimento,
-        p.Stato,
-        p.Budget,
-        p.Data_Limite,
-        p.Tipo,
-        p.Email_Creatore,
-        u.Nickname AS CreatoreNickname,
-        u.Nome AS CreatoreNome,
-        u.Cognome AS CreatoreCognome,
+        p.Nome, p.Descrizione, p.Data_Inserimento, p.Stato, p.Budget, p.Data_Limite, p.Tipo, p.Email_Creatore,
+        u.Nickname AS CreatoreNickname, u.Nome AS CreatoreNome, u.Cognome AS CreatoreCognome,
         c.Affidabilita,
         COALESCE(SUM(f.Importo), 0) AS Totale_Finanziato,
         COUNT(DISTINCT f.Email_Utente) AS Num_Finanziatori,
@@ -52,30 +39,55 @@ $sql = "
     JOIN CREATORE c ON p.Email_Creatore = c.Email
     JOIN UTENTE u ON c.Email = u.Email
     LEFT JOIN FINANZIAMENTO f ON p.Nome = f.Nome_Progetto
-    LEFT JOIN FOTO foto ON p.Nome = foto.Nome_Progetto
     WHERE p.Nome = ?
-    GROUP BY p.Nome, p.Descrizione, p.Data_Inserimento, p.Stato, p.Budget, p.Data_Limite, p.Tipo, CreatoreNickname, CreatoreNome, CreatoreCognome, c.Affidabilita, foto.percorso
+    GROUP BY p.Nome, p.Descrizione, p.Data_Inserimento, p.Stato, p.Budget, p.Data_Limite, p.Tipo,
+             u.Nickname, u.Nome, u.Cognome, c.Affidabilita
 ";
 
 $progetto = $db->fetchOne($sql, [$nomeProgetto]);
 
-// AGGIORNAMENTO AUTOMATICO STATO PROGETTO SCADUTO
+// Gestione messaggi di errore e successo
+$errorMessage = '';
+$successMessage = '';
+
+if (isset($_GET['error'])) {
+    switch ($_GET['error']) {
+        case 'no_rewards':
+            $errorMessage = 'Questo progetto non ha ancora definito le reward per i sostenitori.';
+            break;
+        case 'importo_non_valido':
+            $errorMessage = 'Inserisci un importo valido maggiore di zero.';
+            break;
+        case 'reward_obbligatoria':
+            $errorMessage = 'Devi selezionare una reward per completare il finanziamento.';
+            break;
+        case 'reward_non_valida':
+            $errorMessage = 'La reward selezionata non è valida per questo progetto.';
+            break;
+        case 'errore_server':
+            $errorMessage = 'Errore durante il finanziamento. Riprova più tardi.';
+            break;
+    }
+}
+
+if (isset($_GET['success']) && $_GET['success'] === 'finanziato') {
+    $successMessage = 'Finanziamento completato con successo! Grazie per il tuo supporto.';
+}
+
+// Aggiornamento automatico stato progetto scaduto
 if ($progetto && $progetto['Stato'] === 'aperto' && $progetto['Data_Limite'] <= date('Y-m-d')) {
     $db->execute("UPDATE PROGETTO SET Stato = 'chiuso' WHERE Nome = ?", [$nomeProgetto]);
     $progetto['Stato'] = 'chiuso';
 }
 
-// Calcolo consistente dei giorni rimanenti (usa solo il valore SQL)
-// Il valore Giorni_Rimanenti viene già calcolato dalla query SQL con DATEDIFF
-// Non serve ricalcolarlo con PHP per evitare inconsistenze
-
 if (!$progetto) {
     die("<h3>Progetto non trovato.</h3>");
 }
 
-// Calcoli
+// Calcoli per visualizzazione
 $percentuale = $progetto['Budget'] > 0 ? round($progetto['Totale_Finanziato'] / $progetto['Budget'] * 100, 1) : 0;
 $statoClasse = ($progetto['Stato'] === 'aperto' && $progetto['Giorni_Rimanenti'] > 0 && $percentuale < 100) ? 'success' : 'secondary';
+
 if ($progetto['Stato'] === 'chiuso' || $progetto['Giorni_Rimanenti'] <= 0 || $percentuale >= 100) {
     $statoClasse = 'info';
     if ($percentuale >= 100) {
@@ -86,68 +98,60 @@ if ($progetto['Stato'] === 'chiuso' || $progetto['Giorni_Rimanenti'] <= 0 || $pe
     }
 }
 
-// Percorso immagine
+// Gestione percorso immagine
 $fotoDb = $progetto['Foto'] ?? '';
 if ($fotoDb !== '') {
-    $src = (strpos($fotoDb, 'img/') === 0)
-        ? "/Bostarter/{$fotoDb}"
-        : "/Bostarter/img/{$fotoDb}";
+    $src = (strpos($fotoDb, 'img/') === 0) ? "/Bostarter/{$fotoDb}" : "/Bostarter/img/{$fotoDb}";
 } else {
-    $src = "/Bostarter/img/placeholder.jpg"; 
+    $src = "/Bostarter/img/placeholder.jpg";
 }
 
-// Ottieni le rewards disponibili per questo progetto
+// Recupero rewards del progetto
 $rewards = $db->fetchAll("SELECT Codice, Descrizione FROM REWARD WHERE Nome_Progetto = ? ORDER BY Codice ASC", [$nomeProgetto]);
 
-$profiliRicercati = $db->fetchAll(
-    "SELECT ID, Nome FROM PROFILO WHERE Nome_Progetto = ?",
-    [$nomeProgetto]
-);
+// Recupero profili richiesti per progetti software
+$profiliRicercati = $db->fetchAll("SELECT ID, Nome FROM PROFILO WHERE Nome_Progetto = ?", [$nomeProgetto]);
 
-// START: NEW CODE FOR COMPONENTS (Hardware projects)
+// Recupero componenti per progetti hardware
 $componenti = [];
+$totaleComponenti = 0;
 if ($progetto['Tipo'] === 'Hardware') {
     $componenti = $db->fetchAll("
-        SELECT ID, Nome, Descrizione, Prezzo, Quantita, 
-               (Prezzo * Quantita) as Totale
+        SELECT ID, Nome, Descrizione, Prezzo, Quantita, (Prezzo * Quantita) as Totale
         FROM COMPONENTE 
         WHERE Nome_Progetto = ?
         ORDER BY Nome ASC
     ", [$nomeProgetto]);
-    
-    // Calcola totale generale componenti
-    $totaleComponenti = 0;
+
     foreach ($componenti as $componente) {
         $totaleComponenti += $componente['Totale'];
     }
 }
-// END: NEW CODE FOR COMPONENTS
 
-// NUOVA SEZIONE: Verifica skill per candidature
+// Verifica skill per candidature (solo se utente loggato e progetto software aperto)
 if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'aperto' && !empty($profiliRicercati)) {
-    // Per ogni profilo, verifica se l'utente ha le skill necessarie
     foreach ($profiliRicercati as &$profilo) {
-        // Ottieni skill richieste per questo profilo
+        // Skill richieste per questo profilo
         $skillRichieste = $db->fetchAll("
             SELECT sr.Competenza, sr.Livello 
             FROM SKILL_RICHIESTA sr 
             WHERE sr.ID_Profilo = ?
         ", [$profilo['ID']]);
 
-        // Ottieni skill dell'utente
+        // Skill dell'utente
         $skillUtente = $db->fetchAll("
             SELECT sc.Competenza, sc.Livello 
             FROM SKILL_CURRICULUM sc 
             WHERE sc.Email_Utente = ?
         ", [$userEmail]);
 
-        // Crea array associativo per controllo veloce
+        // Mappa delle skill utente per controllo veloce
         $userSkillsMap = [];
         foreach ($skillUtente as $skill) {
             $userSkillsMap[$skill['Competenza']] = $skill['Livello'];
         }
 
-        // Verifica se ha tutte le skill richieste
+        // Verifica corrispondenza skill
         $hasAllSkills = true;
         $missingSkills = [];
         $hasSkills = [];
@@ -156,8 +160,7 @@ if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'a
             $competenza = $required['Competenza'];
             $livelloRichiesto = $required['Livello'];
 
-            if (!isset($userSkillsMap[$competenza]) ||
-                $userSkillsMap[$competenza] < $livelloRichiesto) {
+            if (!isset($userSkillsMap[$competenza]) || $userSkillsMap[$competenza] < $livelloRichiesto) {
                 $hasAllSkills = false;
                 $missingSkills[] = $competenza . " (liv. " . $livelloRichiesto . ")";
             } else {
@@ -172,15 +175,15 @@ if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'a
     }
 }
 
+// Recupero commenti
 $commenti = $db->fetchAll("
     SELECT c.ID, c.Email_Utente, c.Testo, r.Testo AS Risposta
     FROM COMMENTO c
     LEFT JOIN RISPOSTA r ON r.ID_Commento = c.ID
     WHERE c.Nome_Progetto = ?
-    ",[$nomeProgetto]);
+", [$nomeProgetto]);
 
 $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creatore']) && $_SESSION['email'] === $progetto['Email_Creatore']);
-
 ?>
 
 <!DOCTYPE html>
@@ -215,7 +218,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             color: var(--text-primary);
         }
 
-        /* Navbar migliorata */
         .navbar {
             background: var(--primary-gradient) !important;
             backdrop-filter: blur(10px);
@@ -242,7 +244,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             transform: translateY(-2px);
         }
 
-        /* Header del progetto */
         .project-header {
             background: var(--primary-gradient);
             color: white;
@@ -275,7 +276,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             z-index: 2;
         }
 
-        /* Cards moderne */
         .project-details-card {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(20px);
@@ -292,7 +292,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             box-shadow: var(--card-hover-shadow);
         }
 
-        /* Immagine del progetto */
         .project-image {
             width: 100%;
             height: 450px;
@@ -307,7 +306,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             transform: scale(1.02);
         }
 
-        /* Statistiche moderne */
         .stat-box {
             background: var(--primary-gradient);
             color: white;
@@ -338,7 +336,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             font-weight: 500;
         }
 
-        /* Progress bar migliorata */
         .progress {
             height: 25px;
             border-radius: 15px;
@@ -362,7 +359,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             background: var(--primary-gradient) !important;
         }
 
-        /* Info styling migliorato */
         .info-row {
             background: rgba(255, 255, 255, 0.5);
             border-radius: var(--small-radius);
@@ -378,7 +374,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             transform: translateX(5px);
         }
 
-        /* Pulsanti moderni */
         .btn-modern {
             background: var(--primary-gradient);
             border: none;
@@ -410,7 +405,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             color: white;
         }
 
-        /* Modal migliorato */
         .modal-content {
             border-radius: var(--border-radius);
             border: none;
@@ -434,7 +428,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             filter: invert(1);
         }
 
-        /* Badge type migliorato */
         .type-badge {
             background: var(--success-gradient);
             color: white;
@@ -447,7 +440,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             z-index: 2;
         }
 
-        /* Stili per profili candidatura */
         .profile-card {
             border: 2px solid #e9ecef;
             border-radius: 15px;
@@ -484,7 +476,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             color: #856404;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .project-title {
                 font-size: 2.5rem;
@@ -500,7 +491,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             }
         }
 
-        /* Animazioni di entrata */
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -566,8 +556,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
     <div class="container text-center">
         <h1 class="project-title"><i class="fas fa-lightbulb me-3"></i><?= htmlspecialchars($progetto['Nome']) ?></h1>
         <div class="creator-info">
-            Creato da
-            <strong>
+            Creato da <strong>
                 <?= htmlspecialchars($progetto['CreatoreNickname']) ?>
                 (<?= htmlspecialchars($progetto['CreatoreNome'] ?? '') . ' ' . htmlspecialchars($progetto['CreatoreCognome'] ?? '') ?>)
             </strong>
@@ -584,6 +573,23 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
 </div>
 
 <div class="container">
+    <!-- Messaggi di errore e successo -->
+    <?php if (!empty($errorMessage)): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <?= htmlspecialchars($errorMessage) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($successMessage)): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            <?= htmlspecialchars($successMessage) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    <?php endif; ?>
+
     <div class="row">
         <div class="col-lg-8">
             <div class="fade-in-up">
@@ -658,7 +664,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                 </div>
             </div>
 
-            <!-- START: NEW SECTION FOR HARDWARE COMPONENTS -->
+            <!-- Sezione componenti hardware -->
             <?php if ($progetto['Tipo'] === 'Hardware' && !empty($componenti)): ?>
                 <div class="project-details-card fade-in-up">
                     <h3 class="mb-3 text-warning">
@@ -668,44 +674,44 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead class="table-warning">
-                                <tr>
-                                    <th><i class="fas fa-cube me-1"></i>Componente</th>
-                                    <th><i class="fas fa-info-circle me-1"></i>Descrizione</th>
-                                    <th><i class="fas fa-euro-sign me-1"></i>Prezzo Unitario</th>
-                                    <th><i class="fas fa-boxes me-1"></i>Quantità</th>
-                                    <th><i class="fas fa-calculator me-1"></i>Totale</th>
-                                </tr>
+                            <tr>
+                                <th><i class="fas fa-cube me-1"></i>Componente</th>
+                                <th><i class="fas fa-info-circle me-1"></i>Descrizione</th>
+                                <th><i class="fas fa-euro-sign me-1"></i>Prezzo Unitario</th>
+                                <th><i class="fas fa-boxes me-1"></i>Quantità</th>
+                                <th><i class="fas fa-calculator me-1"></i>Totale</th>
+                            </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($componenti as $componente): ?>
-                                    <tr>
-                                        <td>
-                                            <strong><?= htmlspecialchars($componente['Nome']) ?></strong>
-                                        </td>
-                                        <td>
-                                            <small class="text-muted"><?= htmlspecialchars($componente['Descrizione']) ?></small>
-                                        </td>
-                                        <td>
-                                            <span class="text-success fw-bold"><?= formatCurrency($componente['Prezzo']) ?></span>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-primary"><?= htmlspecialchars($componente['Quantita']) ?></span>
-                                        </td>
-                                        <td>
-                                            <span class="text-primary fw-bold"><?= formatCurrency($componente['Totale']) ?></span>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                            <tfoot class="table-light">
+                            <?php foreach ($componenti as $componente): ?>
                                 <tr>
-                                    <td colspan="4" class="text-end">
-                                        <strong>Totale Componenti:</strong>
+                                    <td>
+                                        <strong><?= htmlspecialchars($componente['Nome']) ?></strong>
                                     </td>
                                     <td>
-                                        <span class="text-primary fw-bold fs-5"><?= formatCurrency($totaleComponenti) ?></span>
+                                        <small class="text-muted"><?= htmlspecialchars($componente['Descrizione']) ?></small>
+                                    </td>
+                                    <td>
+                                        <span class="text-success fw-bold"><?= formatCurrency($componente['Prezzo']) ?></span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary"><?= htmlspecialchars($componente['Quantita']) ?></span>
+                                    </td>
+                                    <td>
+                                        <span class="text-primary fw-bold"><?= formatCurrency($componente['Totale']) ?></span>
                                     </td>
                                 </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                            <tfoot class="table-light">
+                            <tr>
+                                <td colspan="4" class="text-end">
+                                    <strong>Totale Componenti:</strong>
+                                </td>
+                                <td>
+                                    <span class="text-primary fw-bold fs-5"><?= formatCurrency($totaleComponenti) ?></span>
+                                </td>
+                            </tr>
                             </tfoot>
                         </table>
                     </div>
@@ -725,7 +731,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                     </div>
                 </div>
             <?php endif; ?>
-            <!-- END: NEW SECTION FOR HARDWARE COMPONENTS -->
 
             <div class="mt-4">
                 <a href="projects.php" class="btn btn-secondary-modern btn-lg"><i class="fas fa-arrow-left me-2"></i>Torna ai Progetti</a>
@@ -742,6 +747,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
         </div>
 
         <div class="col-lg-4">
+            <!-- Sezione commenti -->
             <?php if ($isLoggedIn): ?>
                 <div class="card my-4">
                     <div class="card-header bg-light">
@@ -761,7 +767,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                                         <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
-
                             </ul>
                         <?php else: ?>
                             <p>Nessun commento presente per questo progetto.</p>
@@ -784,22 +789,8 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                     Accedi per lasciare un commento.
                 </div>
             <?php endif; ?>
-                <!-- Dopo visualizzazione commento -->
-            <?php if ($isLoggedIn && $isCreatore): ?>
-                <form action="/Bostarter/public/manage_comment.php" method="POST" class="mt-2">
-                    <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
-                    <textarea name="testo_risposta" class="form-control" placeholder="Rispondi al commento..." required></textarea>
-                    <button type="submit" class="btn btn-sm btn-outline-primary mt-1">Rispondi</button>
-                </form>
-            <?php endif; ?>
 
-            <?php if (!empty($commento['Risposta'])): ?>
-                <div class="mt-1 ms-3 p-2 bg-light border-start border-3">
-                    <strong>Risposta del creatore:</strong><br>
-                    <?= htmlspecialchars($commento['Risposta']) ?>
-                </div>
-            <?php endif; ?>
-
+            <!-- Sezione candidature per progetti software -->
             <?php if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'aperto'): ?>
                 <div class="card my-4">
                     <div class="card-header bg-primary text-white">
@@ -808,17 +799,16 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
 
                     <div class="card-body">
                         <?php if (isset($_GET['success']) && $_GET['success'] === 'candidatura_inviata'): ?>
-                            <div class="alert alert-success" id="alertBox">✅ Candidatura inviata con successo!</div>
+                            <div class="alert alert-success" id="alertBox">Candidatura inviata con successo!</div>
                         <?php endif; ?>
 
                         <?php if (isset($_GET['error'])): ?>
-                            <div class="alert alert-danger" id="alertBox">❌ Errore: <?= htmlspecialchars($_GET['error']) ?></div>
+                            <div class="alert alert-danger" id="alertBox">Errore: <?= htmlspecialchars($_GET['error']) ?></div>
                         <?php endif; ?>
 
                         <?php if (!empty($profiliRicercati)): ?>
                             <p class="mb-3">Questo progetto software sta ricercando i seguenti profili:</p>
 
-                            <!-- Mostra dettagli profili con verifica skill -->
                             <?php foreach ($profiliRicercati as $profilo): ?>
                                 <div class="profile-card <?= $profilo['canApply'] ? 'can-apply' : 'cannot-apply' ?> p-3">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
@@ -827,9 +817,9 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                                             <?= htmlspecialchars($profilo['Nome']) ?>
                                         </h6>
                                         <?php if ($profilo['canApply']): ?>
-                                            <span class="badge bg-success">✓ Puoi candidarti</span>
+                                            <span class="badge bg-success">Puoi candidarti</span>
                                         <?php else: ?>
-                                            <span class="badge bg-warning">⚠ Skill mancanti</span>
+                                            <span class="badge bg-warning">Skill mancanti</span>
                                         <?php endif; ?>
                                     </div>
 
@@ -864,7 +854,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                                     <?php endif; ?>
                                 </div>
                             <?php endforeach; ?>
-                            
+
                             <!-- Form candidatura -->
                             <form id="candidaturaForm" class="mt-3">
                                 <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
@@ -891,13 +881,11 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                                         break;
                                     }
                                 }
+                                $utenteEmail = $_SESSION['user_email'] ?? null;
+                                $creatoreEmail = $progetto['Email_Creatore'];
                                 ?>
 
-                                <?php
-                                $utenteEmail = $_SESSION['user_email'] ?? null;
-                                $creatoreEmail = $progetto['Email_Creatore']; // o il nome corretto del campo
-
-                                if ($utenteEmail === $creatoreEmail): ?>
+                                <?php if ($utenteEmail === $creatoreEmail): ?>
                                     <div class="alert alert-danger">
                                         <i class="fas fa-user-shield me-2"></i>
                                         <strong>Sei il creatore di questo progetto.</strong><br>
@@ -917,7 +905,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                                         </small>
                                     </div>
                                 <?php endif; ?>
-
                             </form>
 
                         <?php else: ?>
@@ -943,11 +930,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
     </div>
 </div>
 
-<!-- ================================================================ -->
-<!-- MODAL FINANZIAMENTO COMPLETO - Sostituisci nel projects/projects/project_detail.php -->
-<!-- Cerca la sezione <-- Modal finanziamento  e sostituisci tutto -->
-<!-- ================================================================ -->
-
 <!-- Modal per finanziamento -->
 <div class="modal fade" id="finanziaModal" tabindex="-1" aria-labelledby="finanziaModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -961,7 +943,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             </div>
             <div class="modal-body">
                 <?php if (!empty($rewards)): ?>
-                    <!-- ✅ Progetto con reward - form completo -->
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
                         <strong>Seleziona una reward</strong> per ricevere un ringraziamento speciale dal creatore.
@@ -970,7 +951,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                     <form action="../../api/fund_project.php" method="POST" id="quickFundingForm">
                         <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
 
-                        <!-- STEP 1: Reward obbligatoria -->
+                        <!-- Sezione reward -->
                         <div class="mb-4">
                             <label class="form-label">
                                 <strong><i class="fas fa-gift me-2"></i>Reward disponibili</strong>
@@ -999,7 +980,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                             <?php endforeach; ?>
                         </div>
 
-                        <!-- STEP 2: Importo -->
+                        <!-- Sezione importo -->
                         <div class="mb-3">
                             <label for="modal_importo" class="form-label">
                                 <strong><i class="fas fa-euro-sign me-2"></i>Importo da finanziare (€)</strong>
@@ -1037,7 +1018,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                     </form>
 
                 <?php else: ?>
-                    <!-- ✅ Progetto senza reward - non finanziabile -->
                     <div class="alert alert-warning text-center">
                         <i class="fas fa-exclamation-triangle fa-3x mb-3 text-warning"></i>
                         <h5>Progetto Non Ancora Finanziabile</h5>
@@ -1076,9 +1056,10 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
     </div>
 </div>
 
-<!-- ✅ JavaScript per il modal (aggiungi prima della chiusura del body) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
-    // Funzione per impostare importo rapido
+    // Gestione modal finanziamento
     function setModalAmount(amount) {
         const importoInput = document.getElementById('modal_importo');
         if (importoInput) {
@@ -1088,26 +1069,21 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
         }
     }
 
-    // Verifica completezza form
     function checkModalFormCompletion() {
         const selectedReward = document.querySelector('input[name="codice_reward"]:checked');
         const importo = parseFloat(document.getElementById('modal_importo')?.value || 0);
-
         const isComplete = selectedReward && importo > 0;
 
-        // Abilita/disabilita submit
         const submitBtn = document.getElementById('modalSubmitBtn');
         if (submitBtn) {
             submitBtn.disabled = !isComplete;
         }
 
-        // Mostra/nascondi riepilogo
         const summary = document.getElementById('modalSummary');
         if (summary) {
             summary.style.display = isComplete ? 'block' : 'none';
         }
 
-        // Aggiorna testo reward selezionata
         if (selectedReward) {
             const rewardCode = selectedReward.value;
             const rewardDesc = selectedReward.closest('.form-check').querySelector('.text-muted').textContent;
@@ -1115,98 +1091,12 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
         }
     }
 
-    // Inizializzazione quando il DOM è pronto
-    document.addEventListener('DOMContentLoaded', function() {
-        console.log('✅ Modal finanziamento inizializzato');
-
-        // Listener per selezione reward
-        document.querySelectorAll('input[name="codice_reward"]').forEach(radio => {
-            radio.addEventListener('change', checkModalFormCompletion);
-        });
-
-        // Listener per input importo
-        const modalImporto = document.getElementById('modal_importo');
-        if (modalImporto) {
-            modalImporto.addEventListener('input', function() {
-                const amount = parseFloat(this.value) || 0;
-                document.getElementById('selectedAmountDisplay').textContent = `€${amount.toFixed(2)}`;
-                checkModalFormCompletion();
-            });
-        }
-
-        // Validazione form submit
-        const quickForm = document.getElementById('quickFundingForm');
-        if (quickForm) {
-            quickForm.addEventListener('submit', function(e) {
-                const selectedReward = document.querySelector('input[name="codice_reward"]:checked');
-                const importo = parseFloat(document.getElementById('modal_importo').value || 0);
-
-                if (!selectedReward) {
-                    e.preventDefault();
-                    alert('⚠️ Devi selezionare una reward per continuare!');
-                    return false;
-                }
-
-                if (importo <= 0) {
-                    e.preventDefault();
-                    alert('⚠️ Inserisci un importo valido maggiore di zero!');
-                    return false;
-                }
-
-                // Mostra loading
-                const submitBtn = document.getElementById('modalSubmitBtn');
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Elaborazione...';
-
-                return true;
-            });
-        }
-
-        // Reset form quando si apre il modal
-        const modal = document.getElementById('finanziaModal');
-        if (modal) {
-            modal.addEventListener('show.bs.modal', function() {
-                // Reset form
-                const form = document.getElementById('quickFundingForm');
-                if (form) {
-                    form.reset();
-                    checkModalFormCompletion();
-                }
-            });
-        }
-    });
-
-    // Test function per debug
-    function testModal() {
-        console.log('🔍 Test modal:', {
-            modal: document.getElementById('finanziaModal') ? 'OK' : 'MISSING',
-            form: document.getElementById('quickFundingForm') ? 'OK' : 'MISSING',
-            rewards: document.querySelectorAll('input[name="codice_reward"]').length,
-            importo: document.getElementById('modal_importo') ? 'OK' : 'MISSING'
-        });
-    }
-</script>
-
-<script>
-    window.addEventListener('DOMContentLoaded', () => {
-        const alertBox = document.getElementById('alertBox');
-        if (alertBox) {
-            setTimeout(() => {
-                alertBox.style.display = 'none';
-            }, 3000);
-        }
-    });
-</script>
-
-<!-- JavaScript per gestione candidature -->
-<script>
-    // Funzione per mostrare toast
+    // Gestione candidature
     function mostraToast(message, type = 'info') {
         const toast = document.getElementById('toastNotifica');
         const toastMessage = document.getElementById('toastMessage');
 
         if (!toast || !toastMessage) {
-            // Fallback se il toast non esiste
             if (type === 'error') {
                 alert(`❌ ${message}`);
             } else {
@@ -1215,10 +1105,8 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             return;
         }
 
-        // Configura il toast
         toastMessage.textContent = message;
 
-        // Colori in base al tipo
         const colorClasses = {
             'success': 'bg-success text-white',
             'error': 'bg-danger text-white',
@@ -1228,7 +1116,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
 
         toast.className = `toast ${colorClasses[type] || colorClasses.info}`;
 
-        // Mostra il toast
         const bsToast = new bootstrap.Toast(toast, {
             autohide: true,
             delay: type === 'error' ? 5000 : 3000
@@ -1236,84 +1123,119 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
         bsToast.show();
     }
 
-    // Funzione per inviare candidatura
     function inviaCandidatura() {
         const form = document.getElementById('candidaturaForm');
         const profiloSelect = document.getElementById('profiloCandidatura');
         const submitBtn = form.querySelector('button[type="button"]');
 
-        // Validazione
         if (!profiloSelect.value) {
             mostraToast('Seleziona un profilo per candidarti', 'error');
             return;
         }
 
-        // Disabilita il bottone e mostra loading
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Invio in corso...';
 
-        // Prepara i dati
         const formData = new FormData();
         formData.append('action', 'submit_candidatura');
         formData.append('profilo', profiloSelect.value);
         formData.append('nome_progetto', form.querySelector('input[name="nome_progetto"]').value);
 
-        // Debug
-        console.log('🔍 Invio candidatura:', {
-            profilo: profiloSelect.value,
-            progetto: form.querySelector('input[name="nome_progetto"]').value
-        });
-
-        // Chiamata API
         fetch('/Bostarter/api/manage_candidature.php', {
             method: 'POST',
             body: formData
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('✅ Risposta candidatura:', data);
-
-            if (data.success) {
-                mostraToast(data.message, 'success');
-                
-                // Reset form
-                form.reset();
-                
-                // Opzionale: redirect dopo 2 secondi
-                setTimeout(() => {
-                    window.location.href = '/Bostarter/public/dashboard/user_dashboard.php';
-                }, 2000);
-            } else {
-                mostraToast(data.message || 'Errore durante l\'invio della candidatura', 'error');
-                // Riabilita il bottone
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    mostraToast(data.message, 'success');
+                    form.reset();
+                    setTimeout(() => {
+                        window.location.href = '/Bostarter/public/dashboard/user_dashboard.php';
+                    }, 2000);
+                } else {
+                    mostraToast(data.message || 'Errore durante l\'invio della candidatura', 'error');
+                    riabilitaBottoneCandidatura(submitBtn);
+                }
+            })
+            .catch(error => {
+                mostraToast(`Errore di connessione: ${error.message}`, 'error');
                 riabilitaBottoneCandidatura(submitBtn);
-            }
-        })
-        .catch(error => {
-            console.error('❌ Errore candidatura:', error);
-            mostraToast(`Errore di connessione: ${error.message}`, 'error');
-            // Riabilita il bottone
-            riabilitaBottoneCandidatura(submitBtn);
-        });
+            });
     }
 
-    // Funzione per riabilitare il bottone
     function riabilitaBottoneCandidatura(btn) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>Invia Candidatura';
     }
 
-    // Inizializzazione quando il DOM è pronto
+    // Inizializzazione
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('✅ Sistema candidature caricato');
+        // Gestione modal finanziamento
+        document.querySelectorAll('input[name="codice_reward"]').forEach(radio => {
+            radio.addEventListener('change', checkModalFormCompletion);
+        });
+
+        const modalImporto = document.getElementById('modal_importo');
+        if (modalImporto) {
+            modalImporto.addEventListener('input', function() {
+                const amount = parseFloat(this.value) || 0;
+                document.getElementById('selectedAmountDisplay').textContent = `€${amount.toFixed(2)}`;
+                checkModalFormCompletion();
+            });
+        }
+
+        const quickForm = document.getElementById('quickFundingForm');
+        if (quickForm) {
+            quickForm.addEventListener('submit', function(e) {
+                const selectedReward = document.querySelector('input[name="codice_reward"]:checked');
+                const importo = parseFloat(document.getElementById('modal_importo').value || 0);
+
+                if (!selectedReward) {
+                    e.preventDefault();
+                    alert('Devi selezionare una reward per continuare!');
+                    return false;
+                }
+
+                if (importo <= 0) {
+                    e.preventDefault();
+                    alert('Inserisci un importo valido maggiore di zero!');
+                    return false;
+                }
+
+                const submitBtn = document.getElementById('modalSubmitBtn');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Elaborazione...';
+
+                return true;
+            });
+        }
+
+        const modal = document.getElementById('finanziaModal');
+        if (modal) {
+            modal.addEventListener('show.bs.modal', function() {
+                const form = document.getElementById('quickFundingForm');
+                if (form) {
+                    form.reset();
+                    checkModalFormCompletion();
+                }
+            });
+        }
+
+        // Auto-hide degli alert
+        const alertBox = document.getElementById('alertBox');
+        if (alertBox) {
+            setTimeout(() => {
+                alertBox.style.display = 'none';
+            }, 3000);
+        }
     });
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
