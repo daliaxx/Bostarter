@@ -25,219 +25,288 @@ $error_message = '';
 $success_message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nome = trim($_POST['nome'] ?? '');
-    $descrizione = trim($_POST['descrizione'] ?? '');
-    $budget = floatval($_POST['budget'] ?? 0);
-    $data_limite = $_POST['data_limite'] ?? '';
-    $tipo = trim($_POST['tipo'] ?? '');
-    $email = $_SESSION['user_email'];
+$nome = trim($_POST['nome'] ?? '');
+$descrizione = trim($_POST['descrizione'] ?? '');
+$budget = floatval($_POST['budget'] ?? 0);
+$data_limite = $_POST['data_limite'] ?? '';
+$tipo = trim($_POST['tipo'] ?? '');
+$email = $_SESSION['user_email'];
 
-    // Recupera reward, componenti e profili
-    $rewards = [];
-    $componenti = [];
-    $profili = [];
+// Recupera reward, componenti e profili
+$rewards = [];
+$componenti = [];
+$profili = []; // NUOVO: Array per multipli profili
 
-    // Le reward sono sempre obbligatorie per entrambi i tipi
-    if (isset($_POST['reward_codes']) && isset($_POST['reward_descriptions'])) {
-        $rewardCodes = $_POST['reward_codes'];
-        $rewardDescriptions = $_POST['reward_descriptions'];
+// Le reward sono sempre obbligatorie per entrambi i tipi
+if (isset($_POST['reward_codes']) && isset($_POST['reward_descriptions'])) {
+    $rewardCodes = $_POST['reward_codes'];
+    $rewardDescriptions = $_POST['reward_descriptions'];
 
-        for ($i = 0; $i < count($rewardCodes); $i++) {
-            $code = trim($rewardCodes[$i]);
-            $desc = trim($rewardDescriptions[$i]);
+    for ($i = 0; $i < count($rewardCodes); $i++) {
+        $code = trim($rewardCodes[$i]);
+        $desc = trim($rewardDescriptions[$i]);
 
-            if (!empty($code) && !empty($desc)) {
-                $rewards[] = [
-                    'codice' => $code,
-                    'descrizione' => $desc
-                ];
-            }
-        }
-    }
-
-    // Gestisci profili per progetti software
-    if ($tipo === 'Software' && isset($_POST['profili']) && $_POST['profili'] === 'si' && !empty($_POST['profilo_richiesto_nome'])) {
-        $profiloNome = trim($_POST['profilo_richiesto_nome']);
-        $competenze = $_POST['competenze'] ?? [];
-        $livelli = $_POST['livelli'] ?? [];
-
-        if (!empty($profiloNome) && count($competenze) > 0) {
-            $profili[] = [
-                'nome' => $profiloNome,
-                'competenze' => array_combine($competenze, $livelli)
+        if (!empty($code) && !empty($desc)) {
+            $rewards[] = [
+                'codice' => $code,
+                'descrizione' => $desc
             ];
         }
     }
+}
 
-    // Gestisci componenti per progetti hardware
-    if ($tipo === 'Hardware' && isset($_POST['component_names']) && isset($_POST['component_descriptions'])
-        && isset($_POST['component_prices']) && isset($_POST['component_quantities'])) {
+// NUOVO: Gestisci multipli profili per progetti software
+if ($tipo === 'Software' && isset($_POST['profili']) && $_POST['profili'] === 'si') {
 
-        $componentNames = $_POST['component_names'];
-        $componentDescriptions = $_POST['component_descriptions'];
-        $componentPrices = $_POST['component_prices'];
-        $componentQuantities = $_POST['component_quantities'];
+    // Verifica se abbiamo i dati dei profili
+    if (isset($_POST['profile_names']) && isset($_POST['profile_skills'])) {
+        $profileNames = $_POST['profile_names'];
+        $profileSkills = $_POST['profile_skills'];
 
-        for ($i = 0; $i < count($componentNames); $i++) {
-            $name = trim($componentNames[$i]);
-            $desc = trim($componentDescriptions[$i]);
-            $price = floatval($componentPrices[$i]);
-            $quantity = intval($componentQuantities[$i]);
+        // Debug per capire la struttura
+        error_log("🔍 Profile Names: " . print_r($profileNames, true));
+        error_log("🔍 Profile Skills: " . print_r($profileSkills, true));
 
-            if (!empty($name) && !empty($desc) && $price > 0 && $quantity > 0) {
-                $componenti[] = [
-                    'nome' => $name,
-                    'descrizione' => $desc,
-                    'prezzo' => $price,
-                    'quantita' => $quantity
-                ];
-            }
-        }
-    }
+        // Processa ogni profilo
+        foreach ($profileNames as $index => $profileName) {
+            $profileName = trim($profileName);
 
-    // Validazioni
-    $error_message = '';
-    
-    // Validazioni base
-    if (empty($nome) || empty($descrizione) || $budget <= 0 || empty($data_limite) || empty($tipo)) {
-        $error_message = "Tutti i campi sono obbligatori e devono essere validi.";
-    } elseif (strtotime($data_limite) <= strtotime(date('Y-m-d'))) {
-        $error_message = "La data limite deve essere futura.";
-    } elseif (empty($rewards)) {
-        $error_message = "Devi aggiungere almeno una reward per il progetto.";
-    } elseif ($tipo === 'Hardware' && empty($componenti)) {
-        $error_message = "Devi aggiungere almeno un componente per il progetto Hardware.";
-    } elseif ($tipo === 'Software' && isset($_POST['profili']) && $_POST['profili'] === 'si' && empty($profili)) {
-        $error_message = "Se hai selezionato 'Sì' per i profili, devi compilare almeno un profilo con le relative skill.";
-    } else {
-        // Verifica univocità
-        $codiciUnivoci = array_unique(array_column($rewards, 'codice'));
-        if (count($codiciUnivoci) !== count($rewards)) {
-            $error_message = "I codici delle reward devono essere univoci.";
-        } elseif ($tipo === 'Hardware' && !empty($componenti)) {
-            $nomiUnivoci = array_unique(array_column($componenti, 'nome'));
-            if (count($nomiUnivoci) !== count($componenti)) {
-                $error_message = "I nomi dei componenti devono essere univoci.";
-            }
-        }
+            if (!empty($profileName)) {
+                // Trova le skill per questo profilo
+                $profiloSkills = [];
 
-        // Verifica che il nome progetto non esista già
-        if (empty($error_message)) {
-            $progettoEsistente = $db->fetchOne("SELECT Nome FROM PROGETTO WHERE Nome = ?", [$nome]);
-            if ($progettoEsistente) {
-                $error_message = "Esiste già un progetto con questo nome.";
-            }
-        }
-    }
+                // Cerca nelle skill per trovare quelle di questo profilo
+                foreach ($profileSkills as $profileId => $skillData) {
+                    // Controlla se questo è il profilo corretto
+                    if (isset($skillData['competenze']) && isset($skillData['livelli'])) {
+                        $competenze = $skillData['competenze'];
+                        $livelli = $skillData['livelli'];
 
-    if (empty($error_message)) {
-        // Carica immagine se fornita
-        $immaginePath = null;
-        if (isset($_FILES['immagine']) && $_FILES['immagine']['error'] === UPLOAD_ERR_OK) {
-            $fileName = time() . "_" . basename($_FILES['immagine']['name']);
-            $tmpName = $_FILES['immagine']['tmp_name'];
-            $uploadDir = __DIR__ . '/../../img/';
-            
-            if (!is_dir($uploadDir)) {
-                mkdir($uploadDir, 0777, true);
-            }
-            
-            $destPath = $uploadDir . $fileName;
-            if (move_uploaded_file($tmpName, $destPath)) {
-                $immaginePath = 'img/' . $fileName;
-            }
-        }
+                        // Processa le skill di questo profilo
+                        for ($i = 0; $i < count($competenze); $i++) {
+                            $competenza = trim($competenze[$i]);
+                            $livello = intval($livelli[$i]);
 
-        try {
-            $db->beginTransaction();
-
-            $oggi = date('Y-m-d');
-            $stato = 'aperto';
-            
-            // Validazione aggiuntiva per il tipo
-            if (!in_array($tipo, ['Hardware', 'Software'])) {
-                throw new Exception("Tipo progetto non valido: '$tipo'. Deve essere 'Hardware' o 'Software'");
-            }
-            
-            // 1. Inserisci progetto
-            $stmt = $db->callStoredProcedure('InserisciProgetto', [$nome, $descrizione, $oggi, $budget, $data_limite, $stato, $tipo, $email]);
-            $stmt->closeCursor();
-
-            // 2. Inserisci foto se caricata
-            if ($immaginePath) {
-                $stmt = $db->callStoredProcedure('InserisciFoto', [$immaginePath, $nome]);
-                $stmt->closeCursor();
-            }
-
-            // 3. Inserisci reward per entrambi i tipi
-            foreach ($rewards as $reward) {
-                $db->execute("
-                    INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) 
-                    VALUES (?, ?, 'default_reward.jpg', ?)
-                ", [$reward['codice'], $reward['descrizione'], $nome]);
-            }
-
-            // 4. Inserisci componenti per hardware o profili per software
-            if ($tipo === 'Hardware') {
-                foreach ($componenti as $componente) {
-                    $db->execute("
-                        INSERT INTO COMPONENTE (Nome, Descrizione, Prezzo, Quantita, Nome_Progetto) 
-                        VALUES (?, ?, ?, ?, ?)
-                    ", [
-                        $componente['nome'], $componente['descrizione'], 
-                        $componente['prezzo'], $componente['quantita'], $nome
-                    ]);
-                }
-                $countItems = count($componenti) + count($rewards);
-                $itemType = "componenti e reward";
-            } else {
-                // Software: inserisci profili se richiesti
-                if (!empty($profili)) {
-                    foreach ($profili as $profilo) {
-                        $stmt = $db->callStoredProcedure('InserisciProfiloRichiesto', [$profilo['nome'], $nome]);
-                        $result = $stmt->fetch();
-                        $stmt->closeCursor();
-                        $id_profilo = $result['ID_Profilo'] ?? null;
-
-                        if ($id_profilo) {
-                            foreach ($profilo['competenze'] as $competenza => $livello) {
-                                $competenza = trim($competenza);
-                                $livello = intval($livello);
-
-                                if (!empty($competenza) && $livello >= 0 && $livello <= 5) {
-                                    $stmtSkill = $db->callStoredProcedure('InserisciSkill', [$competenza, $livello]);
-                                    $stmtSkill->closeCursor();
-                                    $stmtSkillRich = $db->callStoredProcedure('InserisciSkillRichiesta', [
-                                        $id_profilo, $competenza, $livello
-                                    ]);
-                                    $stmtSkillRich->closeCursor();
-                                }
+                            if (!empty($competenza) && $livello >= 0 && $livello <= 5) {
+                                $profiloSkills[$competenza] = $livello;
                             }
                         }
+                        break; // Trovato il profilo, esci dal loop
                     }
-                    $countItems = count($rewards) + count($profili);
-                    $itemType = "reward e profili";
-                } else {
-                    $countItems = count($rewards);
-                    $itemType = "reward";
+                }
+
+                // Aggiungi il profilo se ha almeno una skill
+                if (!empty($profiloSkills)) {
+                    $profili[] = [
+                        'nome' => $profileName,
+                        'competenze' => $profiloSkills
+                    ];
                 }
             }
-
-            $db->commit();
-
-            $success_message = "Progetto '{$nome}' ({$tipo}) creato con successo con {$countItems} {$itemType}!";
-
-            // Redirect dopo 2 secondi
-            header("refresh:2;url=creator_dashboard.php");
-
-        } catch (Exception $e) {
-            $db->rollback();
-            $error_message = "Errore durante l'inserimento: " . $e->getMessage();
         }
     }
 }
+
+// Gestisci componenti per progetti hardware (invariato)
+if ($tipo === 'Hardware' && isset($_POST['component_names']) && isset($_POST['component_descriptions'])
+    && isset($_POST['component_prices']) && isset($_POST['component_quantities'])) {
+
+    $componentNames = $_POST['component_names'];
+    $componentDescriptions = $_POST['component_descriptions'];
+    $componentPrices = $_POST['component_prices'];
+    $componentQuantities = $_POST['component_quantities'];
+
+    for ($i = 0; $i < count($componentNames); $i++) {
+        $name = trim($componentNames[$i]);
+        $desc = trim($componentDescriptions[$i]);
+        $price = floatval($componentPrices[$i]);
+        $quantity = intval($componentQuantities[$i]);
+
+        if (!empty($name) && !empty($desc) && $price > 0 && $quantity > 0) {
+            $componenti[] = [
+                'nome' => $name,
+                'descrizione' => $desc,
+                'prezzo' => $price,
+                'quantita' => $quantity
+            ];
+        }
+    }
+}
+
+// Validazioni (aggiornate)
+$error_message = '';
+
+// Validazioni base
+if (empty($nome) || empty($descrizione) || $budget <= 0 || empty($data_limite) || empty($tipo)) {
+    $error_message = "Tutti i campi sono obbligatori e devono essere validi.";
+} elseif (strtotime($data_limite) <= strtotime(date('Y-m-d'))) {
+    $error_message = "La data limite deve essere futura.";
+} elseif (empty($rewards)) {
+    $error_message = "Devi aggiungere almeno una reward per il progetto.";
+} elseif ($tipo === 'Hardware' && empty($componenti)) {
+    $error_message = "Devi aggiungere almeno un componente per il progetto Hardware.";
+} elseif ($tipo === 'Software' && isset($_POST['profili']) && $_POST['profili'] === 'si' && empty($profili)) {
+    $error_message = "Se hai selezionato 'Sì' per i profili, devi aggiungere almeno un profilo con le relative skill.";
+} else {
+    // Verifica univocità reward
+    $codiciUnivoci = array_unique(array_column($rewards, 'codice'));
+    if (count($codiciUnivoci) !== count($rewards)) {
+        $error_message = "I codici delle reward devono essere univoci.";
+    } elseif ($tipo === 'Hardware' && !empty($componenti)) {
+        $nomiUnivoci = array_unique(array_column($componenti, 'nome'));
+        if (count($nomiUnivoci) !== count($componenti)) {
+            $error_message = "I nomi dei componenti devono essere univoci.";
+        }
+    } elseif ($tipo === 'Software' && !empty($profili)) {
+        // NUOVO: Verifica univocità nomi profili
+        $nomiProfiliUnivoci = array_unique(array_column($profili, 'nome'));
+        if (count($nomiProfiliUnivoci) !== count($profili)) {
+            $error_message = "I nomi dei profili devono essere univoci.";
+        }
+    }
+
+    // Verifica che il nome progetto non esista già
+    if (empty($error_message)) {
+        $progettoEsistente = $db->fetchOne("SELECT Nome FROM PROGETTO WHERE Nome = ?", [$nome]);
+        if ($progettoEsistente) {
+            $error_message = "Esiste già un progetto con questo nome.";
+        }
+    }
+}
+
+if (empty($error_message)) {
+    // Carica immagine se fornita
+    $immaginePath = null;
+    if (isset($_FILES['immagine']) && $_FILES['immagine']['error'] === UPLOAD_ERR_OK) {
+        $fileName = time() . "_" . basename($_FILES['immagine']['name']);
+        $tmpName = $_FILES['immagine']['tmp_name'];
+        $uploadDir = __DIR__ . '/../../img/';
+
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $destPath = $uploadDir . $fileName;
+        if (move_uploaded_file($tmpName, $destPath)) {
+            $immaginePath = 'img/' . $fileName;
+        }
+    }
+
+    try {
+        $db->beginTransaction();
+
+        $oggi = date('Y-m-d');
+        $stato = 'aperto';
+
+        // Validazione aggiuntiva per il tipo
+        if (!in_array($tipo, ['Hardware', 'Software'])) {
+            throw new Exception("Tipo progetto non valido: '$tipo'. Deve essere 'Hardware' o 'Software'");
+        }
+
+        // 1. Inserisci progetto
+        $stmt = $db->callStoredProcedure('InserisciProgetto', [$nome, $descrizione, $oggi, $budget, $data_limite, $stato, $tipo, $email]);
+        $stmt->closeCursor();
+
+        // 2. Inserisci foto se caricata
+        if ($immaginePath) {
+            $stmt = $db->callStoredProcedure('InserisciFoto', [$immaginePath, $nome]);
+            $stmt->closeCursor();
+        }
+
+        // 3. Inserisci reward per entrambi i tipi
+        foreach ($rewards as $reward) {
+            $db->execute("
+                    INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) 
+                    VALUES (?, ?, 'default_reward.jpg', ?)
+                ", [$reward['codice'], $reward['descrizione'], $nome]);
+        }
+
+        // 4. Inserisci componenti per hardware o profili per software
+        if ($tipo === 'Hardware') {
+            foreach ($componenti as $componente) {
+                $db->execute("
+                        INSERT INTO COMPONENTE (Nome, Descrizione, Prezzo, Quantita, Nome_Progetto) 
+                        VALUES (?, ?, ?, ?, ?)
+                    ", [
+                    $componente['nome'], $componente['descrizione'],
+                    $componente['prezzo'], $componente['quantita'], $nome
+                ]);
+            }
+            $countItems = count($componenti) + count($rewards);
+            $itemType = "componenti e reward";
+        } else {
+            // Software: inserisci multipli profili
+            if (!empty($profili)) {
+                foreach ($profili as $profilo) {
+                    // Inserisci il profilo
+                    $stmt = $db->callStoredProcedure('InserisciProfiloRichiesto', [$profilo['nome'], $nome]);
+                    $result = $stmt->fetch();
+                    $stmt->closeCursor();
+                    $id_profilo = $result['ID_Profilo'] ?? null;
+
+                    if ($id_profilo) {
+                        // Inserisci le skill di questo profilo
+                        foreach ($profilo['competenze'] as $competenza => $livello) {
+                            $competenza = trim($competenza);
+                            $livello = intval($livello);
+
+                            if (!empty($competenza) && $livello >= 0 && $livello <= 5) {
+                                // Inserisci la skill generale se non esiste
+                                $stmtSkill = $db->callStoredProcedure('InserisciSkill', [$competenza, $livello]);
+                                $stmtSkill->closeCursor();
+
+                                // Inserisci la skill richiesta per questo profilo
+                                $stmtSkillRich = $db->callStoredProcedure('InserisciSkillRichiesta', [
+                                    $id_profilo, $competenza, $livello
+                                ]);
+                                $stmtSkillRich->closeCursor();
+                            }
+                        }
+                    }
+                }
+                $countItems = count($rewards) + count($profili);
+                $itemType = "reward e profili";
+            } else {
+                $countItems = count($rewards);
+                $itemType = "reward";
+            }
+        }
+
+        $db->commit();
+
+        // Debug per capire cosa è stato creato
+        error_log("✅ Progetto '{$nome}' ({$tipo}) creato con successo:");
+        error_log("- Rewards: " . count($rewards));
+        error_log("- Componenti: " . count($componenti));
+        error_log("- Profili: " . count($profili));
+        foreach ($profili as $p) {
+            error_log("  * Profilo: {$p['nome']} con " . count($p['competenze']) . " skill");
+        }
+
+        $success_message = "Progetto '{$nome}' ({$tipo}) creato con successo con {$countItems} {$itemType}!";
+
+        // Redirect dopo 2 secondi
+        header("refresh:2;url=creator_dashboard.php");
+
+    } catch (Exception $e) {
+        $db->rollback();
+        error_log("❌ Errore creazione progetto: " . $e->getMessage());
+        $error_message = "Errore durante l'inserimento: " . $e->getMessage();
+    }
+}
+}
 ?>
 
+<!--
+ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per vedere la struttura dati:
+
+<?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['profile_skills'])): ?>
+<div class="alert alert-info">
+    <h5>🔍 DEBUG - Struttura dati ricevuta:</h5>
+    <pre><?= htmlspecialchars(print_r($_POST, true)) ?></pre>
+</div>
+<?php endif; ?>
+-->
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -477,6 +546,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <h5 class="mb-0">
                                 <i class="fas fa-users-cog me-2"></i>Profili Richiesti per il Progetto Software
                             </h5>
+                            <span class="counter">
+                <span id="profileCount">0</span> profili
+            </span>
                         </div>
                         <small>Definisci i profili professionali che cerchi per il tuo progetto</small>
                     </div>
@@ -496,25 +568,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
 
                         <div id="profili-input" class="mt-3" style="display: none;">
-                            <div class="mb-3">
-                                <label for="profilo_richiesto_nome" class="form-label">
-                                    <i class="fas fa-id-badge me-1"></i>Nome del Profilo Richiesto
-                                </label>
-                                <input type="text" class="form-control" id="profilo_richiesto_nome" name="profilo_richiesto_nome"
-                                       placeholder="Es: Sviluppatore Backend, Esperto AI, Data Scientist">
-                                <small class="form-text text-muted">Dai un nome al tipo di profilo che cerchi.</small>
+                            <!-- Container per lista profili -->
+                            <div id="profilesContainer">
+                                <!-- I profili verranno aggiunti qui dinamicamente -->
                             </div>
-                            
-                            <h6><i class="fas fa-list-ul me-1"></i>Skill richieste per questo profilo:</h6>
-                            <div id="lista-profili">
-                                <!-- Le skill verranno aggiunte qui dinamicamente -->
-                            </div>
-                            <button type="button" class="btn btn-outline-info btn-sm mt-2" onclick="aggiungiProfilo()">
-                                <i class="fas fa-plus me-1"></i>Aggiungi un'altra skill
+
+                            <button type="button" class="btn btn-success" onclick="addProfile()">
+                                <i class="fas fa-user-plus me-2"></i>Aggiungi Nuovo Profilo
                             </button>
+
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    <strong>Esempi di profili:</strong> Sviluppatore Backend, Esperto AI, Data Scientist,
+                                    DevOps Engineer, Frontend Developer, ecc.
+                                </small>
+                            </div>
+
+                            <!-- Riepilogo profili -->
+                            <div id="profilesSummary" class="mt-4 p-3 bg-light rounded" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <strong>Profili Richiesti:</strong> <span id="totalProfiles">0</span>
+                                        <div id="profilesList" class="mt-2"></div>
+                                    </div>
+                                </div>
+                                <small class="text-muted">
+                                    <i class="fas fa-users me-1"></i>
+                                    Elenco dei profili che riceveranno candidature
+                                </small>
+                            </div>
                         </div>
                     </div>
                 </div>
+
 
                 <!-- SEZIONE COMPONENTI (solo per Hardware) -->
                 <div class="card border-success mb-4" id="componentsSection" style="display: none;">
@@ -580,16 +667,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // ================================================================
-    // VARIABILI GLOBALI
-    // ================================================================
+    // Variabili globali
     let rewardCount = 0;
     let componentCount = 0;
+    let profileCount = 0;
     window.competenzeDisponibili = [];
 
-    // ================================================================
-    // FUNZIONI PER GESTIONE COMPETENZE DAL DATABASE
-    // ================================================================
+    // Funzioni per gestione competenze dal database
     function loadCompetenze() {
         fetch('../../api/manage_skill.php', {
             method: 'POST',
@@ -619,9 +703,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         });
     }
 
-    // ================================================================
-    // GESTIONE TIPO PROGETTO
-    // ================================================================
+    // Funzione per validazione real-time delle skill per un profilo specifico
+    function validateSkillsForProfile(profileId) {
+        const skillSelects = document.querySelectorAll(`#profile_${profileId} select[name="profile_skills[${profileId}][competenze][]"]`);
+        const selectedCompetenze = [];
+        const duplicates = [];
+
+        skillSelects.forEach((select) => {
+            const competenza = select.value.trim();
+
+            // Reset stile
+            select.style.borderColor = '';
+            select.style.backgroundColor = '';
+
+            if (competenza) {
+                if (selectedCompetenze.includes(competenza)) {
+                    // Duplicato trovato
+                    select.style.borderColor = '#dc3545';
+                    select.style.backgroundColor = '#ffe6e6';
+                    if (!duplicates.includes(competenza)) {
+                        duplicates.push(competenza);
+                    }
+                } else {
+                    selectedCompetenze.push(competenza);
+                }
+            }
+        });
+
+        // Mostra warning se ci sono duplicati
+        const warningDiv = document.getElementById(`duplicateWarning_${profileId}`);
+        if (duplicates.length > 0) {
+            if (!warningDiv) {
+                const warning = document.createElement('div');
+                warning.id = `duplicateWarning_${profileId}`;
+                warning.className = 'alert alert-warning mt-2';
+                warning.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Attenzione:</strong> Competenze duplicate in questo profilo: ${duplicates.join(', ')}
+                `;
+                document.getElementById(`profile_${profileId}`).appendChild(warning);
+            } else {
+                warningDiv.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Attenzione:</strong> Competenze duplicate in questo profilo: ${duplicates.join(', ')}
+                `;
+            }
+        } else {
+            if (warningDiv) {
+                warningDiv.remove();
+            }
+        }
+    }
+
+    // Gestione tipo progetto
     document.getElementById('tipo').addEventListener('change', function() {
         const tipo = this.value;
         const rewardsSection = document.getElementById('rewardsSection');
@@ -659,9 +793,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     });
 
-    // ================================================================
-    // INIZIALIZZAZIONE
-    // ================================================================
+    // Inizializzazione
     document.addEventListener('DOMContentLoaded', function() {
         // Aggiungi automaticamente una reward all'avvio
         if (rewardCount === 0) {
@@ -669,9 +801,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     });
 
-    // ================================================================
-    // FUNZIONI REWARD
-    // ================================================================
+    // Funzioni reward (invariate)
     function addReward() {
         rewardCount++;
 
@@ -725,9 +855,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         document.getElementById('rewardCount').textContent = currentRewards;
     }
 
-    // ================================================================
-    // FUNZIONI COMPONENTI
-    // ================================================================
+    // Funzioni componenti (invariate)
     function addComponent() {
         componentCount++;
 
@@ -827,9 +955,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         summaryDiv.style.display = 'block';
     }
 
-    // ================================================================
-    // FUNZIONI PROFILI SOFTWARE
-    // ================================================================
+    // Nuove funzioni per gestione multipli profili
     function toggleProfiloInput(valore) {
         const profiliInput = document.getElementById("profili-input");
         profiliInput.style.display = (valore === "si") ? "block" : "none";
@@ -839,42 +965,118 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!window.competenzeDisponibili || window.competenzeDisponibili.length === 0) {
                 loadCompetenze();
             }
-            if (document.querySelectorAll('#lista-profili .profilo-entry').length === 0) {
-                aggiungiProfilo();
+            // Aggiungi automaticamente un profilo se non ce ne sono
+            if (profileCount === 0) {
+                addProfile();
             }
         }
         if (valore === "no") {
-            const listaProfili = document.getElementById("lista-profili");
-            if(listaProfili) listaProfili.innerHTML = '';
-            const profiloNomeInput = document.getElementById('profilo_richiesto_nome');
-            if (profiloNomeInput) profiloNomeInput.value = '';
+            // Pulisci tutto quando si disabilita
+            document.getElementById("profilesContainer").innerHTML = '';
+            profileCount = 0;
+            updateProfileCount();
+            updateProfilesSummary();
         }
     }
 
-    function aggiungiProfilo() {
-        const nuovo = document.createElement("div");
-        nuovo.className = "profilo-entry";
-        nuovo.innerHTML = `
-            <div class="row mb-2">
-                <div class="col-md-5">
-                    <select name="competenze[]" class="form-control competenza-select" required>
-                        <option value="">Caricamento...</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <input type="number" name="livelli[]" class="form-control" placeholder="Livello (0-5)" min="0" max="5" required>
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-danger btn-sm" onclick="rimuoviProfilo(this)">
-                        <i class="fas fa-minus-circle"></i>
+    function addProfile() {
+        profileCount++;
+
+        const profileHtml = `
+        <div class="profile-item card border-info mb-3" id="profile_${profileCount}">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-user-tie me-2"></i>Profilo ${profileCount}
+                    </h6>
+                    <button type="button"
+                            class="btn btn-outline-danger btn-sm"
+                            onclick="removeProfile(${profileCount})"
+                            title="Rimuovi profilo">
+                        <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </div>
-        `;
-        document.getElementById("lista-profili").appendChild(nuovo);
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Nome del Profilo</label>
+                    <input type="text"
+                           name="profile_names[]"
+                           class="form-control"
+                           placeholder="es: Esperto AI, Sviluppatore Backend, DevOps Engineer..."
+                           required>
+                    <small class="text-muted">Dai un nome descrittivo al profilo che cerchi</small>
+                </div>
 
-        // Popola il nuovo select appena creato
-        const newSelect = nuovo.querySelector('.competenza-select');
+                <div class="mb-3">
+                    <label class="form-label">Skill Richieste per questo Profilo</label>
+                    <div id="skillsContainer_${profileCount}">
+                        <!-- Le skill verranno aggiunte qui -->
+        </div>
+        <button type="button"
+        class="btn btn-outline-success btn-sm mt-2"
+        onclick="addSkillToProfile(${profileCount})">
+        <i class="fas fa-plus me-1"></i>Aggiungi Skill
+        </button>
+        </div>
+        </div>
+        </div>
+        `;
+
+        document.getElementById('profilesContainer').insertAdjacentHTML('beforeend', profileHtml);
+
+        // Aggiungi automaticamente una skill al nuovo profilo
+        addSkillToProfile(profileCount);
+
+        updateProfileCount();
+        updateProfilesSummary();
+    }
+
+    function removeProfile(profileId) {
+        const profileElement = document.getElementById(`profile_${profileId}`);
+        if (profileElement) {
+            profileElement.remove();
+            updateProfileCount();
+            updateProfilesSummary();
+        }
+    }
+
+    function addSkillToProfile(profileId) {
+        const skillsContainer = document.getElementById(`skillsContainer_${profileId}`);
+        const skillId = `skill_${profileId}_${Date.now()}`;
+
+        const skillHtml = `
+        <div class="row g-2 mb-2 align-items-center" id="${skillId}">
+        <div class="col-md-6">
+        <select name="profile_skills[${profileId}][competenze][]"
+        class="form-control competenza-select"
+        onchange="validateSkillsForProfile(${profileId})"
+        required>
+        <option value="">Caricamento...</option>
+        </select>
+        </div>
+        <div class="col-md-4">
+        <input type="number"
+        name="profile_skills[${profileId}][livelli][]"
+        class="form-control"
+        placeholder="Livello (0-5)"
+        min="0" max="5"
+        required>
+        </div>
+        <div class="col-md-2">
+        <button type="button"
+        class="btn btn-outline-danger btn-sm w-100"
+        onclick="removeSkillFromProfile('${skillId}', ${profileId})">
+        <i class="fas fa-minus"></i>
+        </button>
+        </div>
+        </div>
+        `;
+
+        skillsContainer.insertAdjacentHTML('beforeend', skillHtml);
+
+        // Popola il nuovo select
+        const newSelect = document.getElementById(skillId).querySelector('.competenza-select');
         if (window.competenzeDisponibili && Array.isArray(window.competenzeDisponibili) && window.competenzeDisponibili.length > 0) {
             newSelect.innerHTML = '<option value="">Seleziona competenza...</option>';
             window.competenzeDisponibili.forEach(skill => {
@@ -883,13 +1085,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    function rimuoviProfilo(button) {
-        button.closest('.profilo-entry').remove();
+    function removeSkillFromProfile(skillId, profileId) {
+        const skillElement = document.getElementById(skillId);
+        if (skillElement) {
+            skillElement.remove();
+            // Rivalida dopo rimozione
+            validateSkillsForProfile(profileId);
+        }
     }
 
-    // ================================================================
-    // VALIDAZIONE FORM
-    // ================================================================
+    function updateProfileCount() {
+        const currentProfiles = document.querySelectorAll('.profile-item').length;
+        document.getElementById('profileCount').textContent = currentProfiles;
+    }
+
+    function updateProfilesSummary() {
+        const profiles = document.querySelectorAll('.profile-item');
+        const summaryDiv = document.getElementById('profilesSummary');
+
+        if (profiles.length === 0) {
+            summaryDiv.style.display = 'none';
+            return;
+        }
+
+        let profilesList = [];
+        profiles.forEach(profile => {
+            const nameInput = profile.querySelector('input[name="profile_names[]"]');
+            if (nameInput && nameInput.value.trim()) {
+                profilesList.push(nameInput.value.trim());
+            }
+        });
+
+        document.getElementById('totalProfiles').textContent = profiles.length;
+        document.getElementById('profilesList').innerHTML = profilesList.length > 0
+            ? profilesList.map(name => `<span class="badge bg-info me-1">${name}</span>`).join('')
+            : '<em class="text-muted">Nomi profili non ancora inseriti</em>';
+
+        summaryDiv.style.display = 'block';
+    }
+
+    // Aggiorna riepilogo quando l'utente digita nomi profili
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('input[name="profile_names[]"]')) {
+            updateProfilesSummary();
+        }
+    });
+
+    // Validazione form potenziata per multipli profili
     document.getElementById('projectForm').addEventListener('submit', function(e) {
         const tipo = document.getElementById('tipo').value;
 
@@ -917,29 +1159,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Verifica profili se "Sì" è selezionato
             const profiliSi = document.getElementById('profiliSi');
             if (profiliSi.checked) {
-                const profiloNome = document.getElementById('profilo_richiesto_nome').value.trim();
-                const skillEntries = document.querySelectorAll('#lista-profili .profilo-entry');
+                const profiles = document.querySelectorAll('.profile-item');
 
-                if (!profiloNome) {
+                if (profiles.length === 0) {
                     e.preventDefault();
-                    alert('Devi inserire il nome del profilo richiesto!');
+                    alert('Devi aggiungere almeno un profilo per il progetto Software!');
                     return false;
                 }
 
-                if (skillEntries.length === 0) {
-                    e.preventDefault();
-                    alert('Devi aggiungere almeno una skill per il profilo!');
-                    return false;
-                }
+                // Controlla ogni profilo
+                for (let profile of profiles) {
+                    const profileName = profile.querySelector('input[name="profile_names[]"]').value.trim();
+                    const skillSelects = profile.querySelectorAll('select[name^="profile_skills"]');
+                    const levelInputs = profile.querySelectorAll('input[name^="profile_skills"]');
 
-                // Verifica che tutte le skill siano compilate
-                for (let skill of skillEntries) {
-                    const competenza = skill.querySelector('select[name="competenze[]"]').value;
-                    const livello = skill.querySelector('input[name="livelli[]"]').value;
-
-                    if (!competenza || !livello) {
+                    if (!profileName) {
                         e.preventDefault();
-                        alert('Tutti i campi delle skill devono essere compilati!');
+                        alert('Tutti i profili devono avere un nome!');
+                        return false;
+                    }
+
+                    if (skillSelects.length === 0) {
+                        e.preventDefault();
+                        alert(`Il profilo "${profileName}" deve avere almeno una skill!`);
+                        return false;
+                    }
+
+                    // Controlla duplicati skill nel profilo
+                    const competenzeInProfilo = [];
+                    const duplicatiInProfilo = [];
+
+                    for (let i = 0; i < skillSelects.length; i++) {
+                        const competenza = skillSelects[i].value.trim();
+                        const livello = levelInputs[i].value;
+
+                        if (!competenza || !livello) {
+                            e.preventDefault();
+                            alert(`Tutte le skill del profilo "${profileName}" devono essere compilate!`);
+                            return false;
+                        }
+
+                        if (competenzeInProfilo.includes(competenza)) {
+                            if (!duplicatiInProfilo.includes(competenza)) {
+                                duplicatiInProfilo.push(competenza);
+                            }
+                        } else {
+                            competenzeInProfilo.push(competenza);
+                        }
+                    }
+
+                    if (duplicatiInProfilo.length > 0) {
+                        e.preventDefault();
+                        alert(
+                            `ERRORE nel profilo "${profileName}":\n\n` +
+                            `Le seguenti competenze sono duplicate: ${duplicatiInProfilo.join(', ')}\n\n` +
+                            `Ogni competenza può essere richiesta solo UNA volta per profilo.`
+                        );
                         return false;
                     }
                 }
