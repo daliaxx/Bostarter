@@ -173,6 +173,7 @@ if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'a
         $profilo['hasSkills'] = $hasSkills;
         $profilo['requiredSkills'] = $skillRichieste;
     }
+    unset($profilo); // ← AGGIUNGI QUESTA RIGA QUI
 }
 
 // Recupero commenti
@@ -789,6 +790,20 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                     Accedi per lasciare un commento.
                 </div>
             <?php endif; ?>
+
+
+
+            <?php
+            // DEBUG: stampa i profili prima del rendering
+            echo "<pre style='background:#f0f0f0;padding:10px;margin:10px;'>";
+            echo "DEBUG PROFILI:\n";
+            foreach ($profiliRicercati as $debug_profilo) {
+                echo "ID: " . $debug_profilo['ID'] . " - Nome: " . $debug_profilo['Nome'] . "\n";
+            }
+            echo "</pre>";
+            ?>
+
+
 
             <!-- Sezione candidature per progetti software -->
             <?php if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'aperto'): ?>
