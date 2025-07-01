@@ -980,12 +980,12 @@ INSERT INTO FOTO (Percorso, Nome_Progetto) VALUES
 
 -- Rewards
 INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) VALUES
-('GP_REW1', 'Sticker e ringraziamento social', '/img/gp_sticker.jpg', 'GreenPower Box'),
-('SG_REW1', 'Guida digitale al giardinaggio smart', '/img/sg_guide.jpg', 'SmartGarden'),
-('EC_REW1', 'Menzione sulla colonnina pubblica', '/img/ecostation_reward.jpg', 'EcoCharge Station'),
-('SD_REW1', 'Accesso beta all''app', '/img/safedrive_beta.jpg', 'SafeDrive AI'),
-('CL_REW1', 'Abbonamento pro gratuito', '/img/codelink_reward.jpg', 'CodeLink'),
-('PT_REW1', 'Inserimento nella documentazione open-source', '/img/packtrack_reward.jpg', 'PackTrack');
+('GP_REW1', 'Sticker e ringraziamento social', '/gp_sticker.jpg', 'GreenPower Box'),
+('SG_REW1', 'Guida digitale al giardinaggio smart', '/sg_guide.jpg', 'SmartGarden'),
+('EC_REW1', 'Menzione sulla colonnina pubblica', '/ecostation_reward.jpg', 'EcoCharge Station'),
+('SD_REW1', 'Accesso beta all''app', '/safedrive_beta.jpg', 'SafeDrive AI'),
+('CL_REW1', 'Abbonamento pro gratuito', '/codelink_reward.jpg', 'CodeLink'),
+('PT_REW1', 'Inserimento nella documentazione open-source', '/packtrack_reward.jpg', 'PackTrack');
 
 -- Finanziamenti
 INSERT INTO FINANZIAMENTO (Data, Importo, Email_Utente, Codice_Reward, Nome_Progetto) VALUES
@@ -998,9 +998,9 @@ INSERT INTO FINANZIAMENTO (Data, Importo, Email_Utente, Codice_Reward, Nome_Prog
 
 -- Candidature
 INSERT INTO CANDIDATURA (Esito, Email_Utente, ID_Profilo) VALUES
-(NULL, 'dalia.barone@email.com', 1),
+(NULL, 'sofia.neamtu@email.com', 1),
 (NULL, 'sofia.neamtu@email.com', 2),
 (NULL, 'dalia.barone@email.com', 3),
-(NULL, 'sofia.neamtu@email.com', 4),
+(NULL, 'dalia.barone@email.com', 4),
 (NULL, 'dalia.barone@email.com', 5),
-(NULL, 'sofia.neamtu@email.com', 6);
+(NULL, 'dalia.barone@email.com', 6);
