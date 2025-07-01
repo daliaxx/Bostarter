@@ -67,12 +67,10 @@ if ($tipo === 'Software' && isset($_POST['profili']) && $_POST['profili'] === 's
             $profileName = trim($profileName);
 
             if (!empty($profileName)) {
-                // Trova le skill per questo profilo
                 $profiloSkills = [];
 
                 // Cerca nelle skill per trovare quelle di questo profilo
                 foreach ($profileSkills as $profileId => $skillData) {
-                    // Controlla se questo è il profilo corretto
                     if (isset($skillData['competenze']) && isset($skillData['livelli'])) {
                         $competenze = $skillData['competenze'];
                         $livelli = $skillData['livelli'];
@@ -86,10 +84,9 @@ if ($tipo === 'Software' && isset($_POST['profili']) && $_POST['profili'] === 's
                                 $profiloSkills[$competenza] = $livello;
                             }
                         }
-                        break; // Trovato il profilo, esci dal loop
+                        break;
                     }
                 }
-
                 // Aggiungi il profilo se ha almeno una skill
                 if (!empty($profiloSkills)) {
                     $profili[] = [
@@ -102,7 +99,7 @@ if ($tipo === 'Software' && isset($_POST['profili']) && $_POST['profili'] === 's
     }
 }
 
-// Gestisci componenti per progetti hardware (invariato)
+// Gestisci componenti per progetti hardware
 if ($tipo === 'Hardware' && isset($_POST['component_names']) && isset($_POST['component_descriptions'])
     && isset($_POST['component_prices']) && isset($_POST['component_quantities'])) {
 
@@ -128,7 +125,7 @@ if ($tipo === 'Hardware' && isset($_POST['component_names']) && isset($_POST['co
     }
 }
 
-// Validazioni (aggiornate)
+// Validazioni
 $error_message = '';
 
 // Validazioni base
@@ -293,7 +290,7 @@ if (empty($error_message)) {
 
         $success_message = "Progetto '{$nome}' ({$tipo}) creato con successo con {$countItems} {$itemType}!";
 
-        // Redirect dopo 2 secondi
+        // Redirect
         header("refresh:2;url=creator_dashboard.php");
 
     } catch (Exception $e) {
@@ -455,7 +452,6 @@ if (empty($error_message)) {
             <?php endif; ?>
 
             <form method="POST" enctype="multipart/form-data" id="projectForm">
-                <!-- Informazioni base progetto -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label for="nome" class="form-label">
@@ -940,7 +936,7 @@ if (empty($error_message)) {
         summaryDiv.style.display = 'block';
     }
 
-    // Nuove funzioni per gestione profili multipli
+    // Gestione profili multipli
     function toggleProfiloInput(valore) {
         const profiliInput = document.getElementById("profili-input");
         profiliInput.style.display = (valore === "si") ? "block" : "none";
@@ -956,7 +952,6 @@ if (empty($error_message)) {
             }
         }
         if (valore === "no") {
-            // Pulisci tutto quando si disabilita
             document.getElementById("profilesContainer").innerHTML = '';
             profileCount = 0;
             updateProfileCount();

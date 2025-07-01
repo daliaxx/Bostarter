@@ -24,7 +24,7 @@ try {
 
     $action = $_POST['action'] ?? '';
 
-    // FUNZIONI ESISTENTI PER UTENTI NORMALI
+    // UTENTI NORMALI
     if ($action === 'add_skill') {
         $competenza = trim($_POST['competenza'] ?? '');
         $livello = $_POST['livello'] ?? '';
@@ -39,7 +39,7 @@ try {
             exit;
         }
 
-        // Assicura che la skill esista nel sistema (usa admin di default)
+        // Assicura che la skill esista nel sistema (admin default)
         $db->callStoredProcedure('InserisciSkill', [$competenza, $livello]);
 
         // Aggiunge la skill al curriculum dell'utente
@@ -49,7 +49,7 @@ try {
         exit;
     }
 
-    // NUOVE FUNZIONI PER AMMINISTRATORI
+    // AMMINISTRATORI
     if ($action === 'get_all_skills') {
         // Recupera tutte le competenze uniche (solo admin)
         if (!$isAdmin) {
@@ -109,7 +109,7 @@ try {
             exit;
         }
 
-        // Inserimento della competenza con tutti i livelli da 1 a 5 usando InserisciSkillAdmin
+        // Inserimento della competenza con tutti i livelli da 1 a 5
         try {
             $db->beginTransaction();
 

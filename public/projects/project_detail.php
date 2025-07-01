@@ -214,6 +214,31 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             min-height: 100vh;
             color: var(--text-primary);
         }
+        .navbar {
+            background: var(--primary-gradient) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+            z-index: 50;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
+            border-radius: var(--small-radius);
+            margin: 0 0.25rem;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
 
         .project-header {
             background: var(--primary-gradient);
@@ -502,6 +527,15 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                 opacity: 1;
                 transform: translateY(0);
             }
+        }
+        .skill-has {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .skill-missing {
+            background: #fff3cd;
+            color: #856404;
         }
 
         .fade-in-up {

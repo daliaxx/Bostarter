@@ -7,7 +7,7 @@ const dbConfig = {
   user: 'root',
   password: 'root',
   database: 'BOSTARTER',
-  port: 3306
+  port: 3306  //Dalia mac :8889, Sofia Windows 3306
 };
 
 async function exportLogs() {

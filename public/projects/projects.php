@@ -11,9 +11,9 @@ $isCreator = SessionManager::isCreator();
 $isAdmin = SessionManager::isAdmin();
 
 $db = Database::getInstance();
-$db->ensureEventScheduler(); // Assicura che l'evento MySQL sia attivo
+$db->ensureEventScheduler();
 
-// Esegui l'aggiornamento automatico
+// aggiornamento automatico
 $db->execute("
     UPDATE PROGETTO 
     SET Stato = 'chiuso' 
@@ -416,7 +416,7 @@ $isCreator = SessionManager::isCreator();
         setTimeout(() => {
             const modal = bootstrap.Modal.getInstance(document.getElementById('becomeCreatorModal'));
             modal.hide();
-            location.reload(); // Ricarica per aggiornare la visibilità del bottone
+            location.reload();
         }, 1500);
         } else {
         alertBox.classList.add('alert-danger');

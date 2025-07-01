@@ -124,7 +124,7 @@ class Database {
                 $this->execute("SET GLOBAL event_scheduler = ON");
             }
             
-            // Verifica se l'evento esiste
+            //se l'evento esiste
             $eventExists = $this->fetchOne("
                 SELECT COUNT(*) as count 
                 FROM information_schema.EVENTS 
@@ -226,7 +226,7 @@ class SessionManager {
             return false;
         }
         
-        // Verifica se il timestamp di login è presente e valido (opzionale)
+        // Verifica se il timestamp di login è presente e valido
         $loginTime = self::get('login_time');
         if ($loginTime && (time() - $loginTime) > 86400) { // 24 ore
             self::destroy();
