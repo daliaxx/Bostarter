@@ -210,7 +210,6 @@ $isCreator = SessionManager::isCreator();
     </div>
 
     <!-- Statistiche in evidenza -->
-    <?php if ($isLoggedIn): ?>
         <div class="row mb-4">
             <div class="col-md-4">
                 <div class="card text-center">
@@ -243,7 +242,6 @@ $isCreator = SessionManager::isCreator();
                 </div>
             </div>
         </div>
-    <?php endif; ?>
 
     <!-- Messaggi di errore -->
     <?php if (isset($error)): ?>
