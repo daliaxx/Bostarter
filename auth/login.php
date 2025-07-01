@@ -7,7 +7,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
-    // Sanitizzazione input
     $email = $_POST['email'] ?? '';
     $password = $_POST['password'] ?? '';
 
@@ -24,7 +23,7 @@ try {
     // Verifica credenziali tramite stored procedure
     $stmt = $db->callStoredProcedure('LoginUtente', [$email, $password]);
     $result = $stmt->fetch();
-    $stmt->closeCursor(); // <-- fondamentale
+    $stmt->closeCursor();
 
     if (!$result || $result['Email'] === null) {
         Utils::jsonResponse(false, 'Credenziali non valide');
