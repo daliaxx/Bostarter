@@ -570,7 +570,7 @@ function getCompletionPercentage($raccolto, $budget) {
         formData.append('accettata', accettata ? '1' : '0');
 
         // Chiamata API
-        fetch('../../api/manage_candidatures.php', {
+        fetch('../../api/manage_candidature.php', {
             method: 'POST',
             body: formData
         })

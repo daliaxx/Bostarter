@@ -66,11 +66,19 @@ try {
             exit;
         }
 
+        // Gestione upload foto
+        $fotoPath = 'img/default_reward.jpg';
+        if (isset($_FILES['foto']) && $_FILES['foto']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = '../img/';
+            $fileName = uniqid('reward_') . '_' . basename($_FILES['foto']['name']);
+            $targetFile = $uploadDir . $fileName;
+            if (move_uploaded_file($_FILES['foto']['tmp_name'], $targetFile)) {
+                $fotoPath = 'img/' . $fileName;
+            }
+        }
+
         // Inserimento della reward
-        $db->execute("
-            INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) 
-            VALUES (?, ?, 'default_reward.jpg', ?)
-        ", [$codice, $descrizione, $nomeProgetto]);
+        $db->execute("CALL InserisciReward(?, ?, ?, ?)", [$codice, $descrizione, $fotoPath, $nomeProgetto]);
 
         echo json_encode([
             'success' => true,

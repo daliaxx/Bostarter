@@ -253,13 +253,12 @@ END $$
 CREATE PROCEDURE InserisciReward(
     IN p_Codice VARCHAR(100),
     IN p_Descrizione TEXT,
-    IN p_idFoto INT,
+    IN p_Foto TEXT,
     IN p_NomeProgetto VARCHAR(100)
 )
 BEGIN
-INSERT INTO REWARD (Codice, Descrizione)
-VALUES (p_Codice, p_Descrizione);
-
+    INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto)
+    VALUES (p_Codice, p_Descrizione, p_Foto, p_NomeProgetto);
 END $$
 
 CREATE PROCEDURE InserisciSkill(

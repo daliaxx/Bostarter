@@ -73,10 +73,7 @@ try {
         }
 
         // Inserisci componente
-        $db->execute("
-            INSERT INTO COMPONENTE (Nome, Descrizione, Prezzo, Quantita, Nome_Progetto) 
-            VALUES (?, ?, ?, ?, ?)
-        ", [$nomeComponente, $descrizione, $prezzo, $quantita, $nomeProgetto]);
+        $db->execute("CALL InserisciComponente(?, ?, ?, ?, ?)", [$nomeComponente, $descrizione, $prezzo, $quantita, $nomeProgetto]);
 
         echo json_encode([
             'success' => true,

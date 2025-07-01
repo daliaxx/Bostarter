@@ -406,12 +406,8 @@ if ($project['Tipo'] === 'Hardware') {
                         <textarea class="form-control" id="rewardDescription" name="descrizione" rows="3" required></textarea>
                     </div>
                     <div class="mb-3">
-                        <label for="rewardMinFinanziamento" class="form-label">Importo Minimo Finanziamento (€)</label>
-                        <input type="number" step="0.01" class="form-control" id="rewardMinFinanziamento" name="min_finanziamento" required min="0.01">
-                    </div>
-                    <div class="mb-3">
-                        <label for="rewardFoto" class="form-label">Foto Reward (percorso es. img/rewards/foto.jpg)</label>
-                        <input type="text" class="form-control" id="rewardFoto" name="foto">
+                        <label for="rewardFoto" class="form-label">Foto Reward</label>
+                        <input type="file" class="form-control" id="rewardFoto" name="foto" accept="image/*">
                     </div>
                 </div>
                 <div class="modal-footer">
