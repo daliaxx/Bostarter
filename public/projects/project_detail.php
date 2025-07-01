@@ -119,7 +119,7 @@ $totaleComponenti = 0;
 if ($progetto['Tipo'] === 'Hardware') {
     $componenti = $db->fetchAll("
         SELECT ID, Nome, Descrizione, Prezzo, Quantita, (Prezzo * Quantita) as Totale
-        FROM COMPONENTE 
+        FROM COMPONENTE
         WHERE Nome_Progetto = ?
         ORDER BY Nome ASC
     ", [$nomeProgetto]);
@@ -134,15 +134,15 @@ if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'a
     foreach ($profiliRicercati as &$profilo) {
         // Skill richieste per questo profilo
         $skillRichieste = $db->fetchAll("
-            SELECT sr.Competenza, sr.Livello 
-            FROM SKILL_RICHIESTA sr 
+            SELECT sr.Competenza, sr.Livello
+            FROM SKILL_RICHIESTA sr
             WHERE sr.ID_Profilo = ?
         ", [$profilo['ID']]);
 
         // Skill dell'utente
         $skillUtente = $db->fetchAll("
-            SELECT sc.Competenza, sc.Livello 
-            FROM SKILL_CURRICULUM sc 
+            SELECT sc.Competenza, sc.Livello
+            FROM SKILL_CURRICULUM sc
             WHERE sc.Email_Utente = ?
         ", [$userEmail]);
 
@@ -376,6 +376,45 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             transform: translateX(5px);
         }
 
+        .comment-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--border-radius);
+            box-shadow: var(--card-shadow);
+            padding: 1.5rem; /* Adjusted padding for comments card */
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .comment-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--card-hover-shadow);
+        }
+
+        .comment-item {
+            background-color: rgba(248, 249, 250, 0.8); /* Light background for comments */
+            border-left: 5px solid #007bff; /* Primary color border */
+            border-radius: var(--small-radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .comment-item small {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .comment-reply {
+            background-color: rgba(232, 246, 237, 0.8); /* Lighter green for replies */
+            border-left: 5px solid #28a745; /* Success color border */
+            border-radius: var(--small-radius);
+            padding: 0.75rem;
+            margin-top: 0.75rem;
+            margin-left: 1.5rem;
+            font-size: 0.9rem;
+        }
+
         .btn-modern {
             background: var(--primary-gradient);
             border: none;
@@ -447,6 +486,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             border-radius: 15px;
             margin-bottom: 1rem;
             transition: all 0.3s ease;
+            padding: 1.25rem; /* Adjusted padding */
         }
 
         .profile-card.can-apply {
@@ -461,11 +501,11 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
 
         .skill-tag {
             display: inline-block;
-            padding: 0.25rem 0.5rem;
-            margin: 0.125rem;
-            border-radius: 15px;
-            font-size: 0.75rem;
-            font-weight: 500;
+            padding: 0.25rem 0.75rem; /* Slightly larger padding */
+            margin: 0.2rem; /* Adjusted margin */
+            border-radius: 20px; /* More rounded */
+            font-size: 0.8rem; /* Slightly larger font */
+            font-weight: 600; /* Bolder font */
         }
 
         .skill-has {
@@ -534,7 +574,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
 </div>
 
 <div class="container">
-    <!-- Messaggi di errore e successo -->
     <?php if (!empty($errorMessage)): ?>
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <i class="fas fa-exclamation-triangle me-2"></i>
@@ -625,7 +664,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                 </div>
             </div>
 
-            <!-- Sezione componenti hardware -->
             <?php if ($progetto['Tipo'] === 'Hardware' && !empty($componenti)): ?>
                 <div class="project-details-card fade-in-up">
                     <h3 class="mb-3 text-warning">
@@ -708,74 +746,81 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
         </div>
 
         <div class="col-lg-4">
-            <!-- Sezione commenti -->
             <?php if ($isLoggedIn): ?>
-                <div class="card my-4">
-                    <div class="card-header bg-light">
-                        <h5>Lascia un commento</h5>
-                        <?php if (count($commenti) > 0): ?>
-                            <ul class="list-group">
-                                <?php foreach ($commenti as $commento): ?>
-                                    <div class="mb-3">
-                                        <?php if ($commento['Email_Utente'] === $progetto['Email_Creatore']): ?>
-                                            <strong>Creatore del progetto:</strong><br>
-                                        <?php else: ?>
-                                            <strong><?= htmlspecialchars($commento['Email_Utente']) ?>:</strong><br>
-                                        <?php endif; ?>
-                                        <?= htmlspecialchars($commento['Testo']) ?>
+                <div class="comment-card my-4 fade-in-up">
+                    <h3 class="mb-3 text-primary"><i class="fas fa-comments me-2"></i>Commenti</h3>
+                    <?php if (count($commenti) > 0): ?>
+                        <div class="mb-3">
+                            <?php foreach ($commenti as $commento): ?>
+                                <div class="comment-item">
+                                    <small class="d-block mb-1">
+                                        <strong>
+                                            <?php if ($commento['Email_Utente'] === $progetto['Email_Creatore']): ?>
+                                                <i class="fas fa-crown text-warning me-1"></i>Creatore:
+                                            <?php else: ?>
+                                                <i class="fas fa-user-circle me-1"></i><?= htmlspecialchars($commento['Email_Utente']) ?>:
+                                            <?php endif; ?>
+                                        </strong>
+                                    </small>
+                                    <p class="mb-1"><?= htmlspecialchars($commento['Testo']) ?></p>
 
-                                        <?php if (!empty($commento['Risposta'])): ?>
-                                            <div class="mt-1 ms-3 p-2 bg-light border-start border-3 border-success">
-                                                <strong>Risposta del creatore:</strong><br>
-                                                <?= htmlspecialchars($commento['Risposta']) ?>
-                                            </div>
-                                        <?php endif; ?>
-                                    </div>
-                                <?php endforeach; ?>
-                            </ul>
-                        <?php else: ?>
-                            <p>Nessun commento presente per questo progetto.</p>
-                        <?php endif; ?>
-                    </div>
-                    <div class="card-body">
-                        <form action="/Bostarter/api/manage_comment.php" method="POST">
-                            <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
-                            <div class="mb-3">
-                                <label for="commentText" class="form-label visually-hidden">Il tuo commento</label>
-                                <textarea class="form-control" id="commentText" name="testo_commento" rows="3" placeholder="Scrivi qui il tuo commento..." required maxlength="500"></textarea>
-                                <div class="form-text text-muted">Massimo 500 caratteri.</div>
-                            </div>
-                            <button type="submit" class="btn btn-primary"><i class="fas fa-comment me-2"></i>Invia Commento</button>
-                        </form>
-                    </div>
+                                    <?php if (!empty($commento['Risposta'])): ?>
+                                        <div class="comment-reply">
+                                            <small class="d-block mb-1">
+                                                <strong><i class="fas fa-reply me-1"></i>Risposta del creatore:</strong>
+                                            </small>
+                                            <p class="mb-0"><?= htmlspecialchars($commento['Risposta']) ?></p>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="text-center py-4">
+                            <i class="fas fa-comment-dots fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">Nessun commento presente per questo progetto.</p>
+                        </div>
+                    <?php endif; ?>
+
+                    <hr class="my-4">
+
+                    <form action="/Bostarter/api/manage_comment.php" method="POST">
+                        <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
+                        <div class="mb-3">
+                            <label for="commentText" class="form-label">Lascia un commento:</label>
+                            <textarea class="form-control" id="commentText" name="testo_commento" rows="3" placeholder="Scrivi qui il tuo commento..." required maxlength="500"></textarea>
+                            <div class="form-text text-muted">Massimo 500 caratteri.</div>
+                        </div>
+                        <button type="submit" class="btn btn-modern"><i class="fas fa-comment me-2"></i>Invia Commento</button>
+                    </form>
                 </div>
             <?php else: ?>
-                <div class="alert alert-info my-4">
+                <div class="alert alert-info my-4 text-center">
+                    <i class="fas fa-sign-in-alt me-2"></i>
                     Accedi per lasciare un commento.
                 </div>
             <?php endif; ?>
 
-            <!-- Sezione candidature per progetti software -->
             <?php if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'aperto'): ?>
-                <div class="card my-4">
-                    <div class="card-header bg-primary text-white">
-                        <h5><i class="fas fa-user-tie me-2"></i>Candidati per un ruolo in questo progetto</h5>
-                    </div>
+                <div class="project-details-card my-4 fade-in-up">
+                    <h3 class="mb-3 text-primary">
+                        <i class="fas fa-user-tie me-2"></i>Candidati per un ruolo
+                    </h3>
 
-                    <div class="card-body">
+                    <div class="card-body px-0">
                         <?php if (isset($_GET['success']) && $_GET['success'] === 'candidatura_inviata'): ?>
                             <div class="alert alert-success" id="alertBox">Candidatura inviata con successo!</div>
                         <?php endif; ?>
 
-                        <?php if (isset($_GET['error'])): ?>
-                            <div class="alert alert-danger" id="alertBox">Errore: <?= htmlspecialchars($_GET['error']) ?></div>
+                        <?php if (isset($_GET['error']) && strpos($_GET['error'], 'candidatura_') === 0): ?>
+                            <div class="alert alert-danger" id="alertBox">Errore: <?= htmlspecialchars(str_replace('_', ' ', $_GET['error'])) ?></div>
                         <?php endif; ?>
 
                         <?php if (!empty($profiliRicercati)): ?>
                             <p class="mb-3">Questo progetto software sta ricercando i seguenti profili:</p>
 
                             <?php foreach ($profiliRicercati as $profilo): ?>
-                                <div class="profile-card <?= $profilo['canApply'] ? 'can-apply' : 'cannot-apply' ?> p-3">
+                                <div class="profile-card <?= $profilo['canApply'] ? 'can-apply' : 'cannot-apply' ?>">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <h6 class="mb-0">
                                             <i class="fas fa-<?= $profilo['canApply'] ? 'check-circle text-success' : 'exclamation-triangle text-warning' ?> me-2"></i>
@@ -820,7 +865,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                                 </div>
                             <?php endforeach; ?>
 
-                            <!-- Form candidatura -->
                             <form id="candidaturaForm" class="mt-3">
                                 <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
 
@@ -857,7 +901,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                                         Non puoi candidarti al tuo stesso progetto.
                                     </div>
                                 <?php elseif ($hasEligibleProfile): ?>
-                                    <button type="button" class="btn btn-success" onclick="inviaCandidatura()">
+                                    <button type="button" class="btn btn-modern" onclick="inviaCandidatura()">
                                         <i class="fas fa-user-plus me-2"></i>Invia Candidatura
                                     </button>
                                 <?php else: ?>
@@ -881,12 +925,12 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                     </div>
                 </div>
             <?php elseif ($progetto['Tipo'] === 'Software' && $progetto['Stato'] !== 'aperto'): ?>
-                <div class="alert alert-info my-4">
+                <div class="alert alert-info my-4 text-center">
                     <i class="fas fa-info-circle me-2"></i>
                     Questo progetto software non accetta più candidature (Stato: <?= htmlspecialchars($progetto['Stato']) ?>).
                 </div>
             <?php elseif ($progetto['Tipo'] === 'Software' && !$isLoggedIn): ?>
-                <div class="alert alert-info my-4">
+                <div class="alert alert-info my-4 text-center">
                     <i class="fas fa-sign-in-alt me-2"></i>
                     Accedi per candidarti a questo progetto software.
                 </div>
@@ -895,7 +939,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
     </div>
 </div>
 
-<!-- Modal per finanziamento -->
 <div class="modal fade" id="finanziaModal" tabindex="-1" aria-labelledby="finanziaModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -916,7 +959,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                     <form action="../../api/fund_project.php" method="POST" id="quickFundingForm">
                         <input type="hidden" name="nome_progetto" value="<?= htmlspecialchars($progetto['Nome']) ?>">
 
-                        <!-- Sezione reward -->
                         <div class="mb-4">
                             <label class="form-label">
                                 <strong><i class="fas fa-gift me-2"></i>Reward disponibili</strong>
@@ -956,7 +998,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                             <?php endforeach; ?>
                         </div>
 
-                        <!-- Sezione importo -->
                         <div class="mb-3">
                             <label for="modal_importo" class="form-label">
                                 <strong><i class="fas fa-euro-sign me-2"></i>Importo da finanziare (€)</strong>
@@ -975,7 +1016,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                             </div>
                         </div>
 
-                        <!-- Riepilogo -->
                         <div class="card bg-light mb-3" id="modalSummary" style="display: none;">
                             <div class="card-body">
                                 <h6 class="card-title">
@@ -1021,7 +1061,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
     </div>
 </div>
 
-<!-- Toast per notifiche -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
     <div id="toastNotifica" class="toast" role="alert">
         <div class="toast-header">
@@ -1123,7 +1162,10 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
         })
             .then(response => {
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    // Check for a specific error message from the PHP backend if available
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+                    });
                 }
                 return response.json();
             })
@@ -1144,6 +1186,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                 riabilitaBottoneCandidatura(submitBtn);
             });
     }
+
 
     function riabilitaBottoneCandidatura(btn) {
         btn.disabled = false;
@@ -1204,11 +1247,19 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
         }
 
         // Auto-hide degli alert
-        const alertBox = document.getElementById('alertBox');
-        if (alertBox) {
-            setTimeout(() => {
-                alertBox.style.display = 'none';
-            }, 3000);
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('success') || urlParams.has('error')) {
+            const alertBox = document.getElementById('alertBox');
+            if (alertBox) {
+                setTimeout(() => {
+                    alertBox.style.display = 'none';
+                    // Remove parameters from URL to prevent re-showing on refresh
+                    const newUrl = new URL(window.location.href);
+                    newUrl.searchParams.delete('success');
+                    newUrl.searchParams.delete('error');
+                    window.history.replaceState({}, document.title, newUrl.toString());
+                }, 3000); // Hide after 3 seconds
+            }
         }
     });
 

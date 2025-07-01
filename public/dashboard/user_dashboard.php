@@ -22,19 +22,36 @@ SessionManager::requireLogin('../../index.html');
 try {
     $db = Database::getInstance();
 
+    // Recupera skill dell'utente PRIMA di definire le statistiche
+    $mySkills = [];
+    try {
+        $sql = "SELECT sc.Competenza, sc.Livello
+            FROM SKILL_CURRICULUM sc
+            WHERE sc.Email_Utente = ?
+            ORDER BY sc.Competenza, sc.Livello DESC";
+
+        $skillsResult = $db->fetchAll($sql, [$userEmail]);
+        $mySkills = is_array($skillsResult) ? $skillsResult : [];
+
+    } catch (Exception $e) {
+        error_log("Errore recupero skills: " . $e->getMessage());
+        $mySkills = [];
+    }
+
     // Statistiche utente
     $stats = [
         'progetti_finanziati' => 0,
         'totale_investito' => 0,
         'candidature_inviate' => 0,
         'candidature_accettate' => 0,
-        'commenti_inseriti' => 0
+        'commenti_inseriti' => 0,
+        'numero_skills' => count($mySkills) // Aggiunto il conteggio delle skill qui
     ];
 
     // Progetti finanziati
     $result = $db->fetchOne("
-        SELECT COUNT(DISTINCT Nome_Progetto) as count, COALESCE(SUM(Importo), 0) as totale 
-        FROM FINANZIAMENTO 
+        SELECT COUNT(DISTINCT Nome_Progetto) as count, COALESCE(SUM(Importo), 0) as totale
+        FROM FINANZIAMENTO
         WHERE Email_Utente = ?
     ", [$userEmail]);
 
@@ -54,12 +71,12 @@ try {
 
     // Progetti finanziati recenti
     $progettiFinanziati = $db->fetchAll("
-    SELECT p.Nome, p.Descrizione, 
-        SUM(f.Importo) AS Mio_Investimento, 
+    SELECT p.Nome, p.Descrizione,
+        SUM(f.Importo) AS Mio_Investimento,
         MAX(f.Data) AS Ultima_Donazione,
         GROUP_CONCAT(
-            DISTINCT CONCAT(r.Codice, '|', r.Descrizione, '|', r.Foto) 
-            ORDER BY f.Data DESC 
+            DISTINCT CONCAT(r.Codice, '|', r.Descrizione, '|', r.Foto)
+            ORDER BY f.Data DESC
             SEPARATOR ';;;'
         ) AS Rewards_Ricevute,
         COUNT(DISTINCT f.ID) AS Num_Finanziamenti
@@ -71,21 +88,7 @@ try {
     ORDER BY Ultima_Donazione DESC
     LIMIT 5
 ", [$userEmail]);
-    // Recupera skill dell'utente
-    $mySkills = [];
-    try {
-        $sql = "SELECT sc.Competenza, sc.Livello 
-            FROM SKILL_CURRICULUM sc 
-            WHERE sc.Email_Utente = ? 
-            ORDER BY sc.Competenza, sc.Livello DESC";
 
-        $skillsResult = $db->fetchAll($sql, [$userEmail]);
-        $mySkills = is_array($skillsResult) ? $skillsResult : [];
-
-    } catch (Exception $e) {
-        error_log("Errore recupero skills: " . $e->getMessage());
-        $mySkills = [];
-    }
 
     // Query per candidature in corso
     $candidatureInCorso = $db->fetchAll("
@@ -172,7 +175,6 @@ try {
 <body>
 
 <div class="container mt-4">
-    <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
             <h1><i class="fas fa-user-circle"></i> Benvenuto, <?= htmlspecialchars($userName) ?>!</h1>
@@ -180,14 +182,12 @@ try {
         </div>
     </div>
 
-    <!-- Errori -->
     <?php if (isset($error)): ?>
         <div class="alert alert-danger">
             <i class="fas fa-exclamation-triangle me-2"></i><?= htmlspecialchars($error) ?>
         </div>
     <?php endif; ?>
 
-    <!-- Statistiche -->
     <div class="row mb-4">
         <div class="col-lg-2 col-md-4 col-6 mb-3">
             <div class="card stat-card">
@@ -238,17 +238,14 @@ try {
             <div class="card stat-card">
                 <div class="card-body text-center">
                     <i class="fas fa-cogs fa-2x mb-2"></i>
-                    <span class="badge bg-primary"><?= isset($mySkills) ? count($mySkills) : 0 ?></span>
-                    <small>Skills</small>
+                    <h4><?= $stats['numero_skills'] ?></h4> <small>Skills</small>
                 </div>
             </div>
         </div>
     </div>
 
     <div class="row">
-        <!-- Colonna sinistra -->
         <div class="col-lg-8">
-            <!-- Progetti finanziati con reward -->
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5><i class="fas fa-heart me-2"></i>I Miei Investimenti</h5>
@@ -358,7 +355,6 @@ try {
                             </table>
                         </div>
 
-                        <!-- ✅ Info aggiuntiva -->
                         <div class="mt-3 p-3 bg-light rounded">
                             <small class="text-muted">
                                 <i class="fas fa-info-circle me-1"></i>
@@ -370,7 +366,6 @@ try {
                 </div>
             </div>
 
-            <!-- ✅ CSS aggiuntivo per migliorare l'aspetto -->
             <style>
                 .reward-item {
                     padding: 0.25rem 0;
@@ -389,7 +384,6 @@ try {
                     font-size: 0.9rem !important;
                 }
             </style>
-            <!-- Candidature -->
             <div class="card mb-4">
                 <div class="card-header">
                     <h5><i class="fas fa-briefcase me-2"></i>Le Mie Candidature</h5>
@@ -433,9 +427,7 @@ try {
             </div>
         </div>
 
-        <!-- Colonna destra -->
         <div class="col-lg-4">
-            <!-- Le mie skills -->
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5><i class="fas fa-cogs me-2"></i>Le Mie Skills</h5>
@@ -456,8 +448,7 @@ try {
                         <div class="skills-container">
                             <?php foreach ($mySkills as $skill): ?>
                                 <span class="skill-badge">
-                                    <?= htmlspecialchars($skill['Competenza']) ?>
-                                    <span class="badge bg-light text-dark ms-1"><?= $skill['Livello'] ?>/5</span>
+                                    <?= htmlspecialchars($skill['Competenza']) ?> <?= $skill['Livello'] ?>/5
                                 </span>
                             <?php endforeach; ?>
                         </div>
@@ -471,7 +462,6 @@ try {
 
 
 
-<!-- Modal Aggiungi Skill -->
 <div class="modal fade" id="addSkillModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -561,7 +551,7 @@ try {
                 if (data.success) {
                     select.innerHTML = '<option value="">Seleziona una competenza...</option>';
                     data.skills.forEach(skill => {
-                        select.innerHTML += `<option value="${skill.Competenza}">${skill.Competenza}</option>`;
+                        select.innerHTML += `<option value=\"${skill.Competenza}\">${skill.Competenza}</option>`;
                     });
                 } else {
                     select.innerHTML = '<option value="">Errore caricamento competenze</option>';
