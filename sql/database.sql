@@ -510,6 +510,7 @@ END IF;
 END $$
 
 DELIMITER ;
+
 -- EVENTO PER CHIUDERE PROGETTI SCADUTI
 DELIMITER $$
 
@@ -523,7 +524,6 @@ BEGIN
 END $$
 
 DELIMITER ;
-
 
 -- VIEWS PER STATISTICHE
 
@@ -592,6 +592,7 @@ END //
 DELIMITER ;
 
 -- TRIGGER PER LOGGING EVENTI
+
 DELIMITER $$
 CREATE TRIGGER LogNuovoUtente
     AFTER INSERT ON UTENTE
@@ -912,4 +913,3 @@ INSERT INTO FINANZIAMENTO (Data, Importo, Email_Utente, Codice_Reward, Nome_Prog
 INSERT INTO CANDIDATURA (Esito, Email_Utente, ID_Profilo) VALUES
 (NULL, 'sofia.neamtu@email.com', 1),
 (NULL, 'dalia.barone@email.com', 5);
-

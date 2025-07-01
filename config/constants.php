@@ -1,7 +1,4 @@
 <?php
-/**
- * BOSTARTER - Costanti Applicazione
- */
 
 if (!defined('BOSTARTER_APP')) {
     die('Accesso non autorizzato');

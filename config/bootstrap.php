@@ -1,6 +1,6 @@
 <?php
 
-// Definisci costante app
+// Definisce costante app
 define('BOSTARTER_APP', true);
 
 // Carica configurazione

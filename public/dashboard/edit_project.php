@@ -89,7 +89,7 @@ if ($project['Tipo'] === 'Software') {
     unset($profile);
 }
 
-// (Hardware projects)
+// Progetti Hardware
 $components = [];
 if ($project['Tipo'] === 'Hardware') {
     $components = $db->fetchAll("
@@ -808,7 +808,6 @@ if ($project['Tipo'] === 'Hardware') {
         const form = document.getElementById('addComponentForm');
         const formData = new FormData(form);
 
-        // Basic validation
         const nome = formData.get('nome').trim();
         const descrizione = formData.get('descrizione').trim();
         const prezzo = parseFloat(formData.get('prezzo'));

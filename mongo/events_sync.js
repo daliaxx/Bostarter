@@ -8,7 +8,7 @@ const dbConfig = {
   user: 'root',
   password: 'root',
   database: 'BOSTARTER',
-  port: 3306 // Cambia se usi una porta diversa
+  port: 3306
 };
 
 // Configurazione MongoDB
@@ -28,18 +28,18 @@ async function syncLogs() {
     const db = mongoClient.db(mongoDbName);
     const collection = db.collection(mongoCollection);
 
-    // Pulisci la collezione (opzionale, per evitare duplicati)
+    // Pulisci la collezione
     await collection.deleteMany({});
 
-    // Inserisci tutti i log
+    // Inserimento di tutti i log
     if (rows.length > 0) {
       await collection.insertMany(rows);
-      console.log(`✅ Sincronizzati ${rows.length} log in MongoDB (${mongoDbName}.${mongoCollection})`);
+      console.log(`Sincronizzati ${rows.length} log in MongoDB (${mongoDbName}.${mongoCollection})`);
     } else {
       console.log('Nessun log da sincronizzare.');
     }
   } catch (err) {
-    console.error('❌ Errore durante la sincronizzazione:', err);
+    console.error('Errore durante la sincronizzazione:', err);
   } finally {
     if (mysqlConn) await mysqlConn.end();
     if (mongoClient) await mongoClient.close();

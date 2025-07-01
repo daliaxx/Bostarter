@@ -3,8 +3,6 @@
 require_once '../config/database.php';
 
 header('Content-Type: application/json');
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
 
 try {
     SessionManager::start();
@@ -118,7 +116,7 @@ try {
         $accettata = $_POST['accettata'] ?? '';
 
         // Debug per capire cosa arriva
-        error_log("🔍 Gestione candidatura - ID: $idCandidatura, Accettata: '$accettata', User: $userEmail");
+        error_log("Gestione candidatura - ID: $idCandidatura, Accettata: '$accettata', User: $userEmail");
 
         if ($idCandidatura <= 0) {
             echo json_encode(['success' => false, 'message' => 'ID candidatura non valido']);
