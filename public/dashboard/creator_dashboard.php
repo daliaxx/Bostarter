@@ -219,20 +219,7 @@ function getCompletionPercentage($raccolto, $budget) {
             border-left: 4px solid #dc3545;
             background: rgba(220, 53, 69, 0.05);
         }
-        .affidabilita-badge {
-            font-size: 1.2rem;
-            padding: 8px 16px;
-        }
-        .quick-action-card {
-            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            color: white;
-            transition: transform 0.3s ease;
-        }
-        .quick-action-card:hover {
-            transform: translateY(-3px);
-            color: white;
-            text-decoration: none;
-        }
+
         .comment-card {
             border-left: 4px solid #17a2b8;
         }
@@ -294,43 +281,10 @@ function getCompletionPercentage($raccolto, $budget) {
             <div class="card creator-stat-card">
                 <div class="card-body text-center">
                     <i class="fas fa-star fa-2x mb-2"></i>
-                    <span class="badge bg-light text-dark affidabilita-badge">
-                        <?= number_format(($stats['Affidabilita'] ?? 0) * 100, 1) ?>%
-                    </span>
-                    <p class="card-text mt-2">Affidabilità</p>
+                    <h3 class="card-title"><?= number_format(($stats['Affidabilita'] ?? 0) * 100, 1) ?>%</h3>
+                    <p class="card-text">Affidabilità</p>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- Azioni rapide -->
-    <div class="row mb-4">
-        <div class="col-md-4 mb-3">
-            <a href="new_project.php" class="card quick-action-card text-decoration-none">
-                <div class="card-body text-center">
-                    <i class="fas fa-plus-circle fa-2x mb-2"></i>
-                    <h5 class="card-title">Nuovo Progetto</h5>
-                    <p class="card-text">Crea un nuovo progetto hardware o software</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4 mb-3">
-            <a href="user_dashboard.php" class="card quick-action-card text-decoration-none">
-                <div class="card-body text-center">
-                    <i class="fas fa-cogs fa-2x mb-2"></i>
-                    <h5 class="card-title">Gestisci Skill</h5>
-                    <p class="card-text">Aggiorna le tue competenze</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4 mb-3">
-            <a href="../projects/projects.php" class="card quick-action-card text-decoration-none">
-                <div class="card-body text-center">
-                    <i class="fas fa-search fa-2x mb-2"></i>
-                    <h5 class="card-title">Esplora Progetti</h5>
-                    <p class="card-text">Scopri e finanzia altri progetti</p>
-                </div>
-            </a>
         </div>
     </div>
 
