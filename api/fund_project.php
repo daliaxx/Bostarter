@@ -1,8 +1,4 @@
 <?php
-/**
- * BOSTARTER - Gestione Finanziamento Progetto - VERSIONE PULITA
- * File: public/fund_project.php
- */
 
 require_once '../config/database.php';
 
@@ -48,7 +44,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $importo = floatval($_POST['importo'] ?? 0);
     $codiceReward = trim($_POST['codice_reward'] ?? '');
 
-    // Validazioni
     $errore = null;
 
     if ($importo <= 0) {
