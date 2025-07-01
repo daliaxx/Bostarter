@@ -886,7 +886,7 @@ DELIMITER ;
 -- DATI DI ESEMPIO
 -- ================================================================
 
--- Inserimento utenti
+-- Utenti
 INSERT INTO UTENTE (Email, Nickname, Password, Nome, Cognome, Anno_Di_Nascita, Luogo_Di_Nascita) VALUES
     ('dalia.barone@email.com','dalia28','password123','Dalia','Barone','2004-02-20','Termoli'),
     ('sofia.neamtu@email.com','sofia_n','securepass','Sofia','Neamtu','2003-12-10','Padova'),
@@ -894,18 +894,18 @@ INSERT INTO UTENTE (Email, Nickname, Password, Nome, Cognome, Anno_Di_Nascita, L
     ('dalia.barone@bostarter.com','DaliaAdmin','password123','Dalia','Barone','2004-02-20','Termoli'),
     ('sofia.neamtu@bostarter.com','SofiaAdmin','securepass','Sofia','Neamtu','2003-12-10','Padova');
 
--- Inserimento amministratori
+-- Amministratori
 INSERT INTO AMMINISTRATORE (Email, Codice_Sicurezza) VALUES
     ('admin@bostarter.com','ADMIN2025'),
     ('dalia.barone@bostarter.com','DaliaAdmin2025'),
     ('sofia.neamtu@bostarter.com','SofiaAdmin2025');
 
--- Inserimento creatori
+-- Creatori
 INSERT INTO CREATORE (Email, Affidabilita) VALUES
     ('dalia.barone@email.com',0),
     ('sofia.neamtu@email.com',0);
 
--- Inserimento skill base
+-- Skill base
 INSERT INTO SKILL (COMPETENZA, LIVELLO) VALUES
     ('AI', 1), ('AI', 2), ('AI', 3), ('AI', 4), ('AI', 5),
     ('Machine Learning', 1), ('Machine Learning', 2), ('Machine Learning', 3), ('Machine Learning', 4), ('Machine Learning', 5),
@@ -918,7 +918,7 @@ INSERT INTO SKILL (COMPETENZA, LIVELLO) VALUES
     ('Software Engineering', 1), ('Software Engineering', 2), ('Software Engineering', 3), ('Software Engineering', 4), ('Software Engineering', 5),
     ('Embedded Systems', 1), ('Embedded Systems', 2), ('Embedded Systems', 3), ('Embedded Systems', 4), ('Embedded Systems', 5);
 
--- Inserimento skill curriculum
+-- Skill curriculum
 INSERT INTO SKILL_CURRICULUM (Email_Utente, Competenza, Livello) VALUES
     ('dalia.barone@email.com','Web Development',4),
     ('dalia.barone@email.com','Database Management',3),
@@ -926,66 +926,81 @@ INSERT INTO SKILL_CURRICULUM (Email_Utente, Competenza, Livello) VALUES
     ('sofia.neamtu@email.com','AI',4),
     ('sofia.neamtu@email.com','Machine Learning',5);
 
--- Inserimento progetti
+-- Progetti
 INSERT INTO PROGETTO (Nome, Descrizione, Data_Inserimento, Stato, Budget, Data_Limite, Tipo, Email_Creatore) VALUES
-    ('SmartHome AI','Sistema di automazione domestica basato su AI','2025-03-01','aperto',5000,'2025-06-01','Hardware','dalia.barone@email.com'),
-    ('CyberShield','Firewall AI per la sicurezza informatica','2025-01-15','chiuso',12000,'2025-04-30','Hardware','sofia.neamtu@email.com'),
-    ('AutoPilot System','Sistema di guida autonoma per auto','2025-02-10','aperto',15000,'2025-08-01', 'Software','dalia.barone@email.com'),
-    ('E-Health Monitor','Sistema di monitoraggio remoto della salute','2025-03-05','aperto',7000,'2025-06-30','Software','sofia.neamtu@email.com');
+('GreenPower Box','Power bank solare per ricarica dispositivi in condizioni off-grid','2025-06-20','aperto',8000,'2025-07-31','Hardware','dalia.barone@email.com'),
+('SmartGarden','Sistema intelligente di irrigazione basato su sensori e controllabile via app','2025-06-15','aperto',6500,'2025-07-01','Hardware','sofia.neamtu@email.com'),
+('SafeDrive AI','Assistente vocale per la guida sicura con comandi AI hands-free','2025-06-02','aperto',9500,'2025-07-10','Software','dalia.barone@email.com'),
+('EcoCharge Station','Stazione pubblica per ricarica bici elettriche alimentata a energia solare','2025-06-01','aperto',11000,'2025-07-15','Hardware','sofia.neamtu@email.com'),
+('CodeLink','Piattaforma collaborativa per team di sviluppo distribuiti con gestione task e revisioni di codice','2025-06-25','aperto',11000,'2025-07-01','Software','sofia.neamtu@email.com'),
+('PackTrack','Piattaforma open-source per la gestione e tracciamento delle spedizioni per piccoli e-commerce','2025-06-30','aperto',8900,'2025-07-05','Software','sofia.neamtu@email.com');
 
--- Inserimento componenti per progetti hardware
+-- Componenti per progetti hardware
 INSERT INTO COMPONENTE (Nome, Descrizione, Prezzo, Quantita, Nome_Progetto) VALUES
-    ('Sensore di Movimento','Sensore per rilevare il movimento in ambienti domestici',20.00,10,'SmartHome AI'),
-    ('Modulo Bluetooth','Modulo di comunicazione Bluetooth per connessione remota',15.00,8, 'SmartHome AI'),
-    ('Camera HD','Telecamera ad alta risoluzione per sicurezza',50.00,5,'CyberShield'),
-    ('Motore Elettrico','Motore per guida autonoma',120.00,4,'AutoPilot System'),
-    ('Sensore LiDAR','Sensore per rilevamento ostacoli in guida autonoma',200.00,2,'AutoPilot System'),
-    ('Batteria al Litio','Batteria ricaricabile ad alta capacita',90.00,6,'CyberShield');
+('Modulo Solare 12V', 'Pannello monocristallino ad alta efficienza', 45.00, 6, 'GreenPower Box'),
+('Power Bank USB-C', 'Batteria portatile da 20000mAh', 32.00, 5, 'GreenPower Box'),
+('ESP32', 'Microcontrollore WiFi+Bluetooth', 8.50, 4, 'SmartGarden'),
+('Sensore Umidità', 'Sensore per terreno capacitivo', 3.50, 10, 'SmartGarden'),
+('Valvola Irrigazione', 'Valvola elettrica 12V', 11.00, 6, 'SmartGarden'),
+('Stazione Ricarica', 'Struttura con connettori bici e pannelli', 120.00, 2, 'EcoCharge Station'),
+('Batteria Solare', 'Batteria al litio per accumulo energia', 90.00, 2, 'EcoCharge Station');
 
--- Inserimento profili per progetti software
-INSERT INTO PROFILO (Nome, Nome_Progetto) VALUES
-    ('Esperto AI','SmartHome AI'),
-    ('Sviluppatore Full Stack', 'SmartHome AI'),
-    ('Analista di Sicurezza','CyberShield'),
-    ('Ingegnere DevOps','CyberShield'),
-    ('Data Scientist', 'E-Health Monitor'),
-    ('Cloud Architect','CyberShield');
+-- Profili
+INSERT INTO PROFILO (ID, Nome, Nome_Progetto) VALUES
+(1, 'AI Engineer', 'SafeDrive AI'),
+(2, 'Mobile Dev', 'SafeDrive AI'),
+(3, 'Frontend Dev', 'CodeLink'),
+(4, 'Backend Dev', 'CodeLink'),
+(5, 'Full Stack Dev', 'PackTrack'),
+(6, 'Logistics Analyst', 'PackTrack');
 
+-- Skill richieste
 INSERT INTO SKILL_RICHIESTA (ID_Profilo, Competenza, Livello) VALUES
-    (1,'AI',4),
-    (1,'Machine Learning',5),
-    (2,'Web Development',4),
-    (2,'Database Management',3),
-    (3,'Cybersecurity',4),
-    (4,'Cloud Computing',5),
-    (5,'Data Analysis',3),
-    (5,'AI',4),
-    (6,'Cloud Computing',4),
-    (6,'Networking',3);
+(1, 'AI', 4),
+(1, 'Machine Learning', 3),
+(2, 'Web Development', 4),
+(2, 'Software Engineering', 3),
+(3, 'Web Development', 4),
+(3, 'Database Management', 3),
+(4, 'Software Engineering', 4),
+(4, 'Database Management', 4),
+(5, 'Web Development', 4),
+(5, 'Networking', 3),
+(6, 'Data Analysis', 3),
+(6, 'Cloud Computing', 3);
 
--- Inserimento rewards
-INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) VALUES
-    ('RWD1','Accesso beta esclusivo al prodotto', '/img/rwd2.jpeg','AutoPilot System'),
-    ('RWD2','T-shirt personalizzata del progetto','/img/rwd2.jpeg','AutoPilot System'),
-    ('RWD3','Menzione speciale nel sito ufficiale','/img/rwd2.jpeg','AutoPilot System'),
-    ('RWD4','Invito a evento esclusivo di presentazione','/img/rwd2.jpeg','AutoPilot System'),
-    ('RWD5','Pacchetto premium di funzioni avanzate','/img/rwd2.jpeg','AutoPilot System');
-
--- Inserimento finanziamenti
-INSERT INTO FINANZIAMENTO (Data, Importo, Email_Utente, Codice_Reward, Nome_Progetto) VALUES
-    ('2025-06-05',100.00, 'dalia.barone@email.com', 'RWD1', 'SmartHome AI'),
-    ('2025-06-01',150.00, 'sofia.neamtu@email.com', 'RWD3', 'CyberShield'),
-    ('2025-06-01',300.00, 'dalia.barone@email.com', 'RWD4', 'AutoPilot System'),
-    ('2025-06-01',250.00, 'sofia.neamtu@email.com', 'RWD5', 'E-Health Monitor');
-
--- Inserimento foto progetti
+-- Foto progetti
 INSERT INTO FOTO (Percorso, Nome_Progetto) VALUES
-    ('smarthome.jpg', 'SmartHome AI'),
-    ('cybershield.jpg', 'CyberShield'),
-    ('autopilot.jpg','AutoPilot System'),
-    ('e-health.png','E-Health Monitor');
+('GreenPower.jpg', 'GreenPower Box'),
+('SmartGarden.jpg', 'SmartGarden'),
+('EcoStation.jpg', 'EcoCharge Station'),
+('SafeDrive.jpg', 'SafeDrive AI'),
+('CodeLink.jpg', 'CodeLink'),
+('PackTrack.jpg', 'PackTrack');
 
--- Inserimento candidature
+-- Rewards
+INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) VALUES
+('GP_REW1', 'Sticker e ringraziamento social', '/img/gp_sticker.jpg', 'GreenPower Box'),
+('SG_REW1', 'Guida digitale al giardinaggio smart', '/img/sg_guide.jpg', 'SmartGarden'),
+('EC_REW1', 'Menzione sulla colonnina pubblica', '/img/ecostation_reward.jpg', 'EcoCharge Station'),
+('SD_REW1', 'Accesso beta all''app', '/img/safedrive_beta.jpg', 'SafeDrive AI'),
+('CL_REW1', 'Abbonamento pro gratuito', '/img/codelink_reward.jpg', 'CodeLink'),
+('PT_REW1', 'Inserimento nella documentazione open-source', '/img/packtrack_reward.jpg', 'PackTrack');
+
+-- Finanziamenti
+INSERT INTO FINANZIAMENTO (Data, Importo, Email_Utente, Codice_Reward, Nome_Progetto) VALUES
+('2025-07-01', 120.00, 'dalia.barone@email.com', 'GP_REW1', 'GreenPower Box'),
+('2025-07-02', 150.00, 'sofia.neamtu@email.com', 'SG_REW1', 'SmartGarden'),
+('2025-07-03', 180.00, 'dalia.barone@email.com', 'EC_REW1', 'EcoCharge Station'),
+('2025-07-05', 200.00, 'sofia.neamtu@email.com', 'SD_REW1', 'SafeDrive AI'),
+('2025-07-06', 250.00, 'dalia.barone@email.com', 'CL_REW1', 'CodeLink'),
+('2025-07-07', 220.00, 'sofia.neamtu@email.com', 'PT_REW1', 'PackTrack');
+
+-- Candidature
 INSERT INTO CANDIDATURA (Esito, Email_Utente, ID_Profilo) VALUES
-    (FALSE, 'dalia.barone@email.com', 1),
-    (FALSE, 'sofia.neamtu@email.com', 3);
+(NULL, 'dalia.barone@email.com', 1),
+(NULL, 'sofia.neamtu@email.com', 2),
+(NULL, 'dalia.barone@email.com', 3),
+(NULL, 'sofia.neamtu@email.com', 4),
+(NULL, 'dalia.barone@email.com', 5),
+(NULL, 'sofia.neamtu@email.com', 6);
