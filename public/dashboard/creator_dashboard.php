@@ -3,7 +3,6 @@
 require_once '../../config/database.php';
 require_once '../../includes/navbar.php';
 
-// Verifica login e che sia creatore
 SessionManager::requireLogin('../../index.html');
 SessionManager::requireCreator();
 
@@ -95,12 +94,6 @@ try {
             c.Data_Candidatura DESC
         LIMIT 20
     ", [$userEmail]);
-
-    // Debug candidature
-    error_log(" Debug candidature per $userEmail:");
-    foreach ($candidatureRicevute as $cand) {
-        error_log("- ID: {$cand['ID']}, Esito: " . var_export($cand['Esito'], true) . ", Nickname: {$cand['Nickname']}");
-    }
 
     // Commenti ricevuti
     $commentiRicevuti = $db->fetchAll("
@@ -547,7 +540,7 @@ function getCompletionPercentage($raccolto, $budget) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // FUNZIONE CORRETTA per gestire candidature
+    // Funzione per gestire candidature
     function gestisciCandidatura(idCandidatura, accettata) {
         // Validazione input
         if (!idCandidatura || idCandidatura <= 0) {
@@ -576,14 +569,8 @@ function getCompletionPercentage($raccolto, $budget) {
         formData.append('id_candidatura', idCandidatura);
         formData.append('accettata', accettata ? '1' : '0');
 
-        // Debug per verificare i dati inviati
-        console.log(' Gestione candidatura:', {
-            id: idCandidatura,
-            accettata: accettata ? '1' : '0'
-        });
-
         // Chiamata API
-        fetch('../../api/manage_candidature.php', {
+        fetch('../../api/manage_candidatures.php', {
             method: 'POST',
             body: formData
         })

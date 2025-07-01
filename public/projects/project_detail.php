@@ -2,15 +2,10 @@
 require_once '../../config/database.php';
 require_once '../../includes/navbar.php';
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 function formatCurrency($amount) {
     return '€ ' . number_format($amount, 2, ',', '.');
 }
 
-// Sessione e verifica utente
 SessionManager::start();
 $isLoggedIn = isset($_SESSION['user_email']);
 $userEmail = $_SESSION['user_email'] ?? null;
@@ -174,7 +169,7 @@ if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'a
         $profilo['hasSkills'] = $hasSkills;
         $profilo['requiredSkills'] = $skillRichieste;
     }
-    unset($profilo); // ← AGGIUNGI QUESTA RIGA QUI
+    unset($profilo);
 }
 
 // Recupero commenti
@@ -356,7 +351,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: var(--border-radius);
             box-shadow: var(--card-shadow);
-            padding: 1.5rem; /* Adjusted padding for comments card */
+            padding: 1.5rem; 
             margin-bottom: 2rem;
             transition: all 0.3s ease;
         }
@@ -367,8 +362,8 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
         }
 
         .comment-item {
-            background-color: rgba(248, 249, 250, 0.8); /* Light background for comments */
-            border-left: 5px solid #007bff; /* Primary color border */
+            background-color: rgba(248, 249, 250, 0.8); 
+            border-left: 5px solid #007bff;
             border-radius: var(--small-radius);
             padding: 1rem;
             margin-bottom: 1rem;
@@ -380,8 +375,8 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
         }
 
         .comment-reply {
-            background-color: rgba(232, 246, 237, 0.8); /* Lighter green for replies */
-            border-left: 5px solid #28a745; /* Success color border */
+            background-color: rgba(232, 246, 237, 0.8); 
+            border-left: 5px solid #28a745; 
             border-radius: var(--small-radius);
             padding: 0.75rem;
             margin-top: 0.75rem;
@@ -460,7 +455,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             border-radius: 15px;
             margin-bottom: 1rem;
             transition: all 0.3s ease;
-            padding: 1.25rem; /* Adjusted padding */
+            padding: 1.25rem; 
         }
 
         .profile-card.can-apply {
@@ -475,11 +470,11 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
 
         .skill-tag {
             display: inline-block;
-            padding: 0.25rem 0.75rem; /* Slightly larger padding */
-            margin: 0.2rem; /* Adjusted margin */
-            border-radius: 20px; /* More rounded */
-            font-size: 0.8rem; /* Slightly larger font */
-            font-weight: 600; /* Bolder font */
+            padding: 0.25rem 0.75rem; 
+            margin: 0.2rem; 
+            border-radius: 20px; 
+            font-size: 0.8rem; 
+            font-weight: 600; 
         }
 
 

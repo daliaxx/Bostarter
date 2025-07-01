@@ -158,7 +158,6 @@ if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
 
 <script>
 
-    // GESTIONE COMPETENZE ADMIN
     // Carica competenze all'avvio
     document.addEventListener('DOMContentLoaded', function() {
         loadSkills();

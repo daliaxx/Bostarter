@@ -3,8 +3,6 @@
 require_once '../config/database.php';
 
 header('Content-Type: application/json');
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
 
 try {
     SessionManager::start();
@@ -22,7 +20,6 @@ try {
     $db = Database::getInstance();
     $userEmail = SessionManager::getUserEmail();
     $action = $_POST['action'] ?? '';
-
 
     // AGGIUNGI COMPONENTE
     if ($action === 'add_component') {

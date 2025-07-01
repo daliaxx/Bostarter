@@ -2,13 +2,12 @@
 const fs = require('fs');
 const mysql = require('mysql2/promise');
 
-// Configurazione MySQL (modifica se necessario)
 const dbConfig = {
   host: 'localhost',
   user: 'root',
   password: 'root',
   database: 'BOSTARTER',
-  port: 3306 // Cambia se usi una porta diversa
+  port: 3306
 };
 
 async function exportLogs() {
@@ -20,9 +19,9 @@ async function exportLogs() {
     // Esporta in JSON
     const json = JSON.stringify(rows, null, 2);
     fs.writeFileSync('bostarter_logs.json', json, 'utf8');
-    console.log(`✅ Esportati ${rows.length} log in bostarter_logs.json`);
+    console.log(`Esportati ${rows.length} log in bostarter_logs.json`);
   } catch (err) {
-    console.error('❌ Errore durante l\'esportazione:', err);
+    console.error('Errore durante l\'esportazione:', err);
   } finally {
     if (connection) await connection.end();
   }
