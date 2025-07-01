@@ -67,6 +67,7 @@ try {
         SessionManager::set('creator_affidabilita', $creatorData['Affidabilita']);
     }
 
+    error_log("Login ADMIN: $email");
 
     Utils::jsonResponse(true, 'Accesso amministratore effettuato con successo!', [
         'user' => [
@@ -80,5 +81,6 @@ try {
     ], '/Bostarter/public/dashboard/admin_dashboard.php');
 
 } catch (Exception $e) {
+    error_log("Errore login admin: " . $e->getMessage());
     Utils::jsonResponse(false, 'Errore interno del server. Riprova più tardi.');
 }
