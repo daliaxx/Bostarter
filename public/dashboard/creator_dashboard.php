@@ -505,9 +505,10 @@ function getCompletionPercentage($raccolto, $budget) {
                         <?php foreach ($commentiRicevuti as $commento): ?>
                             <div class="card comment-card mb-3">
                                 <div class="card-body p-3">
-                                    <div class="d-flex justify-content-between">
+                                    <div>
                                         <strong class="text-primary"><?= htmlspecialchars($commento['Email_Utente']) ?></strong>
-                                        <small class="text-muted">Progetto: <?= htmlspecialchars($commento['Nome_Progetto']) ?></small>
+                                        <br>
+                                        <small class="text-dark"><strong>Progetto:</strong> <?= htmlspecialchars($commento['Nome_Progetto']) ?></small>
                                     </div>
                                     <p class="mb-2"><?= htmlspecialchars($commento['Testo']) ?></p>
 
