@@ -73,8 +73,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Recupera le reward del progetto
+// Previous attempts to order by 'Min_Finanziamento' or 'Importo' resulted in 'Unknown column' errors.
+// Temporarily ordering by 'Codice' to ensure the page loads.
+// Please verify the exact column name for minimum funding in your 'REWARD' table schema if you wish to sort by that.
 $rewards = $db->fetchAll("
-    SELECT * FROM REWARD WHERE Nome_Progetto = ?
+    SELECT * FROM REWARD WHERE Nome_Progetto = ? ORDER BY Codice ASC
 ", [$projectName]);
 
 // START: MODIFIED CODE FOR PROFILES (previously added)
@@ -123,6 +126,7 @@ if ($project['Tipo'] === 'Hardware') {
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --small-radius: 12px;
+            --card-radius: 20px; /* Increased border radius for all cards */
         }
         body {
             background: #f8f9fa;
@@ -149,6 +153,21 @@ if ($project['Tipo'] === 'Hardware') {
             background: rgba(255, 255, 255, 0.15);
             transform: translateY(-2px);
         }
+        .card {
+            border: none;
+            border-radius: var(--card-radius); /* Apply to all cards */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden; /* Ensures image and header respect radius */
+        }
+        .card-header {
+            background: var(--primary-gradient); /* All headers use primary gradient */
+            color: white;
+            font-weight: bold;
+            padding: 1rem 1.5rem;
+            border-top-left-radius: var(--card-radius); /* Match card radius */
+            border-top-right-radius: var(--card-radius); /* Match card radius */
+            border-bottom: none; /* Remove default border */
+        }
         /* START: NEW CSS FOR PROFILE SECTION (previously added) */
         .profile-item {
             background: #f8f9fa;
@@ -159,11 +178,11 @@ if ($project['Tipo'] === 'Hardware') {
             transition: all 0.3s ease;
         }
         .profile-item:hover {
-            border-color: #007bff;
-            background: #e3f2fd;
+            border-color: #667eea; /* Changed to violet theme */
+            background: rgba(102, 126, 234, 0.1); /* Changed to violet theme */
         }
         .skill-badge {
-            background-color: #0d6efd;
+            background: var(--primary-gradient); /* Changed to violet gradient */
             color: white;
             padding: 0.35em 0.65em;
             border-radius: 0.25rem;
@@ -183,8 +202,8 @@ if ($project['Tipo'] === 'Hardware') {
             transition: all 0.3s ease;
         }
         .component-item:hover {
-            border-color: #28a745;
-            background: #e8f5e8;
+            border-color: #667eea; /* Changed to violet theme */
+            background: rgba(102, 126, 234, 0.1); /* Changed to violet theme */
         }
         .component-price {
             font-weight: bold;
@@ -195,6 +214,21 @@ if ($project['Tipo'] === 'Hardware') {
             color: #007bff;
         }
         /* END: NEW CSS FOR COMPONENT SECTION */
+
+        /* Modal styling */
+        .modal-content {
+            border-radius: var(--card-radius); /* Apply to modal content */
+        }
+        .modal-header {
+            background: var(--primary-gradient); /* All modal headers use primary gradient */
+            color: white;
+            border-top-left-radius: var(--card-radius);
+            border-top-right-radius: var(--card-radius);
+            border-bottom: none;
+        }
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1); /* Makes the close button white */
+        }
     </style>
 </head>
 <body>
@@ -204,8 +238,7 @@ if ($project['Tipo'] === 'Hardware') {
     <div class="row">
         <div class="col-lg-8">
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0"><i class="fas fa-edit me-2"></i>Modifica Progetto: <?= htmlspecialchars($project['Nome']) ?></h4>
+                <div class="card-header"> <h4 class="mb-0"><i class="fas fa-edit me-2"></i>Modifica Progetto: <?= htmlspecialchars($project['Nome']) ?></h4>
                 </div>
                 <div class="card-body">
                     <?php if ($error): ?>
@@ -247,8 +280,7 @@ if ($project['Tipo'] === 'Hardware') {
             </div>
 
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-info text-white">
-                    <h4 class="mb-0"><i class="fas fa-gift me-2"></i>Gestione Reward</h4>
+                <div class="card-header"> <h4 class="mb-0"><i class="fas fa-gift me-2"></i>Gestione Reward</h4>
                 </div>
                 <div class="card-body">
                     <div class="list-group mb-3">
@@ -280,13 +312,12 @@ if ($project['Tipo'] === 'Hardware') {
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </div>
-                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addRewardModal"><i class="fas fa-plus me-2"></i>Aggiungi Nuova Reward</button>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addRewardModal"><i class="fas fa-plus me-2"></i>Aggiungi Nuova Reward</button>
                 </div>
             </div>
             <?php if ($project['Tipo'] === 'Software'): ?>
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-success text-white">
-                        <h4 class="mb-0"><i class="fas fa-users-cog me-2"></i>Profili Richiesti</h4>
+                    <div class="card-header"> <h4 class="mb-0"><i class="fas fa-users-cog me-2"></i>Profili Richiesti</h4>
                     </div>
                     <div class="card-body">
                         <div class="list-group mb-3">
@@ -317,14 +348,13 @@ if ($project['Tipo'] === 'Hardware') {
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </div>
-                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addProfileModal"><i class="fas fa-user-plus me-2"></i>Aggiungi Nuovo Profilo</button>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProfileModal"><i class="fas fa-user-plus me-2"></i>Aggiungi Nuovo Profilo</button>
                     </div>
                 </div>
             <?php endif; ?>
             <?php if ($project['Tipo'] === 'Hardware'): ?>
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-warning text-dark">
-                        <h4 class="mb-0"><i class="fas fa-microchip me-2"></i>Componenti Hardware</h4>
+                    <div class="card-header"> <h4 class="mb-0"><i class="fas fa-microchip me-2"></i>Componenti Hardware</h4>
                     </div>
                     <div class="card-body">
                         <div class="list-group mb-3">
@@ -339,7 +369,7 @@ if ($project['Tipo'] === 'Hardware') {
                                                 <i class="fas fa-trash-alt"></i> Elimina Componente
                                             </button>
                                         </div>
-                                        <p class="mb-2"><?= htmlspecialchars($component['Descrizione']) ?></p>
+                                        <p class="mb-2"><?= html2br(htmlspecialchars($component['Descrizione'])) ?></p>
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <span class="component-price">
@@ -365,8 +395,7 @@ if ($project['Tipo'] === 'Hardware') {
             </div>
         <div class="col-lg-4">
             <div class="card shadow-sm">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0">Dettagli Progetto</h5>
+                <div class="card-header"> <h5 class="mb-0">Dettagli Progetto</h5>
                 </div>
                 <div class="card-body">
                     <p><strong>Stato:</strong> <span class="badge bg-<?= $project['Stato'] === 'aperto' ? 'success' : 'danger' ?>"><?= htmlspecialchars(ucfirst($project['Stato'])) ?></span></p>
@@ -381,8 +410,7 @@ if ($project['Tipo'] === 'Hardware') {
 <div class="modal fade" id="addRewardModal" tabindex="-1" aria-labelledby="addRewardModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title" id="addRewardModalLabel">Aggiungi Nuova Reward</h5>
+            <div class="modal-header"> <h5 class="modal-title" id="addRewardModalLabel">Aggiungi Nuova Reward</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="addRewardForm">
@@ -395,6 +423,14 @@ if ($project['Tipo'] === 'Hardware') {
                     <div class="mb-3">
                         <label for="rewardDescription" class="form-label">Descrizione Reward</label>
                         <textarea class="form-control" id="rewardDescription" name="descrizione" rows="3" required></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rewardMinFinanziamento" class="form-label">Importo Minimo Finanziamento (€)</label>
+                        <input type="number" step="0.01" class="form-control" id="rewardMinFinanziamento" name="min_finanziamento" required min="0.01">
+                    </div>
+                    <div class="mb-3">
+                        <label for="rewardFoto" class="form-label">Foto Reward (percorso es. img/rewards/foto.jpg)</label>
+                        <input type="text" class="form-control" id="rewardFoto" name="foto">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -409,8 +445,7 @@ if ($project['Tipo'] === 'Hardware') {
 <div class="modal fade" id="addProfileModal" tabindex="-1" aria-labelledby="addProfileModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="addProfileModalLabel">Aggiungi Nuovo Profilo Richiesto</h5>
+            <div class="modal-header"> <h5 class="modal-title" id="addProfileModalLabel">Aggiungi Nuovo Profilo Richiesto</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="addProfileForm">
@@ -431,7 +466,7 @@ if ($project['Tipo'] === 'Hardware') {
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-                    <button type="button" class="btn btn-success" onclick="addProfile()">Salva Profilo</button>
+                    <button type="button" class="btn btn-primary" onclick="addProfile()">Salva Profilo</button>
                 </div>
             </form>
         </div>
@@ -441,10 +476,8 @@ if ($project['Tipo'] === 'Hardware') {
 <div class="modal fade" id="addComponentModal" tabindex="-1" aria-labelledby="addComponentModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title" id="addComponentModalLabel">Aggiungi Nuovo Componente</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
+            <div class="modal-header"> <h5 class="modal-title" id="addComponentModalLabel">Aggiungi Nuovo Componente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button> </div>
             <form id="addComponentForm">
                 <div class="modal-body">
                     <input type="hidden" name="project_name" value="<?= htmlspecialchars($projectName) ?>">

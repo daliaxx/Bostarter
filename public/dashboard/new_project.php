@@ -345,7 +345,7 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
             overflow: hidden;
         }
         .form-header {
-            background: linear-gradient(135deg, #007bff 0%, #6f42c1 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 2rem;
             text-align: center;
