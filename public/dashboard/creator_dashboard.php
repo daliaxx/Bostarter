@@ -1,8 +1,4 @@
 <?php
-/**
- * BOSTARTER - Dashboard Creatore - VERSIONE CORRETTA
- * File: public/dashboard/creator_dashboard.php
- */
 
 require_once '../../config/database.php';
 require_once '../../includes/navbar.php';
@@ -59,7 +55,7 @@ try {
             $progetto['Stato'] = 'chiuso';
         }
     }
-    unset($progetto); // Importante per liberare il riferimento
+    unset($progetto);
 
     // Gestione eliminazione progetto
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['elimina_progetto'])) {
@@ -69,7 +65,6 @@ try {
         try {
             // Elimina prima eventuali dipendenze
             $db->execute("DELETE FROM FOTO WHERE Nome_Progetto = ?", [$nome]);
-            // Aggiungi anche altri DELETE se servono: commenti, reward, candidature...
 
             // Poi elimina il progetto solo se appartiene a chi è loggato
             $db->execute("DELETE FROM PROGETTO WHERE Nome = ? AND Email_Creatore = ?", [$nome, $email]);
@@ -93,21 +88,21 @@ try {
         WHERE p.Email_Creatore = ?
         ORDER BY 
             CASE 
-                WHEN c.Esito IS NULL THEN 0  -- Candidature in attesa vengono prima
-                WHEN c.Esito = 1 THEN 1      -- Candidature accettate
-                ELSE 2                       -- Candidature rifiutate per ultime
+                WHEN c.Esito IS NULL THEN 0  
+                WHEN c.Esito = 1 THEN 1      
+                ELSE 2                       
             END,
             c.Data_Candidatura DESC
         LIMIT 20
     ", [$userEmail]);
 
     // Debug candidature
-    error_log("🔍 Debug candidature per $userEmail:");
+    error_log(" Debug candidature per $userEmail:");
     foreach ($candidatureRicevute as $cand) {
         error_log("- ID: {$cand['ID']}, Esito: " . var_export($cand['Esito'], true) . ", Nickname: {$cand['Nickname']}");
     }
 
-    // Commenti ricevuti (query corretta)
+    // Commenti ricevuti
     $commentiRicevuti = $db->fetchAll("
         SELECT c.ID, c.Testo, c.Email_Utente, c.Nome_Progetto, r.Testo AS Risposta
         FROM COMMENTO c
@@ -552,7 +547,7 @@ function getCompletionPercentage($raccolto, $budget) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // ✅ FUNZIONE CORRETTA per gestire candidature
+    // FUNZIONE CORRETTA per gestire candidature
     function gestisciCandidatura(idCandidatura, accettata) {
         // Validazione input
         if (!idCandidatura || idCandidatura <= 0) {
@@ -575,14 +570,14 @@ function getCompletionPercentage($raccolto, $budget) {
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Elaborazione...';
         });
 
-        // Prepara i dati
+        // dati
         const formData = new FormData();
         formData.append('action', 'manage_candidatura');
         formData.append('id_candidatura', idCandidatura);
         formData.append('accettata', accettata ? '1' : '0');
 
         // Debug per verificare i dati inviati
-        console.log('🔍 Gestione candidatura:', {
+        console.log(' Gestione candidatura:', {
             id: idCandidatura,
             accettata: accettata ? '1' : '0'
         });
@@ -593,14 +588,14 @@ function getCompletionPercentage($raccolto, $budget) {
             body: formData
         })
             .then(response => {
-                // Verifica se la risposta è JSON valida
+                // se la risposta JSON è valida
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 return response.json();
             })
             .then(data => {
-                console.log('✅ Risposta API:', data);
+                console.log(' Risposta API:', data);
 
                 if (data.success) {
                     mostraToast(data.message, 'success');
@@ -608,25 +603,25 @@ function getCompletionPercentage($raccolto, $budget) {
                     // Aggiorna l'UI senza ricaricare la pagina
                     aggiornaUICandidatura(idCandidatura, accettata, data.candidatura);
 
-                    // Opzionale: ricarica dopo 2 secondi per aggiornare tutto
+                    // ricarica dopo 2 secondi per aggiornare tutto
                     setTimeout(() => {
                         location.reload();
                     }, 2000);
                 } else {
                     mostraToast(data.message || 'Errore sconosciuto', 'error');
-                    // Riabilita i bottoni in caso di errore
+                    // bottoni in caso di errore si riavviano
                     riabilitaBottoniCandidatura(idCandidatura);
                 }
             })
             .catch(error => {
-                console.error('❌ Errore:', error);
+                console.error('Errore:', error);
                 mostraToast(`Errore di connessione: ${error.message}`, 'error');
                 // Riabilita i bottoni in caso di errore
                 riabilitaBottoniCandidatura(idCandidatura);
             });
     }
 
-    // ✅ Funzione per aggiornare UI senza reload
+    // Funzione per aggiornare UI senza reload
     function aggiornaUICandidatura(idCandidatura, accettata, candidaturaData) {
         // Trova la card della candidatura
         const candidaturaCard = document.querySelector(`[data-candidatura-id="${idCandidatura}"]`);
@@ -652,7 +647,7 @@ function getCompletionPercentage($raccolto, $budget) {
         }
     }
 
-    // ✅ Funzione per riabilitare bottoni in caso di errore
+    // Funzione per riabilitare bottoni in caso di errore
     function riabilitaBottoniCandidatura(idCandidatura) {
         const bottoniCandidatura = document.querySelectorAll(`[onclick*="${idCandidatura}"]`);
         bottoniCandidatura.forEach((btn, index) => {
@@ -665,7 +660,7 @@ function getCompletionPercentage($raccolto, $budget) {
         });
     }
 
-    // ✅ Funzione migliorata per mostrare toast
+    // Funzione migliorata per mostrare toast
     function mostraToast(message, type = 'info') {
         const toastContainer = document.querySelector('.toast-container');
         const toast = document.getElementById('toastNotifica');
@@ -674,9 +669,9 @@ function getCompletionPercentage($raccolto, $budget) {
         if (!toast || !toastMessage) {
             // Fallback se il toast non esiste
             if (type === 'error') {
-                alert(`❌ ${message}`);
+                alert(`errore ${message}`);
             } else {
-                alert(`✅ ${message}`);
+                alert(`okk${message}`);
             }
             return;
         }
@@ -684,7 +679,6 @@ function getCompletionPercentage($raccolto, $budget) {
         // Configura il toast
         toastMessage.textContent = message;
 
-        // Colori in base al tipo
         const colorClasses = {
             'success': 'bg-success text-white',
             'error': 'bg-danger text-white',
@@ -702,9 +696,9 @@ function getCompletionPercentage($raccolto, $budget) {
         bsToast.show();
     }
 
-    // ✅ Inizializzazione quando il DOM è pronto
+    // Inizializzazione quando il DOM è pronto
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('✅ Sistema gestione candidature caricato');
+        console.log('Sistema gestione candidature caricato');
 
         // Debug opzionale
         if (window.location.search.includes('debug=1')) {

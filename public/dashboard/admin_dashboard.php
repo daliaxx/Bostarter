@@ -157,10 +157,8 @@ if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // ================================================================
-    // GESTIONE COMPETENZE ADMIN
-    // ================================================================
 
+    // GESTIONE COMPETENZE ADMIN
     // Carica competenze all'avvio
     document.addEventListener('DOMContentLoaded', function() {
         loadSkills();
@@ -218,7 +216,7 @@ if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
         skillsList.innerHTML = html;
     }
 
-    // Form per aggiungere competenza
+    // per aggiungere competenza
     document.getElementById('addCompetenceForm').addEventListener('submit', function(e) {
         e.preventDefault();
 

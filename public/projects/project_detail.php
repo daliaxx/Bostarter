@@ -26,7 +26,7 @@ $nomeProgetto = $_GET['name'];
 $db = Database::getInstance();
 $db->ensureEventScheduler();
 
-// Query principale per i dettagli del progetto
+// Query per i dettagli del progetto
 $sql = "
     SELECT
         p.Nome, p.Descrizione, p.Data_Inserimento, p.Stato, p.Budget, p.Data_Limite, p.Tipo, p.Email_Creatore,
@@ -129,7 +129,7 @@ if ($progetto['Tipo'] === 'Hardware') {
     }
 }
 
-// Verifica skill per candidature (solo se utente loggato e progetto software aperto)
+// Verifica skill per candidature
 if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'aperto' && !empty($profiliRicercati)) {
     foreach ($profiliRicercati as &$profilo) {
         // Skill richieste per questo profilo
@@ -218,32 +218,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             background: linear-gradient(135deg, #fffdfd 0%, #c3cfe2 100%);
             min-height: 100vh;
             color: var(--text-primary);
-        }
-
-        .navbar {
-            background: var(--primary-gradient) !important;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            padding: 1rem 0;
-            z-index: 50;
-        }
-
-        .navbar-brand {
-            font-weight: 700;
-            font-size: 1.5rem;
-            letter-spacing: -0.5px;
-        }
-
-        .nav-link {
-            font-weight: 500;
-            padding: 0.5rem 1rem !important;
-            border-radius: var(--small-radius);
-            margin: 0 0.25rem;
-        }
-
-        .nav-link:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-2px);
         }
 
         .project-header {
@@ -508,15 +482,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             font-weight: 600; /* Bolder font */
         }
 
-        .skill-has {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .skill-missing {
-            background: #fff3cd;
-            color: #856404;
-        }
 
         @media (max-width: 768px) {
             .project-title {
@@ -1113,9 +1078,9 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
 
         if (!toast || !toastMessage) {
             if (type === 'error') {
-                alert(`❌ ${message}`);
+                alert(`errore ${message}`);
             } else {
-                alert(`✅ ${message}`);
+                alert(`ok ${message}`);
             }
             return;
         }
@@ -1162,7 +1127,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
         })
             .then(response => {
                 if (!response.ok) {
-                    // Check for a specific error message from the PHP backend if available
                     return response.json().then(errorData => {
                         throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
                     });
@@ -1246,19 +1210,18 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             });
         }
 
-        // Auto-hide degli alert
+        // allert
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('success') || urlParams.has('error')) {
             const alertBox = document.getElementById('alertBox');
             if (alertBox) {
                 setTimeout(() => {
                     alertBox.style.display = 'none';
-                    // Remove parameters from URL to prevent re-showing on refresh
                     const newUrl = new URL(window.location.href);
                     newUrl.searchParams.delete('success');
                     newUrl.searchParams.delete('error');
                     window.history.replaceState({}, document.title, newUrl.toString());
-                }, 3000); // Hide after 3 seconds
+                }, 3000);
             }
         }
     });

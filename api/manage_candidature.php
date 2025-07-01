@@ -1,8 +1,4 @@
 <?php
-/**
- * BOSTARTER - API Gestione Candidature Unificata
- * File: api/
- */
 
 require_once '../config/database.php';
 
@@ -27,9 +23,8 @@ try {
     $userEmail = SessionManager::getUserEmail();
     $action = $_POST['action'] ?? 'submit_candidatura'; // Default per retrocompatibilità
 
-    // ================================================================
-    // INVIA CANDIDATURA (per utenti normali)
-    // ================================================================
+
+    // INVIA CANDIDATURA
     if ($action === 'submit_candidatura') {
         $idProfilo = intval($_POST['profilo'] ?? 0);
         $nomeProgetto = trim($_POST['nome_progetto'] ?? '');
@@ -97,10 +92,10 @@ try {
             ]);
 
             // Log per debug
-            error_log("✅ Candidatura inviata - Utente: {$userEmail}, Profilo: {$idProfilo}, Progetto: {$nomeProgetto}");
+            error_log("Candidatura inviata - Utente: {$userEmail}, Profilo: {$idProfilo}, Progetto: {$nomeProgetto}");
 
         } catch (Exception $e) {
-            error_log("❌ Errore stored procedure InserisciCandidatura: " . $e->getMessage());
+            error_log("Errore stored procedure InserisciCandidatura: " . $e->getMessage());
 
             // Messaggi di errore più user-friendly
             if (strpos($e->getMessage(), 'skill') !== false) {
@@ -112,9 +107,7 @@ try {
         exit;
     }
 
-    // ================================================================
     // GESTISCI CANDIDATURA (per creatori - accetta/rifiuta)
-    // ================================================================
     if ($action === 'manage_candidatura') {
         if (!SessionManager::isCreator()) {
             echo json_encode(['success' => false, 'message' => 'Accesso non autorizzato - Solo i creatori possono gestire candidature']);
@@ -191,18 +184,16 @@ try {
             ]);
 
             // Log per debug
-            error_log("✅ Candidatura {$idCandidatura} " . ($accettataBoolean ? 'accettata' : 'rifiutata') . " da {$userEmail}");
+            error_log("Candidatura {$idCandidatura} " . ($accettataBoolean ? 'accettata' : 'rifiutata') . " da {$userEmail}");
 
         } catch (Exception $e) {
-            error_log("❌ Errore stored procedure AccettaCandidatura: " . $e->getMessage());
+            error_log("Errore stored procedure AccettaCandidatura: " . $e->getMessage());
             echo json_encode(['success' => false, 'message' => 'Errore durante l\'aggiornamento della candidatura']);
         }
         exit;
     }
 
-    // ================================================================
     // RECUPERA CANDIDATURE RICEVUTE (per creatori)
-    // ================================================================
     if ($action === 'get_candidature_ricevute') {
         if (!SessionManager::isCreator()) {
             echo json_encode(['success' => false, 'message' => 'Accesso non autorizzato - Solo i creatori possono visualizzare le candidature']);
@@ -253,9 +244,8 @@ try {
         exit;
     }
 
-    // ================================================================
+
     // RECUPERA CANDIDATURE INVIATE (per utenti)
-    // ================================================================
     if ($action === 'get_candidature_inviate') {
         $candidatureInviate = $db->fetchAll("
             SELECT c.ID, c.Data_Candidatura, c.Esito, 
@@ -281,7 +271,7 @@ try {
     echo json_encode(['success' => false, 'message' => 'Azione non riconosciuta: ' . $action]);
 
 } catch (Exception $e) {
-    error_log("❌ Errore manage_candidature: " . $e->getMessage());
+    error_log("Errore manage_candidature: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'Errore interno del server']);
 }
 ?>

@@ -1,9 +1,6 @@
 <?php
-/**
- * BOSTARTER - Login Handler per utenti
- */
 
-require_once '../config/bootstrap.php'; // include tutto (config, database, session, utils)
+require_once '../config/bootstrap.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     Utils::jsonResponse(false, 'Metodo non consentito');

@@ -1,8 +1,4 @@
 <?php
-/**
- * BOSTARTER - Navbar Unificata
- * File: includes/navbar.php
- */
 
 // Determina il percorso base in base alla posizione del file che include la navbar
 $currentFile = $_SERVER['PHP_SELF'];

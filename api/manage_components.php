@@ -1,8 +1,4 @@
 <?php
-/**
- * BOSTARTER - API Gestione Componenti Hardware
- * File: api/manage_components.php
- */
 
 require_once '../config/database.php';
 
@@ -27,9 +23,8 @@ try {
     $userEmail = SessionManager::getUserEmail();
     $action = $_POST['action'] ?? '';
 
-    // ================================================================
+
     // AGGIUNGI COMPONENTE
-    // ================================================================
     if ($action === 'add_component') {
         $nomeProgetto = trim($_POST['nome_progetto'] ?? '');
         $nomeComponente = trim($_POST['nome_componente'] ?? '');
@@ -100,9 +95,7 @@ try {
         exit;
     }
 
-    // ================================================================
     // RECUPERA COMPONENTI PROGETTO
-    // ================================================================
     if ($action === 'get_components') {
         $nomeProgetto = trim($_POST['nome_progetto'] ?? '');
 
@@ -147,9 +140,7 @@ try {
         exit;
     }
 
-    // ================================================================
     // ELIMINA COMPONENTE
-    // ================================================================
     if ($action === 'delete_component') {
         $componentId = intval($_POST['component_id'] ?? 0);
 
@@ -181,9 +172,7 @@ try {
         exit;
     }
 
-    // ================================================================
     // RECUPERA COMPONENTI PER VISUALIZZAZIONE PUBBLICA
-    // ================================================================
     if ($action === 'get_components_public') {
         $nomeProgetto = trim($_POST['nome_progetto'] ?? '');
 
@@ -192,7 +181,7 @@ try {
             exit;
         }
 
-        // Verifica che il progetto esista (non serve essere il creatore)
+        // Verifica che il progetto esista
         $progetto = $db->fetchOne("
             SELECT Nome, Tipo FROM PROGETTO WHERE Nome = ?
         ", [$nomeProgetto]);

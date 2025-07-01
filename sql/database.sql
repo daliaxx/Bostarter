@@ -2,11 +2,8 @@ DROP DATABASE IF EXISTS BOSTARTER;
 CREATE DATABASE IF NOT EXISTS BOSTARTER;
 USE BOSTARTER;
 
--- ================================================================
 -- TABELLE PRINCIPALI
--- ================================================================
 
--- Tabella UTENTE
 CREATE TABLE UTENTE(
     Email               VARCHAR(100) PRIMARY KEY,
     Nickname            VARCHAR(50) UNIQUE NOT NULL,
@@ -17,14 +14,12 @@ CREATE TABLE UTENTE(
     Luogo_Di_Nascita    VARCHAR(100) NOT NULL
 );
 
--- Tabella AMMINISTRATORE
 CREATE TABLE AMMINISTRATORE(
     Email               VARCHAR(100) PRIMARY KEY,
     Codice_Sicurezza    VARCHAR(50) NOT NULL,
     FOREIGN KEY (Email) REFERENCES UTENTE(Email) ON DELETE CASCADE
 );
 
--- Tabella SKILL
 CREATE TABLE SKILL(
     Competenza  VARCHAR(100),
     Livello     INT CHECK (LIVELLO BETWEEN 0 AND 5),
@@ -33,7 +28,6 @@ CREATE TABLE SKILL(
     FOREIGN KEY (Email_Amministratore) REFERENCES AMMINISTRATORE(Email) ON DELETE CASCADE
 );
 
--- Tabella SKILL_CURRICULUM
 CREATE TABLE SKILL_CURRICULUM(
     Email_Utente    VARCHAR(100),
     Competenza      VARCHAR(100),
@@ -43,7 +37,6 @@ CREATE TABLE SKILL_CURRICULUM(
     FOREIGN KEY (Competenza, Livello) REFERENCES SKILL(Competenza, LIVELLO) ON DELETE CASCADE
 );
 
--- Tabella CREATORE
 CREATE TABLE CREATORE (
     Email           VARCHAR(100) PRIMARY KEY,
     Nr_Progetti     INT DEFAULT 0,
@@ -51,7 +44,6 @@ CREATE TABLE CREATORE (
     FOREIGN KEY (Email) REFERENCES UTENTE(Email) ON DELETE CASCADE
 );
 
--- Tabella PROGETTO
 CREATE TABLE PROGETTO(
     Nome                VARCHAR(100) PRIMARY KEY,
     Descrizione         TEXT NOT NULL,
@@ -64,7 +56,6 @@ CREATE TABLE PROGETTO(
     FOREIGN KEY (Email_Creatore) REFERENCES CREATORE(Email) ON DELETE CASCADE
 );
 
--- Tabella FOTO
 CREATE TABLE FOTO (
     ID              INT AUTO_INCREMENT PRIMARY KEY,
     Percorso        TEXT NOT NULL,
@@ -72,7 +63,6 @@ CREATE TABLE FOTO (
     FOREIGN KEY (Nome_Progetto) REFERENCES PROGETTO(Nome) ON DELETE CASCADE
 );
 
--- Tabella COMPONENTI
 CREATE TABLE COMPONENTE(
     ID              INT AUTO_INCREMENT PRIMARY KEY,
     Nome            VARCHAR(100),
@@ -83,7 +73,6 @@ CREATE TABLE COMPONENTE(
     FOREIGN KEY (Nome_Progetto) REFERENCES PROGETTO(Nome) ON DELETE CASCADE
 );
 
--- Tabella PROFILO
 CREATE TABLE PROFILO(
     ID              INT AUTO_INCREMENT PRIMARY KEY,
     Nome            VARCHAR(100) NOT NULL,
@@ -91,7 +80,6 @@ CREATE TABLE PROFILO(
     FOREIGN KEY (Nome_Progetto) REFERENCES PROGETTO(Nome) ON DELETE CASCADE
 );
 
--- Tabella SKILL_RICHIESTA
 CREATE TABLE SKILL_RICHIESTA(
     ID_Profilo  INT,
     Competenza  VARCHAR(100),
@@ -101,7 +89,6 @@ CREATE TABLE SKILL_RICHIESTA(
     FOREIGN KEY (Competenza, Livello) REFERENCES SKILL(Competenza, LIVELLO) ON DELETE CASCADE
 );
 
--- Tabella COMMENTO
 CREATE TABLE COMMENTO(
     ID              INT AUTO_INCREMENT PRIMARY KEY,
     Data            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -112,7 +99,6 @@ CREATE TABLE COMMENTO(
     FOREIGN KEY (Email_Utente) REFERENCES UTENTE(Email) ON DELETE CASCADE
 );
 
--- Tabella RISPOSTA
 CREATE TABLE RISPOSTA(
     ID_Commento     INT PRIMARY KEY,
     Email_Creatore  VARCHAR(100) NOT NULL,
@@ -122,7 +108,6 @@ CREATE TABLE RISPOSTA(
     FOREIGN KEY (Email_Creatore) REFERENCES CREATORE(Email) ON DELETE CASCADE
 );
 
--- Tabella REWARD
 CREATE TABLE REWARD(
     Codice          VARCHAR(100) PRIMARY KEY,
     Descrizione     TEXT NOT NULL,
@@ -131,7 +116,6 @@ CREATE TABLE REWARD(
     FOREIGN KEY (Nome_Progetto) REFERENCES PROGETTO(Nome) ON DELETE CASCADE
 );
 
--- Tabella FINANZIAMENTO
 CREATE TABLE FINANZIAMENTO(
     ID              INT AUTO_INCREMENT PRIMARY KEY,
     Data            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -144,7 +128,6 @@ CREATE TABLE FINANZIAMENTO(
     FOREIGN KEY (Nome_Progetto) REFERENCES PROGETTO(Nome) ON DELETE CASCADE
 );
 
--- Tabella CANDIDATURA
 CREATE TABLE CANDIDATURA(
     ID                  INT AUTO_INCREMENT PRIMARY KEY,
     Esito               BOOLEAN DEFAULT NULL,
@@ -155,13 +138,9 @@ CREATE TABLE CANDIDATURA(
     FOREIGN KEY (ID_Profilo) REFERENCES PROFILO(ID) ON DELETE CASCADE
 );
 
--- ================================================================
 -- STORED PROCEDURES
--- ================================================================
-
 DELIMITER $$
 
--- Procedure per autenticazione utente
 CREATE PROCEDURE AutenticaUtente(
     IN p_Email VARCHAR(100),
     IN p_Password VARCHAR(255)
@@ -180,7 +159,6 @@ SELECT 'Autenticazione fallita' AS Messaggio, NULL AS Email;
 END IF;
 END $$
 
--- Procedure per registrazione utente
 CREATE PROCEDURE RegistraUtente(
     IN p_Email VARCHAR(100),
     IN p_Nickname VARCHAR(50),
@@ -217,7 +195,6 @@ BEGIN
       AND Password = in_password;
 END $$
 
--- Procedure per login amministratore
 CREATE PROCEDURE LoginAmministratore(
     IN p_Email VARCHAR(100),
     IN p_Password VARCHAR(255),
@@ -237,7 +214,6 @@ SELECT 'Credenziali amministratore non valide' AS Messaggio, NULL AS Email;
 END IF;
 END $$
 
--- Procedure per diventare creatore
 CREATE PROCEDURE PromuoviACreatore(IN p_Email VARCHAR(100))
 BEGIN
     -- Controlla se l'utente esiste
@@ -250,7 +226,6 @@ END IF;
 END IF;
 END$$
 
--- Procedure per inserimento progetto
 CREATE PROCEDURE InserisciProgetto(
     IN p_Nome VARCHAR(100),
     IN p_Descrizione TEXT,
@@ -266,7 +241,6 @@ INSERT INTO PROGETTO (Nome, Descrizione, Data_Inserimento, Budget, Data_Limite, 
 VALUES (p_Nome, p_Descrizione, p_DataInserimento, p_Budget, p_DataLimite, p_Stato, p_Tipo, p_EmailCreatore);
 END $$
 
--- Procedure per inserimento foto
 CREATE PROCEDURE InserisciFoto(
     IN p_Percorso TEXT,
     IN p_NomeProgetto VARCHAR(100)
@@ -276,7 +250,6 @@ BEGIN
     VALUES (p_Percorso, p_NomeProgetto);
 END $$
 
--- Procedure per inserimento reward
 CREATE PROCEDURE InserisciReward(
     IN p_Codice VARCHAR(100),
     IN p_Descrizione TEXT,
@@ -289,13 +262,12 @@ VALUES (p_Codice, p_Descrizione);
 
 END $$
 
--- Procedure per inserimento skill - CORRETTA
 CREATE PROCEDURE InserisciSkill(
     IN p_Competenza VARCHAR(100),
     IN p_Livello INT
 )
 BEGIN
-    -- Usa admin di default se non specificato diversamente
+    -- Usiamo admin di default
     DECLARE v_admin_email VARCHAR(100) DEFAULT 'admin@bostarter.com';
 
     IF NOT EXISTS (
@@ -307,7 +279,7 @@ BEGIN
 END IF;
 END $$
 
--- Procedure per inserimento skill con admin specifico
+-- Per inserimento skill con admin specifico
 CREATE PROCEDURE InserisciSkillAdmin(
     IN p_Competenza VARCHAR(100),
     IN p_Livello INT,
@@ -323,7 +295,6 @@ BEGIN
 END IF;
 END $$
 
--- Procedure per inserimento componente
 CREATE PROCEDURE InserisciComponente(
     IN p_Nome VARCHAR(100),
     IN p_Descrizione TEXT,
@@ -336,7 +307,6 @@ INSERT INTO COMPONENTE (Nome, Descrizione, Prezzo, Quantita, Nome_Progetto)
 VALUES (p_Nome, p_Descrizione, p_Prezzo, p_Quantita, p_NomeProgetto);
 END $$
 
--- Procedure per finanziamento progetto
 CREATE PROCEDURE FinanziaProgetto(
     IN p_Email VARCHAR(100),
     IN p_NomeProgetto VARCHAR(100),
@@ -348,7 +318,6 @@ INSERT INTO FINANZIAMENTO (Data, Importo, Email_Utente, Codice_Reward, Nome_Prog
 VALUES (NOW(), p_Importo, p_Email, p_CodiceReward, p_NomeProgetto);
 END $$
 
--- Procedure per inserimento candidatura
 CREATE PROCEDURE InserisciCandidatura(
     IN p_Email VARCHAR(100),
     IN p_IDProfilo INT
@@ -377,7 +346,6 @@ ELSE
 END IF;
 END $$
 
--- Procedure per accettare candidatura
 CREATE PROCEDURE AccettaCandidatura(
     IN p_IDCandidatura INT,
     IN p_Esito BOOLEAN
@@ -388,7 +356,6 @@ SET Esito = p_Esito
 WHERE ID = p_IDCandidatura;
 END $$
 
--- Procedure per inserimento profilo richiesto
 CREATE PROCEDURE InserisciProfiloRichiesto(
     IN p_NomeProfilo VARCHAR(100),
     IN p_NomeProgetto VARCHAR(100)
@@ -399,7 +366,6 @@ BEGIN
     SELECT LAST_INSERT_ID() AS ID_Profilo; -- Restituisce l'ID del profilo appena inserito
 END $$
 
--- Procedure per inserimento risposta commento
 CREATE PROCEDURE InserisciRisposta(
     IN p_IDCommento INT,
     IN p_EmailCreatore VARCHAR(100),
@@ -410,7 +376,6 @@ INSERT INTO RISPOSTA (ID_Commento, Email_Creatore, Testo)
 VALUES (p_IDCommento, p_EmailCreatore, p_Testo);
 END $$
 
--- Procedure per inserimento skill curriculum
 CREATE PROCEDURE InserisciSkillCurriculum(
     IN p_Email VARCHAR(100),
     IN p_Competenza VARCHAR(100),
@@ -425,21 +390,19 @@ BEGIN
     WHERE Email_Utente = p_Email AND Competenza = p_Competenza;
 
     IF v_LivelloAttuale IS NULL THEN
-        -- Non esiste, inserisci nuova skill
+        -- se non esiste: inserisci nuova skill
         INSERT INTO SKILL_CURRICULUM (Email_Utente, Competenza, Livello)
         VALUES (p_Email, p_Competenza, p_Livello);
     ELSEIF p_Livello > v_LivelloAttuale THEN
-        -- Esiste già ma il nuovo livello è superiore: elimina il vecchio e inserisci il nuovo
+        -- esiste già ma il nuovo livello è superiore: elimina il vecchio e inserisci il nuovo
         DELETE FROM SKILL_CURRICULUM
         WHERE Email_Utente = p_Email AND Competenza = p_Competenza AND Livello = v_LivelloAttuale;
 
         INSERT INTO SKILL_CURRICULUM (Email_Utente, Competenza, Livello)
         VALUES (p_Email, p_Competenza, p_Livello);
     END IF;
-    -- Se il livello è uguale o inferiore, non fa nulla
 END $$
 
--- Procedure per inserimento skill richiesta
 CREATE PROCEDURE InserisciSkillRichiesta(
     IN p_IDProfilo INT,
     IN p_Competenza VARCHAR(100),
@@ -450,7 +413,6 @@ BEGIN
     VALUES (p_IDProfilo, p_Competenza, p_Livello);
 END $$
 
--- Procedure per inserimento commento
 CREATE PROCEDURE InserisciCommento(
     IN p_Email VARCHAR(100),
     IN p_NomeProgetto VARCHAR(100),
@@ -463,13 +425,9 @@ END $$
 
 DELIMITER ;
 
--- ================================================================
 -- TRIGGERS
--- ================================================================
-
 DELIMITER $$
 
--- Trigger per incrementare numero progetti
 CREATE TRIGGER IncrementaNrProgetti
     AFTER INSERT ON PROGETTO
     FOR EACH ROW
@@ -479,7 +437,6 @@ BEGIN
     WHERE Email = NEW.Email_Creatore;
 END $$
 
--- Trigger per aggiornare affidabilità creatore
 CREATE TRIGGER AggiornaAffidabilita
     AFTER INSERT ON FINANZIAMENTO
     FOR EACH ROW
@@ -508,7 +465,6 @@ BEGIN
 END IF;
 END $$
 
--- Trigger per ricalcolare affidabilità dopo nuovo progetto
 CREATE TRIGGER RicalcolaAffidabilitaDopoNuovoProgetto
     AFTER INSERT ON PROGETTO
     FOR EACH ROW
@@ -533,7 +489,6 @@ BEGIN
 END IF;
 END $$
 
--- Trigger per chiudere progetto quando budget raggiunto
 CREATE TRIGGER ChiudiProgettoBudget
     AFTER INSERT ON FINANZIAMENTO
     FOR EACH ROW
@@ -555,11 +510,7 @@ END IF;
 END $$
 
 DELIMITER ;
-
--- ================================================================
 -- EVENTO PER CHIUDERE PROGETTI SCADUTI
--- ================================================================
-
 DELIMITER $$
 
 CREATE EVENT ChiudiProgettiScaduti
@@ -573,11 +524,9 @@ END $$
 
 DELIMITER ;
 
--- ================================================================
--- VIEWS PER STATISTICHE
--- ================================================================
 
--- View classifica affidabilità creatori
+-- VIEWS PER STATISTICHE
+
 CREATE VIEW classifica_affidabilita AS
 SELECT u.Nickname, c.affidabilita
 FROM CREATORE c
@@ -585,7 +534,6 @@ FROM CREATORE c
 ORDER BY c.affidabilita DESC
     LIMIT 3;
 
--- View progetti quasi completati
 CREATE VIEW ProgettiQuasiCompletati AS
 SELECT p.Nome,
        p.Budget - COALESCE(SUM(f.Importo), 0) AS DifferenzaResidua
@@ -596,7 +544,6 @@ GROUP BY p.Nome, p.Budget
 ORDER BY DifferenzaResidua ASC
     LIMIT 3;
 
--- View classifica finanziatori
 CREATE VIEW ClassificaFinanziatori AS
 SELECT u.Nickname, SUM(f.Importo) AS Totale
 FROM FINANZIAMENTO f
@@ -605,7 +552,6 @@ GROUP BY u.Nickname
 ORDER BY Totale DESC
     LIMIT 3;
 
--- View per debug
 CREATE VIEW DebugProgetti AS
 SELECT
     p.Nome AS Progetto,
@@ -622,11 +568,8 @@ FROM PROGETTO p
          JOIN UTENTE u ON u.Email = c.Email
 GROUP BY p.Nome, p.Stato, p.Budget, p.Data_Limite, c.Nr_Progetti, c.Affidabilita, u.Nickname;
 
--- ================================================================
 -- SISTEMA DI LOGGING EVENTI BOSTARTER
--- ================================================================
 
--- Tabella per il logging degli eventi
 CREATE TABLE IF NOT EXISTS LOG_EVENTI (
     id INT AUTO_INCREMENT PRIMARY KEY,
     evento VARCHAR(255) NOT NULL,
@@ -636,7 +579,6 @@ CREATE TABLE IF NOT EXISTS LOG_EVENTI (
     sincronizzato BOOLEAN DEFAULT FALSE
 ) ENGINE=INNODB;
 
--- Procedura per inserimento log eventi
 DELIMITER //
 CREATE PROCEDURE InserisciLogEvento(
     IN p_evento VARCHAR(255),
@@ -644,19 +586,13 @@ CREATE PROCEDURE InserisciLogEvento(
     IN p_descrizione TEXT
 )
 BEGIN
-    -- Inserimento del log
     INSERT INTO LOG_EVENTI (evento, email_utente, descrizione)
     VALUES (p_evento, p_email_utente, p_descrizione);
 END //
 DELIMITER ;
 
--- ================================================================
 -- TRIGGER PER LOGGING EVENTI
--- ================================================================
-
 DELIMITER $$
-
--- Trigger per log registrazione nuovo utente
 CREATE TRIGGER LogNuovoUtente
     AFTER INSERT ON UTENTE
     FOR EACH ROW
@@ -668,7 +604,6 @@ BEGIN
     );
 END $$
 
--- Trigger per log promozione a creatore
 CREATE TRIGGER LogNuovoCreatore
     AFTER INSERT ON CREATORE
     FOR EACH ROW
@@ -680,7 +615,6 @@ BEGIN
     );
 END $$
 
--- Trigger per log nuovo progetto
 CREATE TRIGGER LogNuovoProgetto
     AFTER INSERT ON PROGETTO
     FOR EACH ROW
@@ -692,7 +626,6 @@ BEGIN
     );
 END $$
 
--- Trigger per log nuovo finanziamento
 CREATE TRIGGER LogNuovoFinanziamento
     AFTER INSERT ON FINANZIAMENTO
     FOR EACH ROW
@@ -704,7 +637,6 @@ BEGIN
     );
 END $$
 
--- Trigger per log chiusura progetto
 CREATE TRIGGER LogChiusuraProgetto
     AFTER UPDATE ON PROGETTO
     FOR EACH ROW
@@ -722,7 +654,6 @@ BEGIN
     END IF;
 END $$
 
--- Trigger per log nuova candidatura
 CREATE TRIGGER LogNuovaCandidatura
     AFTER INSERT ON CANDIDATURA
     FOR EACH ROW
@@ -742,7 +673,6 @@ BEGIN
     );
 END $$
 
--- Trigger per log accettazione candidatura
 CREATE TRIGGER LogAccettazioneCandidatura
 AFTER UPDATE ON CANDIDATURA
 FOR EACH ROW
@@ -778,7 +708,6 @@ BEGIN
     END IF;
 END $$
 
--- Trigger per log nuovo commento
 CREATE TRIGGER LogNuovoCommento
     AFTER INSERT ON COMMENTO
     FOR EACH ROW
@@ -790,7 +719,6 @@ BEGIN
     );
 END $$
 
--- Trigger per log nuova risposta
 CREATE TRIGGER LogNuovaRisposta
     AFTER INSERT ON RISPOSTA
     FOR EACH ROW
@@ -802,7 +730,6 @@ BEGIN
     );
 END $$
 
--- Trigger per log nuova skill aggiunta
 CREATE TRIGGER LogNuovaSkill
     AFTER INSERT ON SKILL
     FOR EACH ROW
@@ -814,7 +741,6 @@ BEGIN
     );
 END $$
 
--- Trigger per log aggiornamento skill curriculum
 CREATE TRIGGER LogAggiornamentoSkillCurriculum
     AFTER INSERT ON SKILL_CURRICULUM
     FOR EACH ROW
@@ -826,7 +752,6 @@ BEGIN
     );
 END $$
 
--- Trigger per log nuovo componente
 CREATE TRIGGER LogNuovoComponente
     AFTER INSERT ON COMPONENTE
     FOR EACH ROW
@@ -844,7 +769,6 @@ BEGIN
     );
 END $$
 
--- Trigger per log nuovo profilo richiesto
 CREATE TRIGGER LogNuovoProfilo
     AFTER INSERT ON PROFILO
     FOR EACH ROW
@@ -862,7 +786,6 @@ BEGIN
     );
 END $$
 
--- Trigger per log nuova reward
 CREATE TRIGGER LogNuovaReward
     AFTER INSERT ON REWARD
     FOR EACH ROW
@@ -882,11 +805,8 @@ END $$
 
 DELIMITER ;
 
--- ================================================================
 -- DATI DI ESEMPIO
--- ================================================================
 
--- Utenti
 INSERT INTO UTENTE (Email, Nickname, Password, Nome, Cognome, Anno_Di_Nascita, Luogo_Di_Nascita) VALUES
     ('dalia.barone@email.com','dalia28','password123','Dalia','Barone','2004-02-20','Termoli'),
     ('sofia.neamtu@email.com','sofia_n','securepass','Sofia','Neamtu','2003-12-10','Padova'),
@@ -894,18 +814,15 @@ INSERT INTO UTENTE (Email, Nickname, Password, Nome, Cognome, Anno_Di_Nascita, L
     ('dalia.barone@bostarter.com','DaliaAdmin','password123','Dalia','Barone','2004-02-20','Termoli'),
     ('sofia.neamtu@bostarter.com','SofiaAdmin','securepass','Sofia','Neamtu','2003-12-10','Padova');
 
--- Amministratori
 INSERT INTO AMMINISTRATORE (Email, Codice_Sicurezza) VALUES
     ('admin@bostarter.com','ADMIN2025'),
     ('dalia.barone@bostarter.com','DaliaAdmin2025'),
     ('sofia.neamtu@bostarter.com','SofiaAdmin2025');
 
--- Creatori
 INSERT INTO CREATORE (Email, Affidabilita) VALUES
     ('dalia.barone@email.com',0),
     ('sofia.neamtu@email.com',0);
 
--- Skill base
 INSERT INTO SKILL (COMPETENZA, LIVELLO) VALUES
     ('AI', 1), ('AI', 2), ('AI', 3), ('AI', 4), ('AI', 5),
     ('Machine Learning', 1), ('Machine Learning', 2), ('Machine Learning', 3), ('Machine Learning', 4), ('Machine Learning', 5),
@@ -918,7 +835,6 @@ INSERT INTO SKILL (COMPETENZA, LIVELLO) VALUES
     ('Software Engineering', 1), ('Software Engineering', 2), ('Software Engineering', 3), ('Software Engineering', 4), ('Software Engineering', 5),
     ('Embedded Systems', 1), ('Embedded Systems', 2), ('Embedded Systems', 3), ('Embedded Systems', 4), ('Embedded Systems', 5);
 
--- Skill curriculum
 INSERT INTO SKILL_CURRICULUM (Email_Utente, Competenza, Livello) VALUES
     ('dalia.barone@email.com','Web Development',4),
     ('dalia.barone@email.com','Database Management',3),
@@ -930,7 +846,6 @@ INSERT INTO SKILL_CURRICULUM (Email_Utente, Competenza, Livello) VALUES
     ('sofia.neamtu@email.com','Software Engineering',3),
     ('sofia.neamtu@email.com','Machine Learning',5);
 
--- Progetti
 INSERT INTO PROGETTO (Nome, Descrizione, Data_Inserimento, Stato, Budget, Data_Limite, Tipo, Email_Creatore) VALUES
 ('GreenPower Box','Power bank solare per ricarica dispositivi in condizioni off-grid','2025-06-20','aperto',8000,'2025-07-31','Hardware','dalia.barone@email.com'),
 ('SmartGarden','Sistema intelligente di irrigazione basato su sensori e controllabile via app','2025-06-15','aperto',6500,'2025-07-01','Hardware','sofia.neamtu@email.com'),
@@ -939,7 +854,6 @@ INSERT INTO PROGETTO (Nome, Descrizione, Data_Inserimento, Stato, Budget, Data_L
 ('CodeLink','Piattaforma collaborativa per team di sviluppo distribuiti con gestione task e revisioni di codice','2025-06-25','aperto',11000,'2025-07-01','Software','dalia.barone@email.com'),
 ('PackTrack','Piattaforma open-source per la gestione e tracciamento delle spedizioni per piccoli e-commerce','2025-06-30','aperto',8900,'2025-07-05','Software','sofia.neamtu@email.com');
 
--- Componenti per progetti hardware
 INSERT INTO COMPONENTE (Nome, Descrizione, Prezzo, Quantita, Nome_Progetto) VALUES
 ('Modulo Solare 12V', 'Pannello monocristallino ad alta efficienza', 45.00, 6, 'GreenPower Box'),
 ('Power Bank USB-C', 'Batteria portatile da 20000mAh', 32.00, 5, 'GreenPower Box'),
@@ -949,7 +863,6 @@ INSERT INTO COMPONENTE (Nome, Descrizione, Prezzo, Quantita, Nome_Progetto) VALU
 ('Stazione Ricarica', 'Struttura con connettori bici e pannelli', 120.00, 2, 'EcoCharge Station'),
 ('Batteria Solare', 'Batteria al litio per accumulo energia', 90.00, 2, 'EcoCharge Station');
 
--- Profili
 INSERT INTO PROFILO (ID, Nome, Nome_Progetto) VALUES
 (1, 'AI Engineer', 'SafeDrive AI'),
 (2, 'Mobile Dev', 'SafeDrive AI'),
@@ -958,7 +871,6 @@ INSERT INTO PROFILO (ID, Nome, Nome_Progetto) VALUES
 (5, 'Full Stack Dev', 'PackTrack'),
 (6, 'Logistics Analyst', 'PackTrack');
 
--- Skill richieste
 INSERT INTO SKILL_RICHIESTA (ID_Profilo, Competenza, Livello) VALUES
 (1, 'AI', 4),
 (1, 'Machine Learning', 3),
@@ -973,7 +885,6 @@ INSERT INTO SKILL_RICHIESTA (ID_Profilo, Competenza, Livello) VALUES
 (6, 'Data Analysis', 3),
 (6, 'Cloud Computing', 3);
 
--- Foto progetti
 INSERT INTO FOTO (Percorso, Nome_Progetto) VALUES
 ('GreenPower.jpg', 'GreenPower Box'),
 ('SmartGarden.jpg', 'SmartGarden'),
@@ -982,7 +893,6 @@ INSERT INTO FOTO (Percorso, Nome_Progetto) VALUES
 ('CodeLink.jpg', 'CodeLink'),
 ('PackTrack.jpg', 'PackTrack');
 
--- Rewards
 INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) VALUES
 ('GP_REW1', 'Sticker e ringraziamento social', '/gp_sticker.jpg', 'GreenPower Box'),
 ('SG_REW1', 'Guida digitale al giardinaggio smart', '/sg_guide.jpg', 'SmartGarden'),
@@ -991,7 +901,6 @@ INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) VALUES
 ('CL_REW1', 'Abbonamento pro gratuito', '/codelink_reward.jpg', 'CodeLink'),
 ('PT_REW1', 'Inserimento nella documentazione open-source', '/packtrack_reward.jpg', 'PackTrack');
 
--- Finanziamenti
 INSERT INTO FINANZIAMENTO (Data, Importo, Email_Utente, Codice_Reward, Nome_Progetto) VALUES
 ('2025-07-01', 120.00, 'dalia.barone@email.com', 'GP_REW1', 'GreenPower Box'),
 ('2025-07-02', 150.00, 'sofia.neamtu@email.com', 'SG_REW1', 'SmartGarden'),
@@ -1000,7 +909,6 @@ INSERT INTO FINANZIAMENTO (Data, Importo, Email_Utente, Codice_Reward, Nome_Prog
 ('2025-07-06', 250.00, 'dalia.barone@email.com', 'CL_REW1', 'CodeLink'),
 ('2025-07-07', 220.00, 'sofia.neamtu@email.com', 'PT_REW1', 'PackTrack');
 
--- Candidature
 INSERT INTO CANDIDATURA (Esito, Email_Utente, ID_Profilo) VALUES
 (NULL, 'sofia.neamtu@email.com', 1),
 (NULL, 'dalia.barone@email.com', 5);
