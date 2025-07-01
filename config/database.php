@@ -12,7 +12,7 @@ define('DB_PASS', 'root');  // Per MAMP usa 'root', per XAMPP spesso è vuoto ''
 define('DB_CHARSET', 'utf8mb4');
 
 // Configurazione applicazione
-define('DEBUG_MODE', true);  // Cambia a false in produzione
+define('DEBUG_MODE', false);  // Cambia a false in produzione
 
 // Classe principale per gestire il database
 class Database {

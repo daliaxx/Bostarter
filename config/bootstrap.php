@@ -1,7 +1,4 @@
 <?php
-/**
- * BOSTARTER - Bootstrap Applicazione
- */
 
 // Definisci costante app
 define('BOSTARTER_APP', true);
