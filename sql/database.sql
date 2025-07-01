@@ -17,11 +17,20 @@ CREATE TABLE UTENTE(
     Luogo_Di_Nascita    VARCHAR(100) NOT NULL
 );
 
+-- Tabella AMMINISTRATORE
+CREATE TABLE AMMINISTRATORE(
+    Email               VARCHAR(100) PRIMARY KEY,
+    Codice_Sicurezza    VARCHAR(50) NOT NULL,
+    FOREIGN KEY (Email) REFERENCES UTENTE(Email) ON DELETE CASCADE
+);
+
 -- Tabella SKILL
 CREATE TABLE SKILL(
     Competenza  VARCHAR(100),
     Livello     INT CHECK (LIVELLO BETWEEN 0 AND 5),
-    PRIMARY KEY (Competenza, Livello)
+    Email_Amministratore VARCHAR(100),
+    PRIMARY KEY (Competenza, Livello),
+    FOREIGN KEY (Email_Amministratore) REFERENCES AMMINISTRATORE(Email) ON DELETE CASCADE
 );
 
 -- Tabella SKILL_CURRICULUM
@@ -32,13 +41,6 @@ CREATE TABLE SKILL_CURRICULUM(
     PRIMARY KEY (Email_Utente, Competenza, Livello),
     FOREIGN KEY (Email_Utente) REFERENCES UTENTE(Email) ON DELETE CASCADE,
     FOREIGN KEY (Competenza, Livello) REFERENCES SKILL(Competenza, LIVELLO) ON DELETE CASCADE
-);
-
--- Tabella AMMINISTRATORE
-CREATE TABLE AMMINISTRATORE(
-    Email               VARCHAR(100) PRIMARY KEY,
-    Codice_Sicurezza    VARCHAR(50) NOT NULL,
-    FOREIGN KEY (Email) REFERENCES UTENTE(Email) ON DELETE CASCADE
 );
 
 -- Tabella CREATORE
@@ -244,8 +246,8 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM CREATORE WHERE Email = p_Email) THEN
             INSERT INTO CREATORE (Email, Nr_Progetti, Affidabilita)
             VALUES (p_Email, 0, 0);
-        END IF;
-    END IF;
+END IF;
+END IF;
 END$$
 
 -- Procedure per inserimento progetto
@@ -287,19 +289,38 @@ VALUES (p_Codice, p_Descrizione);
 
 END $$
 
--- Procedure per inserimento skill
+-- Procedure per inserimento skill - CORRETTA
 CREATE PROCEDURE InserisciSkill(
     IN p_Competenza VARCHAR(100),
     IN p_Livello INT
+)
+BEGIN
+    -- Usa admin di default se non specificato diversamente
+    DECLARE v_admin_email VARCHAR(100) DEFAULT 'admin@bostarter.com';
+
+    IF NOT EXISTS (
+        SELECT 1 FROM SKILL
+        WHERE Competenza = p_Competenza AND Livello = p_Livello
+    ) THEN
+        INSERT INTO SKILL (Competenza, Livello, Email_Amministratore)
+        VALUES (p_Competenza, p_Livello, v_admin_email);
+END IF;
+END $$
+
+-- Procedure per inserimento skill con admin specifico
+CREATE PROCEDURE InserisciSkillAdmin(
+    IN p_Competenza VARCHAR(100),
+    IN p_Livello INT,
+    IN p_Email_Amministratore VARCHAR(100)
 )
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM SKILL
         WHERE Competenza = p_Competenza AND Livello = p_Livello
     ) THEN
-        INSERT INTO SKILL (Competenza, Livello)
-        VALUES (p_Competenza, p_Livello);
-    END IF;
+        INSERT INTO SKILL (Competenza, Livello, Email_Amministratore)
+        VALUES (p_Competenza, p_Livello, p_Email_Amministratore);
+END IF;
 END $$
 
 -- Procedure per inserimento componente
@@ -869,11 +890,15 @@ DELIMITER ;
 INSERT INTO UTENTE (Email, Nickname, Password, Nome, Cognome, Anno_Di_Nascita, Luogo_Di_Nascita) VALUES
     ('dalia.barone@email.com','dalia28','password123','Dalia','Barone','2004-02-20','Termoli'),
     ('sofia.neamtu@email.com','sofia_n','securepass','Sofia','Neamtu','2003-12-10','Padova'),
-    ('admin@bostarter.com','admin','password123','Admin','System','1990-01-01','Bologna');
+    ('admin@bostarter.com','admin','password123','Admin','System','1990-01-01','Bologna'),
+    ('dalia.barone@bostarter.com','DaliaAdmin','password123','Dalia','Barone','2004-02-20','Termoli'),
+    ('sofia.neamtu@bostarter.com','SofiaAdmin','securepass','Sofia','Neamtu','2003-12-10','Padova');
 
 -- Inserimento amministratori
 INSERT INTO AMMINISTRATORE (Email, Codice_Sicurezza) VALUES
-    ('admin@bostarter.com','ADMIN2024');
+    ('admin@bostarter.com','ADMIN2025'),
+    ('dalia.barone@bostarter.com','DaliaAdmin2025'),
+    ('sofia.neamtu@bostarter.com','SofiaAdmin2025');
 
 -- Inserimento creatori
 INSERT INTO CREATORE (Email, Affidabilita) VALUES

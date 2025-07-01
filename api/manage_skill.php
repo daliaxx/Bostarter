@@ -42,8 +42,11 @@ try {
             exit;
         }
 
-        // Esegui direttamente le due stored procedure
+        // ✅ CORRETTO: Esegui direttamente le due stored procedure
+        // 1. Assicura che la skill esista nel sistema (usa admin di default)
         $db->callStoredProcedure('InserisciSkill', [$competenza, $livello]);
+
+        // 2. Aggiunge la skill al curriculum dell'utente
         $db->callStoredProcedure('InserisciSkillCurriculum', [$userEmail, $competenza, $livello]);
 
         echo json_encode(['success' => true, 'message' => "Skill inserita correttamente."]);
@@ -113,12 +116,13 @@ try {
             exit;
         }
 
-        // Inserisci la competenza con tutti i livelli da 1 a 5
+        // ✅ CORRETTO: Inserisci la competenza con tutti i livelli da 1 a 5 usando InserisciSkillAdmin
         try {
             $db->beginTransaction();
 
             for ($livello = 1; $livello <= 5; $livello++) {
-                $db->callStoredProcedure('InserisciSkill', [$competenza, $livello]);
+                // Usa la procedura specifica per admin che accetta l'email dell'admin
+                $db->callStoredProcedure('InserisciSkillAdmin', [$competenza, $livello, $userEmail]);
             }
 
             $db->commit();
@@ -152,6 +156,63 @@ try {
             'success' => true,
             'skills' => $skills
         ]);
+        exit;
+    }
+
+    // ================================================================
+    // FUNZIONE AGGIUNTIVA: Elimina competenza (solo admin)
+    // ================================================================
+
+    if ($action === 'delete_competence') {
+        if (!$isAdmin) {
+            echo json_encode(['success' => false, 'message' => 'Accesso negato. Solo gli amministratori possono eliminare competenze.']);
+            exit;
+        }
+
+        $competenza = trim($_POST['competenza'] ?? '');
+
+        if (empty($competenza)) {
+            echo json_encode(['success' => false, 'message' => 'Il nome della competenza è obbligatorio.']);
+            exit;
+        }
+
+        // Verifica se la competenza è utilizzata in curriculum
+        $usedInCurriculum = $db->fetchOne("
+            SELECT COUNT(*) as count 
+            FROM SKILL_CURRICULUM 
+            WHERE Competenza = ?
+        ", [$competenza]);
+
+        if ($usedInCurriculum['count'] > 0) {
+            echo json_encode(['success' => false, 'message' => 'Impossibile eliminare: competenza utilizzata in ' . $usedInCurriculum['count'] . ' curriculum.']);
+            exit;
+        }
+
+        // Verifica se la competenza è utilizzata in skill richieste
+        $usedInRequired = $db->fetchOne("
+            SELECT COUNT(*) as count 
+            FROM SKILL_RICHIESTA 
+            WHERE Competenza = ?
+        ", [$competenza]);
+
+        if ($usedInRequired['count'] > 0) {
+            echo json_encode(['success' => false, 'message' => 'Impossibile eliminare: competenza richiesta in ' . $usedInRequired['count'] . ' profili.']);
+            exit;
+        }
+
+        try {
+            // Elimina tutti i livelli della competenza
+            $db->execute("DELETE FROM SKILL WHERE Competenza = ?", [$competenza]);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Competenza "' . htmlspecialchars($competenza) . '" eliminata con successo.'
+            ]);
+
+        } catch (Exception $e) {
+            error_log("❌ Errore eliminazione competenza {$competenza}: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Errore durante l\'eliminazione: ' . $e->getMessage()]);
+        }
         exit;
     }
 
