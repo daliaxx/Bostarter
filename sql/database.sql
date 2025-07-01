@@ -922,8 +922,12 @@ INSERT INTO SKILL (COMPETENZA, LIVELLO) VALUES
 INSERT INTO SKILL_CURRICULUM (Email_Utente, Competenza, Livello) VALUES
     ('dalia.barone@email.com','Web Development',4),
     ('dalia.barone@email.com','Database Management',3),
+    ('dalia.barone@email.com','Networking',4),
+    ('dalia.barone@email.com','AI',2),
     ('sofia.neamtu@email.com','Data Analysis',3),
     ('sofia.neamtu@email.com','AI',4),
+    ('sofia.neamtu@email.com','Web Development',4),
+    ('sofia.neamtu@email.com','Software Engineering',3),
     ('sofia.neamtu@email.com','Machine Learning',5);
 
 -- Progetti
@@ -1001,6 +1005,5 @@ INSERT INTO CANDIDATURA (Esito, Email_Utente, ID_Profilo) VALUES
 (NULL, 'sofia.neamtu@email.com', 1),
 (NULL, 'sofia.neamtu@email.com', 2),
 (NULL, 'dalia.barone@email.com', 3),
-(NULL, 'dalia.barone@email.com', 4),
-(NULL, 'dalia.barone@email.com', 5),
-(NULL, 'dalia.barone@email.com', 6);
+(NULL, 'dalia.barone@email.com', 5);
+
