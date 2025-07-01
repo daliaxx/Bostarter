@@ -936,7 +936,7 @@ INSERT INTO PROGETTO (Nome, Descrizione, Data_Inserimento, Stato, Budget, Data_L
 ('SmartGarden','Sistema intelligente di irrigazione basato su sensori e controllabile via app','2025-06-15','aperto',6500,'2025-07-01','Hardware','sofia.neamtu@email.com'),
 ('SafeDrive AI','Assistente vocale per la guida sicura con comandi AI hands-free','2025-06-02','aperto',9500,'2025-07-10','Software','dalia.barone@email.com'),
 ('EcoCharge Station','Stazione pubblica per ricarica bici elettriche alimentata a energia solare','2025-06-01','aperto',11000,'2025-07-15','Hardware','sofia.neamtu@email.com'),
-('CodeLink','Piattaforma collaborativa per team di sviluppo distribuiti con gestione task e revisioni di codice','2025-06-25','aperto',11000,'2025-07-01','Software','sofia.neamtu@email.com'),
+('CodeLink','Piattaforma collaborativa per team di sviluppo distribuiti con gestione task e revisioni di codice','2025-06-25','aperto',11000,'2025-07-01','Software','dalia.barone@email.com'),
 ('PackTrack','Piattaforma open-source per la gestione e tracciamento delle spedizioni per piccoli e-commerce','2025-06-30','aperto',8900,'2025-07-05','Software','sofia.neamtu@email.com');
 
 -- Componenti per progetti hardware
@@ -1003,7 +1003,5 @@ INSERT INTO FINANZIAMENTO (Data, Importo, Email_Utente, Codice_Reward, Nome_Prog
 -- Candidature
 INSERT INTO CANDIDATURA (Esito, Email_Utente, ID_Profilo) VALUES
 (NULL, 'sofia.neamtu@email.com', 1),
-(NULL, 'sofia.neamtu@email.com', 2),
-(NULL, 'dalia.barone@email.com', 3),
 (NULL, 'dalia.barone@email.com', 5);
 

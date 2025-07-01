@@ -1,5 +1,6 @@
 <?php
 require_once '../../config/database.php';
+require_once '../../includes/navbar.php';
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -510,48 +511,7 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="/Bostarter/public/projects/projects.php">
-            <i class="fas fa-rocket me-2"></i>BOSTARTER
-        </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <?php if ($isLoggedIn): ?>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-1"></i><?= htmlspecialchars($_SESSION['user_nickname'] ?? 'Utente') ?>
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <?php if ($isAdmin): ?>
-                                <li><a class="dropdown-item" href="/Bostarter/public/dashboard/admin_dashboard.php"><i class="fas fa-shield-alt me-2"></i>Dashboard Admin</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                            <?php elseif ($isCreator): ?>
-                                <li><a class="dropdown-item" href="/Bostarter/public/dashboard/creator_dashboard.php"><i class="fas fa-user-cog me-2"></i>Dashboard Creatore</a></li>
-                                <li><a class="dropdown-item" href="/Bostarter/public/dashboard/new_project.php"><i class="fas fa-plus me-2"></i>Crea Progetto</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                            <?php endif; ?>
-                            <li><a class="dropdown-item" href="/Bostarter/public/dashboard/user_dashboard.php"><i class="fas fa-user me-2"></i>Il mio profilo</a></li>
-                            <li><a class="dropdown-item" href="/Bostarter/public/statistiche.php"><i class="fas fa-chart-bar me-2"></i>Statistiche</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="../../auth/logout.php"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
-                        </ul>
-                    </li>
-                <?php else: ?>
-                    <li class="nav-item">
-                        <a class="nav-link" href="../../index.html"><i class="fas fa-sign-in-alt me-1"></i>Accedi</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="../../index.html"><i class="fas fa-user-plus me-1"></i>Registrati</a>
-                    </li>
-                <?php endif; ?>
-            </ul>
-        </div>
-    </div>
-</nav>
+<?php require_once '../../includes/navbar.php'; ?>
 
 <div class="project-header">
     <div class="container text-center">
@@ -757,7 +717,11 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                             <ul class="list-group">
                                 <?php foreach ($commenti as $commento): ?>
                                     <div class="mb-3">
-                                        <strong><?= htmlspecialchars($commento['Email_Utente']) ?>:</strong><br>
+                                        <?php if ($commento['Email_Utente'] === $progetto['Email_Creatore']): ?>
+                                            <strong>Creatore del progetto:</strong><br>
+                                        <?php else: ?>
+                                            <strong><?= htmlspecialchars($commento['Email_Utente']) ?>:</strong><br>
+                                        <?php endif; ?>
                                         <?= htmlspecialchars($commento['Testo']) ?>
 
                                         <?php if (!empty($commento['Risposta'])): ?>
@@ -790,20 +754,6 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
                     Accedi per lasciare un commento.
                 </div>
             <?php endif; ?>
-
-
-
-            <?php
-            // DEBUG: stampa i profili prima del rendering
-            echo "<pre style='background:#f0f0f0;padding:10px;margin:10px;'>";
-            echo "DEBUG PROFILI:\n";
-            foreach ($profiliRicercati as $debug_profilo) {
-                echo "ID: " . $debug_profilo['ID'] . " - Nome: " . $debug_profilo['Nome'] . "\n";
-            }
-            echo "</pre>";
-            ?>
-
-
 
             <!-- Sezione candidature per progetti software -->
             <?php if ($isLoggedIn && $progetto['Tipo'] === 'Software' && $progetto['Stato'] === 'aperto'): ?>
@@ -1261,6 +1211,19 @@ $isCreatore = ($isLoggedIn && isset($_SESSION['email'], $progetto['Email_Creator
             }, 3000);
         }
     });
+
+    // Apri automaticamente il modal se arriva dalla pagina progetti
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('action') === 'fund') {
+            const fundModal = document.getElementById('finanziaModal');
+            if (fundModal) {
+                const modal = new bootstrap.Modal(fundModal);
+                modal.show();
+            }
+        }
+    });
+
 </script>
 
 </body>

@@ -669,7 +669,7 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
 
                 <div class="d-grid gap-2">
                     <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="fas fa-rocket me-2"></i>Crea Progetto
+                        <i class="fas fa-star me-2"></i>Crea Progetto
                     </button>
                     <a href="creator_dashboard.php" class="btn btn-outline-secondary btn-lg">
                         <i class="fas fa-arrow-left me-2"></i>Torna alla Dashboard
