@@ -1,13 +1,9 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
 ob_start();
 header('Content-Type: application/json');
 
-require_once '../config/bootstrap.php'; // include tutto (config, database, session, utils)
-
+require_once '../config/bootstrap.php'; 
 try {
     $required = ['nome', 'cognome', 'email', 'nickname', 'password', 'data_nascita', 'luogo_nascita'];
     foreach ($required as $field) {

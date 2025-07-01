@@ -2,9 +2,6 @@
 require_once '../config/database.php';
 require_once '../includes/navbar.php';
 
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
 SessionManager::start();
 $isLoggedIn = SessionManager::isLoggedIn();
 $isCreator = SessionManager::isCreator();
@@ -32,7 +29,7 @@ function renderTable($title, $headers, $rows, $icon) {
     echo "<div class='table-responsive'>";
     echo "<table class='table table-hover'>";
     echo "<thead class='table-light'><tr>";
-    echo "<th>#</th>"; // posizione
+    echo "<th>#</th>";
     foreach ($headers as $h) echo "<th>" . htmlspecialchars($h) . "</th>";
     echo "</tr></thead><tbody>";
 
@@ -166,7 +163,7 @@ switch ($view) {
 </div>
 
 <div class="container">
-    <!-- Navigation Tabs -->
+    <!-- nav tabelle -->
     <div class="row mb-4">
         <div class="col-12">
             <ul class="nav nav-pills justify-content-center">

@@ -1,8 +1,4 @@
 <?php
-/**
- * BOSTARTER - Logout
- * File: auth/logout.php
- */
 
 require_once '../config/database.php';
 
@@ -17,7 +13,7 @@ SessionManager::start();
 // Log del logout (opzionale)
 if (SessionManager::isLoggedIn()) {
     $userEmail = SessionManager::getUserEmail();
-    error_log("✅ Logout: $userEmail");
+    error_log("Logout: $userEmail");
 }
 
 // Distruggi sessione

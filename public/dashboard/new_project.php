@@ -1,8 +1,4 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 require_once '../../config/database.php';
 require_once '../../includes/navbar.php';
@@ -35,9 +31,8 @@ $email = $_SESSION['user_email'];
 // Recupera reward, componenti e profili
 $rewards = [];
 $componenti = [];
-$profili = []; // NUOVO: Array per multipli profili
+$profili = []; 
 
-// Le reward sono sempre obbligatorie per entrambi i tipi
 if (isset($_POST['reward_codes']) && isset($_POST['reward_descriptions'])) {
     $rewardCodes = $_POST['reward_codes'];
     $rewardDescriptions = $_POST['reward_descriptions'];
@@ -55,7 +50,7 @@ if (isset($_POST['reward_codes']) && isset($_POST['reward_descriptions'])) {
     }
 }
 
-// NUOVO: Gestisci multipli profili per progetti software
+// Gestione profili multipli per progetti software
 if ($tipo === 'Software' && isset($_POST['profili']) && $_POST['profili'] === 'si') {
 
     // Verifica se abbiamo i dati dei profili
@@ -64,8 +59,8 @@ if ($tipo === 'Software' && isset($_POST['profili']) && $_POST['profili'] === 's
         $profileSkills = $_POST['profile_skills'];
 
         // Debug per capire la struttura
-        error_log("🔍 Profile Names: " . print_r($profileNames, true));
-        error_log("🔍 Profile Skills: " . print_r($profileSkills, true));
+        error_log("Profile Names: " . print_r($profileNames, true));
+        error_log("Profile Skills: " . print_r($profileSkills, true));
 
         // Processa ogni profilo
         foreach ($profileNames as $index => $profileName) {
@@ -158,7 +153,7 @@ if (empty($nome) || empty($descrizione) || $budget <= 0 || empty($data_limite) |
             $error_message = "I nomi dei componenti devono essere univoci.";
         }
     } elseif ($tipo === 'Software' && !empty($profili)) {
-        // NUOVO: Verifica univocità nomi profili
+        // Verifica univocità nomi profili
         $nomiProfiliUnivoci = array_unique(array_column($profili, 'nome'));
         if (count($nomiProfiliUnivoci) !== count($profili)) {
             $error_message = "I nomi dei profili devono essere univoci.";
@@ -203,17 +198,17 @@ if (empty($error_message)) {
             throw new Exception("Tipo progetto non valido: '$tipo'. Deve essere 'Hardware' o 'Software'");
         }
 
-        // 1. Inserisci progetto
+        // Inserimento progetto
         $stmt = $db->callStoredProcedure('InserisciProgetto', [$nome, $descrizione, $oggi, $budget, $data_limite, $stato, $tipo, $email]);
         $stmt->closeCursor();
 
-        // 2. Inserisci foto se caricata
+        // Inserimento foto se caricata
         if ($immaginePath) {
             $stmt = $db->callStoredProcedure('InserisciFoto', [$immaginePath, $nome]);
             $stmt->closeCursor();
         }
 
-        // 3. Inserisci reward per entrambi i tipi
+        // Inserimento reward per entrambi i tipi
         foreach ($rewards as $i => $reward) {
             $fotoRewardPath = 'img/default_reward.jpg';
             if (isset($_FILES['reward_photos']) && isset($_FILES['reward_photos']['error'][$i]) && $_FILES['reward_photos']['error'][$i] === UPLOAD_ERR_OK) {
@@ -234,7 +229,7 @@ if (empty($error_message)) {
             );
         }
 
-        // 4. Inserisci componenti per hardware o profili per software
+        // Inserimento componenti per hardware o profili per software
         if ($tipo === 'Hardware') {
             foreach ($componenti as $componente) {
                 $db->execute("
@@ -248,27 +243,27 @@ if (empty($error_message)) {
             $countItems = count($componenti) + count($rewards);
             $itemType = "componenti e reward";
         } else {
-            // Software: inserisci multipli profili
+            // Software: inserimento profili multipli
             if (!empty($profili)) {
                 foreach ($profili as $profilo) {
-                    // Inserisci il profilo
+                    // Inserimento profilo
                     $stmt = $db->callStoredProcedure('InserisciProfiloRichiesto', [$profilo['nome'], $nome]);
                     $result = $stmt->fetch();
                     $stmt->closeCursor();
                     $id_profilo = $result['ID_Profilo'] ?? null;
 
                     if ($id_profilo) {
-                        // Inserisci le skill di questo profilo
+                        // Inserimento skill di questo profilo
                         foreach ($profilo['competenze'] as $competenza => $livello) {
                             $competenza = trim($competenza);
                             $livello = intval($livello);
 
                             if (!empty($competenza) && $livello >= 0 && $livello <= 5) {
-                                // Inserisci la skill generale se non esiste
+                                // Inserimento la skill generale se non esiste
                                 $stmtSkill = $db->callStoredProcedure('InserisciSkill', [$competenza, $livello]);
                                 $stmtSkill->closeCursor();
 
-                                // Inserisci la skill richiesta per questo profilo
+                                // Inserimento la skill richiesta per questo profilo
                                 $stmtSkillRich = $db->callStoredProcedure('InserisciSkillRichiesta', [
                                     $id_profilo, $competenza, $livello
                                 ]);
@@ -288,7 +283,7 @@ if (empty($error_message)) {
         $db->commit();
 
         // Debug per capire cosa è stato creato
-        error_log("✅ Progetto '{$nome}' ({$tipo}) creato con successo:");
+        error_log("- Progetto '{$nome}' ({$tipo}) creato con successo:");
         error_log("- Rewards: " . count($rewards));
         error_log("- Componenti: " . count($componenti));
         error_log("- Profili: " . count($profili));
@@ -313,16 +308,6 @@ if (empty($error_message)) {
 }
 ?>
 
-<!--
-ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per vedere la struttura dati:
-
-<?php if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['profile_skills'])): ?>
-<div class="alert alert-info">
-    <h5>🔍 DEBUG - Struttura dati ricevuta:</h5>
-    <pre><?= htmlspecialchars(print_r($_POST, true)) ?></pre>
-</div>
-<?php endif; ?>
--->
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -523,7 +508,7 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
                     <small class="form-text text-muted">Carica un'immagine rappresentativa del tuo progetto.</small>
                 </div>
 
-                <!-- SEZIONE REWARD (sempre visibile) -->
+                <!-- Sezione reward -->
                 <div class="card border-primary mb-4" id="rewardsSection">
                     <div class="card-header bg-primary text-white">
                         <div class="d-flex justify-content-between align-items-center">
@@ -537,9 +522,7 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
                         <small>Aggiungi le ricompense che i sostenitori riceveranno (obbligatorio per tutti i progetti)</small>
                     </div>
                     <div class="card-body">
-                        <div id="rewardsContainer">
-                            <!-- Le reward verranno aggiunte qui dinamicamente -->
-                        </div>
+                        <div id="rewardsContainer"></div>
 
                         <button type="button" class="btn btn-add-reward" onclick="addReward()">
                             <i class="fas fa-plus me-2"></i>Aggiungi Reward
@@ -555,7 +538,7 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
                     </div>
                 </div>
 
-                <!-- SEZIONE PROFILI SOFTWARE -->
+                <!-- Sezione profilo software -->
                 <div class="card border-info mb-4" id="softwareProfilesSection" style="display: none;">
                     <div class="card-header bg-info text-white">
                         <div class="d-flex justify-content-between align-items-center">
@@ -563,8 +546,8 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
                                 <i class="fas fa-users-cog me-2"></i>Profili Richiesti per il Progetto Software
                             </h5>
                             <span class="counter">
-                <span id="profileCount">0</span> profili
-            </span>
+                                <span id="profileCount">0</span> profili
+                             </span>
                         </div>
                         <small>Definisci i profili professionali che cerchi per il tuo progetto</small>
                     </div>
@@ -585,9 +568,7 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
 
                         <div id="profili-input" class="mt-3" style="display: none;">
                             <!-- Container per lista profili -->
-                            <div id="profilesContainer">
-                                <!-- I profili verranno aggiunti qui dinamicamente -->
-                            </div>
+                            <div id="profilesContainer"></div>
 
                             <button type="button" class="btn btn-success" onclick="addProfile()">
                                 <i class="fas fa-user-plus me-2"></i>Aggiungi Nuovo Profilo
@@ -618,8 +599,7 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
                     </div>
                 </div>
 
-
-                <!-- SEZIONE COMPONENTI (solo per Hardware) -->
+                <!-- Sezione componenti -->
                 <div class="card border-success mb-4" id="componentsSection" style="display: none;">
                     <div class="card-header bg-success text-white">
                         <div class="d-flex justify-content-between align-items-center">
@@ -633,9 +613,7 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
                         <small>Elenca i componenti fisici necessari per realizzare il progetto (minimo 1 richiesto)</small>
                     </div>
                     <div class="card-body">
-                        <div id="componentsContainer">
-                            <!-- I componenti verranno aggiunti qui dinamicamente -->
-                        </div>
+                        <div id="componentsContainer"></div>
 
                         <button type="button" class="btn btn-add-component" onclick="addComponent()">
                             <i class="fas fa-plus me-2"></i>Aggiungi Componente
@@ -771,7 +749,7 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
         }
     }
 
-    // === VISIBILITÀ SEZIONI IN BASE AL TIPO DI PROGETTO ===
+    // visibilità sezione in base al tipo di progetto
     function updateFormVisibility() {
         const tipo = document.getElementById('tipo').value;
         const rewardsSection = document.getElementById('rewardsSection');
@@ -803,7 +781,7 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
         }
     });
 
-    // Funzioni reward (invariate)
+    // Funzioni reward
     function addReward() {
         rewardCount++;
 
@@ -862,7 +840,7 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
         document.getElementById('rewardCount').textContent = currentRewards;
     }
 
-    // Funzioni componenti (invariate)
+    // Funzioni componenti
     function addComponent() {
         componentCount++;
 
@@ -962,7 +940,7 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
         summaryDiv.style.display = 'block';
     }
 
-    // Nuove funzioni per gestione multipli profili
+    // Nuove funzioni per gestione profili multipli
     function toggleProfiloInput(valore) {
         const profiliInput = document.getElementById("profili-input");
         profiliInput.style.display = (valore === "si") ? "block" : "none";
@@ -1032,7 +1010,7 @@ ESEMPIO DI DEBUG - Aggiungi questo codice temporaneamente dopo il POST per veder
 
         document.getElementById('profilesContainer').insertAdjacentHTML('beforeend', profileHtml);
 
-        // Aggiungi automaticamente una skill al nuovo profilo
+        // Aggiunge automaticamente una skill al nuovo profilo
         addSkillToProfile(profileCount);
 
         updateProfileCount();

@@ -1,18 +1,6 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
-/**
- * BOSTARTER - API per aggiungere un nuovo profilo richiesto e le sue skill.
- * File: api/add_profile.php
- */
-
-require_once '../config/database.php'; // Usa il percorso relativo corretto
-
-// Assicurati che solo i creatori loggati possano accedere a questa API
-// SessionManager::requireLogin('../../index.html'); // Commentato se database.php gestisce la sessione
-// SessionManager::requireCreator(); // Commentato se database.php gestisce la sessione
+require_once '../config/database.php'; 
 
 $db = Database::getInstance();
 
@@ -20,7 +8,6 @@ header('Content-Type: application/json');
 
 $response = ['success' => false, 'message' => ''];
 
-// Utility per risposta e uscita pulita
 function json_exit($arr) {
     echo json_encode($arr);
     exit;

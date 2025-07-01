@@ -1,26 +1,15 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-/**
- * BOSTARTER - Lista Progetti
- * File: public/projects.php
- */
 
 require_once '../../config/database.php';
 require_once '../../includes/navbar.php';
 
-// Avvia sessione
 SessionManager::start();
 
-// Verifica se l'utente è loggato
 $isLoggedIn = SessionManager::isLoggedIn();
 $userEmail = SessionManager::getUserEmail();
 $isCreator = SessionManager::isCreator();
 $isAdmin = SessionManager::isAdmin();
 
-// AGGIORNAMENTO AUTOMATICO STATO PROGETTI SCADUTI
 $db = Database::getInstance();
 $db->ensureEventScheduler(); // Assicura che l'evento MySQL sia attivo
 

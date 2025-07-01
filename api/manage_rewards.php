@@ -1,8 +1,4 @@
 <?php
-/**
- * BOSTARTER - API Gestione Reward Unificata
- * File: api/manage_rewards.php
- */
 
 require_once '../config/database.php';
 
@@ -27,9 +23,7 @@ try {
     $userEmail = SessionManager::getUserEmail();
     $action = $_POST['action'] ?? '';
 
-    // ================================================================
     // AGGIUNGI REWARD
-    // ================================================================
     if ($action === 'add_reward') {
         $codice = trim($_POST['codice'] ?? '');
         $descrizione = trim($_POST['descrizione'] ?? '');
@@ -72,7 +66,7 @@ try {
             exit;
         }
 
-        // Inserisci la reward
+        // Inserimento della reward
         $db->execute("
             INSERT INTO REWARD (Codice, Descrizione, Foto, Nome_Progetto) 
             VALUES (?, ?, 'default_reward.jpg', ?)
@@ -90,9 +84,7 @@ try {
         exit;
     }
 
-    // ================================================================
     // ELIMINA REWARD
-    // ================================================================
     if ($action === 'delete_reward') {
         $codice = trim($_POST['codice'] ?? '');
 
@@ -136,9 +128,7 @@ try {
         exit;
     }
 
-    // ================================================================
     // RECUPERA REWARD DI UN PROGETTO
-    // ================================================================
     if ($action === 'get_rewards') {
         $nomeProgetto = trim($_POST['nome_progetto'] ?? '');
 
@@ -175,9 +165,7 @@ try {
         exit;
     }
 
-    // ================================================================
     // RECUPERA REWARD PER VISUALIZZAZIONE PUBBLICA
-    // ================================================================
     if ($action === 'get_rewards_public') {
         $nomeProgetto = trim($_POST['nome_progetto'] ?? '');
 
@@ -212,9 +200,7 @@ try {
         exit;
     }
 
-    // ================================================================
     // VERIFICA AVAILABILITY REWARD
-    // ================================================================
     if ($action === 'check_code_availability') {
         $codice = trim($_POST['codice'] ?? '');
 

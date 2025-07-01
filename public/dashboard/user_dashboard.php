@@ -1,8 +1,4 @@
 <?php
-/**
- * BOSTARTER - Dashboard Utente
- * File: public/dashboard/user_dashboard.php
- */
 
 require_once '../../config/database.php';
 require_once '../../includes/navbar.php';
@@ -45,7 +41,7 @@ try {
         'candidature_inviate' => 0,
         'candidature_accettate' => 0,
         'commenti_inseriti' => 0,
-        'numero_skills' => count($mySkills) // Aggiunto il conteggio delle skill qui
+        'numero_skills' => count($mySkills)
     ];
 
     // Progetti finanziati
@@ -88,7 +84,6 @@ try {
     ORDER BY Ultima_Donazione DESC
     LIMIT 5
 ", [$userEmail]);
-
 
     // Query per candidature in corso
     $candidatureInCorso = $db->fetchAll("
@@ -277,7 +272,7 @@ try {
                                 <tbody>
                                 <?php foreach ($progettiFinanziati as $progetto): ?>
                                     <?php
-                                    // ✅ Elabora le reward ricevute
+                                    // Elabora le reward ricevute
                                     $rewardsRicevute = [];
                                     if (!empty($progetto['Rewards_Ricevute'])) {
                                         $rewardsList = explode(';;;', $progetto['Rewards_Ricevute']);

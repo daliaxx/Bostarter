@@ -24,10 +24,7 @@ try {
 
     $action = $_POST['action'] ?? '';
 
-    // ================================================================
     // FUNZIONI ESISTENTI PER UTENTI NORMALI
-    // ================================================================
-
     if ($action === 'add_skill') {
         $competenza = trim($_POST['competenza'] ?? '');
         $livello = $_POST['livello'] ?? '';
@@ -42,21 +39,17 @@ try {
             exit;
         }
 
-        // ✅ CORRETTO: Esegui direttamente le due stored procedure
-        // 1. Assicura che la skill esista nel sistema (usa admin di default)
+        // Assicura che la skill esista nel sistema (usa admin di default)
         $db->callStoredProcedure('InserisciSkill', [$competenza, $livello]);
 
-        // 2. Aggiunge la skill al curriculum dell'utente
+        // Aggiunge la skill al curriculum dell'utente
         $db->callStoredProcedure('InserisciSkillCurriculum', [$userEmail, $competenza, $livello]);
 
         echo json_encode(['success' => true, 'message' => "Skill inserita correttamente."]);
         exit;
     }
 
-    // ================================================================
     // NUOVE FUNZIONI PER AMMINISTRATORI
-    // ================================================================
-
     if ($action === 'get_all_skills') {
         // Recupera tutte le competenze uniche (solo admin)
         if (!$isAdmin) {
@@ -116,7 +109,7 @@ try {
             exit;
         }
 
-        // ✅ CORRETTO: Inserisci la competenza con tutti i livelli da 1 a 5 usando InserisciSkillAdmin
+        // Inserimento della competenza con tutti i livelli da 1 a 5 usando InserisciSkillAdmin
         try {
             $db->beginTransaction();
 
@@ -128,7 +121,7 @@ try {
             $db->commit();
 
             // Log dell'operazione
-            error_log("✅ Admin {$userEmail} ha aggiunto la competenza: {$competenza} (livelli 1-5)");
+            error_log("Admin {$userEmail} ha aggiunto la competenza: {$competenza} (livelli 1-5)");
 
             echo json_encode([
                 'success' => true,
@@ -138,7 +131,7 @@ try {
 
         } catch (Exception $e) {
             $db->rollback();
-            error_log("❌ Errore aggiunta competenza {$competenza}: " . $e->getMessage());
+            error_log("Errore aggiunta competenza {$competenza}: " . $e->getMessage());
             echo json_encode(['success' => false, 'message' => 'Errore durante l\'inserimento: ' . $e->getMessage()]);
         }
         exit;
@@ -159,10 +152,7 @@ try {
         exit;
     }
 
-    // ================================================================
-    // FUNZIONE AGGIUNTIVA: Elimina competenza (solo admin)
-    // ================================================================
-
+    // Elimina competenza (solo admin)
     if ($action === 'delete_competence') {
         if (!$isAdmin) {
             echo json_encode(['success' => false, 'message' => 'Accesso negato. Solo gli amministratori possono eliminare competenze.']);
@@ -210,7 +200,7 @@ try {
             ]);
 
         } catch (Exception $e) {
-            error_log("❌ Errore eliminazione competenza {$competenza}: " . $e->getMessage());
+            error_log("Errore eliminazione competenza {$competenza}: " . $e->getMessage());
             echo json_encode(['success' => false, 'message' => 'Errore durante l\'eliminazione: ' . $e->getMessage()]);
         }
         exit;
@@ -220,7 +210,7 @@ try {
     echo json_encode(['success' => false, 'message' => 'Azione non riconosciuta: ' . $action]);
 
 } catch (Exception $e) {
-    error_log("❌ Errore manage_skill.php: " . $e->getMessage());
+    error_log("Errore manage_skill.php: " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'Errore del server: ' . $e->getMessage()]);
 }
 ?>

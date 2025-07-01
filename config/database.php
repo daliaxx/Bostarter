@@ -1,18 +1,14 @@
 <?php
-/**
- * BOSTARTER - Configurazione Database Unificata
- * File: config/database.php
- */
 
-// Configurazione database - MODIFICA SECONDO IL TUO SETUP
-define('DB_HOST', 'localhost');  // Per MAMP usa :8889, per XAMPP usa solo 'localhost'
+// Configurazione database
+define('DB_HOST', 'localhost'); 
 define('DB_NAME', 'BOSTARTER');
 define('DB_USER', 'root');
-define('DB_PASS', 'root');  // Per MAMP usa 'root', per XAMPP spesso è vuoto ''
+define('DB_PASS', 'root');  
 define('DB_CHARSET', 'utf8mb4');
 
 // Configurazione applicazione
-define('DEBUG_MODE', false);  // Cambia a false in produzione
+define('DEBUG_MODE', true);  // Cambia a false in produzione
 
 // Classe principale per gestire il database
 class Database {
@@ -45,11 +41,11 @@ class Database {
             $this->conn->exec("SET NAMES " . DB_CHARSET);
 
             if (DEBUG_MODE) {
-                error_log("✅ Database connesso: " . DB_HOST . "/" . DB_NAME);
+                error_log("Database connesso: " . DB_HOST . "/" . DB_NAME);
             }
 
         } catch(PDOException $e) {
-            $error = "❌ Errore connessione database: " . $e->getMessage();
+            $error = "Errore connessione database: " . $e->getMessage();
             error_log($error);
 
             if (DEBUG_MODE) {
@@ -118,9 +114,7 @@ class Database {
     public function commit() { return $this->conn->commit(); }
     public function rollback() { return $this->conn->rollback(); }
 
-    /**
-     * Verifica e attiva l'evento per la chiusura automatica dei progetti scaduti
-     */
+    //Verifica e attiva l'evento per la chiusura automatica dei progetti scaduti
     public function ensureEventScheduler() {
         try {
             // Verifica se l'event scheduler è attivo
@@ -382,17 +376,17 @@ function isCreator() {
 
 // Test configurazione (solo se chiamato direttamente)
 if (basename($_SERVER['PHP_SELF']) === 'database.php') {
-    echo "<h2>🧪 Test Configurazione BOSTARTER</h2>";
+    echo "<h2>Test Configurazione BOSTARTER</h2>";
 
     try {
         $db = Database::getInstance();
-        echo "<p style='color: green;'>✅ Connessione database riuscita!</p>";
+        echo "<p style='color: green;'>Connessione database riuscita!</p>";
 
         // Test tabelle
         $tables = $db->fetchAll("SHOW TABLES");
-        echo "<h3>📋 Tabelle trovate (" . count($tables) . "):</h3>";
+        echo "<h3>Tabelle trovate (" . count($tables) . "):</h3>";
         if (empty($tables)) {
-            echo "<p style='color: orange;'>⚠️ Nessuna tabella trovata. Importa database.sql!</p>";
+            echo "<p style='color: orange;'>Nessuna tabella trovata. Importa database.sql!</p>";
         } else {
             echo "<ul>";
             foreach ($tables as $table) {
@@ -403,7 +397,7 @@ if (basename($_SERVER['PHP_SELF']) === 'database.php') {
 
         // Test stored procedures
         $procedures = $db->fetchAll("SHOW PROCEDURE STATUS WHERE Db = '" . DB_NAME . "'");
-        echo "<h3>⚙️ Stored Procedures (" . count($procedures) . "):</h3>";
+        echo "<h3> Stored Procedures (" . count($procedures) . "):</h3>";
         if (!empty($procedures)) {
             echo "<ul>";
             foreach ($procedures as $proc) {
@@ -413,7 +407,7 @@ if (basename($_SERVER['PHP_SELF']) === 'database.php') {
         }
 
     } catch (Exception $e) {
-        echo "<p style='color: red;'>❌ " . $e->getMessage() . "</p>";
+        echo "<p style='color: red;'> " . $e->getMessage() . "</p>";
     }
 
     echo "<hr><p><strong>Setup:</strong> Host: " . DB_HOST . " | DB: " . DB_NAME . " | User: " . DB_USER . "</p>";
