@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $success = "Progetto aggiornato con successo!";
 
-            // Aggiornamento i dati
+            // Aggiorna i dati del progetto
             $project = $db->fetchOne("
                 SELECT * FROM PROGETTO 
                 WHERE Nome = ? AND Email_Creatore = ?
@@ -66,10 +66,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Recupera le reward del progetto
 $rewards = $db->fetchAll("
     SELECT * FROM REWARD WHERE Nome_Progetto = ? ORDER BY Codice ASC
 ", [$projectName]);
-
 
 $profiles = [];
 if ($project['Tipo'] === 'Software') {
@@ -86,10 +86,9 @@ if ($project['Tipo'] === 'Software') {
             WHERE SR.ID_Profilo = ?
         ", [$profile['ID']]);
     }
-    unset($profile);
+    unset($profile); 
 }
 
-// Progetti Hardware
 $components = [];
 if ($project['Tipo'] === 'Hardware') {
     $components = $db->fetchAll("
@@ -114,7 +113,7 @@ if ($project['Tipo'] === 'Hardware') {
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --small-radius: 12px;
-            --card-radius: 20px;
+            --card-radius: 20px; 
         }
         body {
             background: #f8f9fa;
@@ -143,20 +142,19 @@ if ($project['Tipo'] === 'Hardware') {
         }
         .card {
             border: none;
-            border-radius: var(--card-radius);
+            border-radius: var(--card-radius); 
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            overflow: hidden;
+            overflow: hidden; 
         }
         .card-header {
-            background: var(--primary-gradient);
+            background: var(--primary-gradient); 
             color: white;
             font-weight: bold;
             padding: 1rem 1.5rem;
-            border-top-left-radius: var(--card-radius);
-            border-top-right-radius: var(--card-radius);
-            border-bottom: none;
+            border-top-left-radius: var(--card-radius); 
+            border-top-right-radius: var(--card-radius); 
+            border-bottom: none; 
         }
-
         .profile-item {
             background: #f8f9fa;
             border: 2px solid #e9ecef;
@@ -166,11 +164,11 @@ if ($project['Tipo'] === 'Hardware') {
             transition: all 0.3s ease;
         }
         .profile-item:hover {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
+            border-color: #667eea; 
+            background: rgba(102, 126, 234, 0.1); 
         }
         .skill-badge {
-            background: var(--primary-gradient);
+            background: var(--primary-gradient); 
             color: white;
             padding: 0.35em 0.65em;
             border-radius: 0.25rem;
@@ -179,7 +177,6 @@ if ($project['Tipo'] === 'Hardware') {
             margin-bottom: 5px;
             display: inline-block;
         }
-
         .component-item {
             background: #f8f9fa;
             border: 2px solid #e9ecef;
@@ -189,8 +186,8 @@ if ($project['Tipo'] === 'Hardware') {
             transition: all 0.3s ease;
         }
         .component-item:hover {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
+            border-color: #667eea; 
+            background: rgba(102, 126, 234, 0.1); 
         }
         .component-price {
             font-weight: bold;
@@ -200,19 +197,18 @@ if ($project['Tipo'] === 'Hardware') {
             font-weight: bold;
             color: #007bff;
         }
-
         .modal-content {
-            border-radius: var(--card-radius);
+            border-radius: var(--card-radius); 
         }
         .modal-header {
-            background: var(--primary-gradient);
+            background: var(--primary-gradient); 
             color: white;
             border-top-left-radius: var(--card-radius);
             border-top-right-radius: var(--card-radius);
             border-bottom: none;
         }
         .modal-header .btn-close {
-            filter: brightness(0) invert(1);
+            filter: brightness(0) invert(1); 
         }
     </style>
 </head>
@@ -354,7 +350,7 @@ if ($project['Tipo'] === 'Hardware') {
                                                 <i class="fas fa-trash-alt"></i> Elimina Componente
                                             </button>
                                         </div>
-                                        <p class="mb-2"><?= html2br(htmlspecialchars($component['Descrizione'])) ?></p>
+                                        <p class="mb-2"><?= nl2br(htmlspecialchars($component['Descrizione'])) ?></p>
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <span class="component-price">
@@ -371,7 +367,7 @@ if ($project['Tipo'] === 'Hardware') {
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </div>
-                        <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addComponentModal">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addComponentModal">
                             <i class="fas fa-plus me-2"></i>Aggiungi Nuovo Componente
                         </button>
                     </div>
@@ -484,8 +480,7 @@ if ($project['Tipo'] === 'Hardware') {
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-                    <button type="button" class="btn btn-warning" onclick="addComponent()">Aggiungi Componente</button>
+                    <button type="button" class="btn btn-primary" onclick="addComponent()">Aggiungi Componente</button>
                 </div>
             </form>
         </div>
@@ -497,7 +492,7 @@ if ($project['Tipo'] === 'Hardware') {
     window.competenzeDisponibili = [];
     let profileSkillCounter = 0;
 
-    // per gestione competenze dal database
+    // Funzioni per gestione competenze dal database
     function loadCompetenze() {
         fetch('../../api/manage_skill.php', {
             method: 'POST',
@@ -527,7 +522,7 @@ if ($project['Tipo'] === 'Hardware') {
         });
     }
 
-    // reward
+    // Funzioni reward
     function addReward() {
         const form = document.getElementById('addRewardForm');
         const formData = new FormData(form);
@@ -589,12 +584,13 @@ if ($project['Tipo'] === 'Hardware') {
         skillSelects.forEach((select) => {
             const competenza = select.value.trim();
 
+            // Reset stile
             select.style.borderColor = '';
             select.style.backgroundColor = '';
 
             if (competenza) {
                 if (selectedCompetenze.includes(competenza)) {
-                    //Se Duplicato
+                    // Duplicato trovato
                     select.style.borderColor = '#dc3545';
                     select.style.backgroundColor = '#ffe6e6';
                     if (!duplicates.includes(competenza)) {
@@ -606,7 +602,7 @@ if ($project['Tipo'] === 'Hardware') {
             }
         });
 
-        // warning se ci sono duplicati
+        // Mostra warning se ci sono duplicati
         const warningDiv = document.getElementById('duplicateWarning');
         if (duplicates.length > 0) {
             if (!warningDiv) {
@@ -708,7 +704,6 @@ if ($project['Tipo'] === 'Hardware') {
             return;
         }
 
-        // Basic validation for skills
         const skillInputs = document.querySelectorAll('#skillsContainer select[name^="profile_skills"]');
         const levelInputs = document.querySelectorAll('#skillsContainer input[type="number"][name^="profile_skills"]');
 
@@ -883,6 +878,7 @@ if ($project['Tipo'] === 'Hardware') {
 
     // Inizializzazione e event listeners
     document.addEventListener('DOMContentLoaded', function() {
+        // Carica competenze quando si apre il modal per aggiungere profili
         const addProfileModalElement = document.getElementById('addProfileModal');
         if (addProfileModalElement) {
             addProfileModalElement.addEventListener('show.bs.modal', function () {
@@ -900,7 +896,6 @@ if ($project['Tipo'] === 'Hardware') {
                 document.getElementById('skillsContainer').innerHTML = '';
                 profileSkillCounter = 0;
 
-                // Rimuovi warning duplicati quando chiudi modal
                 const warningDiv = document.getElementById('duplicateWarning');
                 if (warningDiv) {
                     warningDiv.remove();
